@@ -1,0 +1,18 @@
+body { font-family: 'Inter', sans-serif; background: #f4f7f6; color: #2d3436; display: flex; justify-content: center; padding: 40px; }
+.container { max-width: 600px; width: 100%; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+h1 { margin-bottom: 5px; color: #1e272e; }
+.subtitle { color: #7f8c8d; margin-bottom: 25px; }
+input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #dfe6e9; border-radius: 8px; box-sizing: border-box; }
+button { width: 100%; padding: 15px; background: #00b894; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+.toggle-container { display: flex; gap: 10px; margin-bottom: 15px; }
+.toggle-container button { background: #dfe6e9; color: #2d3436; padding: 10px; }
+.toggle-container button.active { background: #0984e3; color: white; }
+.hidden { display: none; }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+.card { padding: 20px; border-radius: 12px; text-align: center; }
+.official { background: #e3f2fd; border: 1px solid #bbdefb; }
+.real { background: #e8f5e9; border: 1px solid #c8e6c9; }
+.amount { font-size: 1.8rem; font-weight: 800; margin: 10px 0; }
+.comparison-box { background: #fff5f5; border: 2px solid #ff4d4d; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
+.highlight { font-size: 1.3rem; color: #d63031; font-weight: bold; }
+.btn-union { display: block; background: #d63031; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 20px; }
