@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const calculateBtn = document.getElementById('calculateBtn');
     const resultsArea = document.getElementById('results');
 
-    // 1. 2026 TAX CALCULATOR (Standard Deduction: $16,100)
+    // 1. TAX CALCULATOR
     function calculateFederalTax(grossIncome) {
         const taxable = Math.max(0, grossIncome - 16100);
         if (taxable <= 12400) return Math.round(taxable * 0.10);
@@ -15,17 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.round(5800 + (taxable - 50400) * 0.22);
     }
 
-    // 2. AUTOCOMPLETE SEARCH (With 403/Error Protection)
+    // 2. AUTOCOMPLETE SEARCH
     companyInput.addEventListener('input', async (e) => {
         const query = e.target.value.trim();
         if (query.length < 2) return;
 
         try {
-            // Using the 'search-ticker' endpoint as it's more stable for free tiers
             const res = await fetch(`https://financialmodelingprep.com/api/v3/search-ticker?query=${query}&limit=5&apikey=${API_KEY}`);
             const results = await res.json();
             
-            // FIX: Check if results is an Array before looping (prevents the TypeError)
             if (Array.isArray(results)) {
                 dataList.innerHTML = ""; 
                 results.forEach(item => {
@@ -34,12 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.textContent = `${item.name} (${item.symbol})`;
                     dataList.appendChild(option);
                 });
-            } else {
-                // This captures the 403 "Limit Reached" message in the console
-                console.warn("API returned an error object instead of a list:", results);
             }
         } catch (err) {
-            console.error("Autocomplete fetch failed:", err);
+            console.error("Autocomplete failed:", err);
         }
     });
 
@@ -48,11 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const symbol = companyInput.value.toUpperCase().trim();
         
         if (!symbol) {
-            alert("Please enter a company ticker (e.g. AAPL, TSLA, WMT).");
+            alert("Please enter a company ticker (e.g. AAPL, TSLA).");
             return;
         }
 
-        calculateBtn.innerText = "Accessing SEC Filings...";
+        calculateBtn.innerText = "Analyzing SEC Filings...";
         calculateBtn.disabled = true;
 
         try {
@@ -64,12 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const pData = await pRes.json();
             const iData = await iRes.json();
 
-            // Safety check for empty or error responses
             if (!Array.isArray(pData) || !pData[0] || !Array.isArray(iData) || !iData[0]) {
                 throw new Error("Invalid Data");
             }
 
-            // Salary vs Hourly Logic
             const isHourly = !document.getElementById('hourlyInputs').classList.contains('hidden');
             let userIncome = 0;
             let timeRatio = 1;
@@ -90,13 +83,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const officialShare = (netIncome / headcount) * timeRatio;
             const estimatedTax = calculateFederalTax(userIncome);
 
-            // Update UI
             document.getElementById('officialAmount').innerText = `$${Math.round(officialShare).toLocaleString()}`;
             document.getElementById('realAmount').innerText = `$${Math.round(officialShare * 1.65).toLocaleString()}`;
             
             const ratio = estimatedTax > 0 ? (officialShare / estimatedTax).toFixed(1) : "Many";
 
             document.getElementById('taxResults').innerHTML = `
-                <div class="comparison-box">
+                <div class="comparison-box" style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px;">
                     <p><strong>Company:</strong> ${pData[0].companyName}</p>
-                    <p><strong>Your
+                    <p><strong>Your 2026 Fed Tax:</strong> $${estimatedTax.toLocaleString()}</p>
+                    <p><strong>Your Surplus Share:</strong> $${Math.round(officialShare).toLocaleString()}</p>
+                    <p style="color: #d32f2f; font-weight: bold; margin-top: 10px;">
+                        The company kept ${ratio}x more of your value than the government took in taxes.
+                    </p>
+                </div>
+            `;
+
+            resultsArea.classList.remove('hidden');
+
+        } catch (err) {
+            alert("Could not retrieve data. The ticker might be wrong, or the API limit reached.");
+        } finally {
+            calculateBtn.innerText = "Calculate My Share";
+            calculateBtn.disabled = false;
+        }
+    });
+
+    // 4. UI TOGGLES
+    const annualBtn = document.getElementById('annualToggle');
+    const hourlyBtn = document.getElementById('hourlyToggle');
+
+    annualBtn.onclick = () => {
+        document.getElementById('salaryInputs').classList.remove('hidden');
+        document.getElementById('hourlyInputs').classList.add('hidden');
+        annualBtn.classList.add('active');
+        hourlyBtn.classList.remove('active');
+    };
+
+    hourlyBtn.onclick = () => {
+        document.getElementById('hourlyInputs').classList.remove('hidden');
+        document.getElementById('salaryInputs').classList.add('hidden');
+        hourlyBtn.classList.add('active');
+        annualBtn.classList.remove('active');
+    };
+});
