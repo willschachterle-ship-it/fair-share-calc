@@ -15,13 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.round(5800 + (taxable - 50400) * 0.22);
     }
 
-    // 2. AUTOCOMPLETE SEARCH
+    // 2. UPDATED 2026 SEARCH (v3/search is the current standard)
     companyInput.addEventListener('input', async (e) => {
         const query = e.target.value.trim();
-        if (query.length < 2) return;
+        if (query.length < 3) return;
 
         try {
-            const res = await fetch(`https://financialmodelingprep.com/api/v3/search-ticker?query=${query}&limit=5&apikey=${API_KEY}`);
+            // Updated endpoint to the supported v3/search
+            const res = await fetch(`https://financialmodelingprep.com/api/v3/search?query=${query}&limit=5&apikey=${API_KEY}`);
             const results = await res.json();
             
             if (Array.isArray(results)) {
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } catch (err) {
-            console.error("Autocomplete failed:", err);
+            console.error("Search failed:", err);
         }
     });
 
@@ -47,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        calculateBtn.innerText = "Analyzing SEC Filings...";
+        calculateBtn.innerText = "Accessing SEC Filings...";
         calculateBtn.disabled = true;
 
         try {
@@ -59,8 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const pData = await pRes.json();
             const iData = await iRes.json();
 
-            if (!Array.isArray(pData) || !pData[0] || !Array.isArray(iData) || !iData[0]) {
-                throw new Error("Invalid Data");
+            // Check for valid arrays and data
+            if (!pData || pData.length === 0 || !iData || iData.length === 0) {
+                throw new Error("No data found");
             }
 
             const isHourly = !document.getElementById('hourlyInputs').classList.contains('hidden');
@@ -75,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeRatio = (hrs * wks) / 2080;
             } else {
                 userIncome = parseFloat(document.getElementById('annualSalary').value) || 0;
-                timeRatio = 1;
             }
 
             const netIncome = iData[0].netIncome;
@@ -102,7 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsArea.classList.remove('hidden');
 
         } catch (err) {
-            alert("Could not retrieve data. The ticker might be wrong, or the API limit reached.");
+            console.error(err);
+            alert("Could not find data. Ensure the ticker is correct (e.g., AAPL) or try again later.");
         } finally {
             calculateBtn.innerText = "Calculate My Share";
             calculateBtn.disabled = false;
