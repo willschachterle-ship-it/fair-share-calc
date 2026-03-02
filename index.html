@@ -3,47 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fair Share Calculator | 2026 Audit</title>
+    <title>Fair Share Audit 2026</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Find Your Fair Share</h1>
-            <p class="subtitle">Compare your 2026 federal taxes against the surplus value your company keeps.</p>
+            <h1>Fair Share Audit</h1>
+            <p>Compare your 2026 taxes to corporate profit surplus.</p>
         </header>
         
         <div class="input-section">
             <div class="form-group">
-                <label for="company">Company Name</label>
-                <input type="text" id="company" list="companyList" placeholder="Start typing (e.g. Apple, Amazon, Tesla...)">
+                <label for="company">Search Public Company (e.g. Apple, Tesla)</label>
+                <input type="text" id="company" name="company" list="companyList" autocomplete="off" placeholder="Start typing...">
                 <datalist id="companyList"></datalist>
             </div>
             
             <div class="toggle-container">
-                <button id="annualToggle" class="active">Annual Salary</button>
-                <button id="hourlyToggle">Hourly Wage</button>
+                <button type="button" id="annualToggle" class="active">Annual</button>
+                <button type="button" id="hourlyToggle">Hourly</button>
             </div>
 
             <div id="salaryInputs">
-                <input type="number" id="annualSalary" placeholder="Your Yearly Salary ($)">
+                <label for="annualSalary">Annual Salary ($)</label>
+                <input type="number" id="annualSalary" name="annualSalary" placeholder="70000">
             </div>
 
             <div id="hourlyInputs" class="hidden">
-                <input type="number" id="hourlyWage" placeholder="Hourly Rate ($)">
+                <label for="hourlyWage">Hourly Wage</label>
+                <input type="number" id="hourlyWage" name="hourlyWage">
                 <div class="grid-inputs">
-                    <input type="number" id="hoursPerWeek" placeholder="Hrs/Week" value="40">
-                    <input type="number" id="weeksWorked" placeholder="Weeks/Year" value="52">
+                    <label for="hoursPerWeek">Hrs/Wk</label>
+                    <input type="number" id="hoursPerWeek" value="40">
+                    <label for="weeksWorked">Wks/Yr</label>
+                    <input type="number" id="weeksWorked" value="52">
                 </div>
             </div>
 
-            <button id="calculateBtn">Calculate My Share</button>
+            <button type="button" id="calculateBtn">Calculate My Share</button>
         </div>
 
         <div id="results" class="hidden">
             <div class="result-grid">
-                <div class="card official">
+                <div class="card">
                     <h3>Official Profit Share</h3>
-                    <p class="amount" id="officialAmount">$0</p>
-                    <small
+                    <p id="officialAmount">$0</p>
+                </div>
+                <div class="card">
+                    <h3>Real Cash Flow</h3>
+                    <p id="realAmount">$0</p>
+                </div>
+            </div>
+            <div id="taxResults"></div>
+            <a href="https://aflcio.org/formaunion" target="_blank" class="btn-union">Join the Union</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
