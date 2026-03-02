@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fair Share Calculator</title>
+    <title>Fair Share Calculator | 2026 Audit</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>Find Your Fair Share</h1>
-        <p class="subtitle">See the gap between what you're paid and the value you create.</p>
+        <header>
+            <h1>Find Your Fair Share</h1>
+            <p class="subtitle">Compare your 2026 federal taxes against the surplus value your company keeps.</p>
+        </header>
         
         <div class="input-section">
-            <label for="company">Company Name</label>
-            <input type="text" id="company" placeholder="e.g. Amazon, Walmart">
+            <div class="form-group">
+                <label for="company">Company Name</label>
+                <input type="text" id="company" list="companyList" placeholder="Start typing (e.g. Apple, Amazon, Tesla...)">
+                <datalist id="companyList"></datalist>
+            </div>
             
             <div class="toggle-container">
                 <button id="annualToggle" class="active">Annual Salary</button>
@@ -21,13 +27,15 @@
             </div>
 
             <div id="salaryInputs">
-                <input type="number" id="annualSalary" placeholder="Yearly Salary ($)">
+                <input type="number" id="annualSalary" placeholder="Your Yearly Salary ($)">
             </div>
 
             <div id="hourlyInputs" class="hidden">
                 <input type="number" id="hourlyWage" placeholder="Hourly Rate ($)">
-                <input type="number" id="hoursPerWeek" placeholder="Hours per Week" value="40">
-                <input type="number" id="weeksWorked" placeholder="Weeks Worked (Max 52)" value="52">
+                <div class="grid-inputs">
+                    <input type="number" id="hoursPerWeek" placeholder="Hrs/Week" value="40">
+                    <input type="number" id="weeksWorked" placeholder="Weeks/Year" value="52">
+                </div>
             </div>
 
             <button id="calculateBtn">Calculate My Share</button>
@@ -38,25 +46,4 @@
                 <div class="card official">
                     <h3>Official Profit Share</h3>
                     <p class="amount" id="officialAmount">$0</p>
-                    <a href="#" class="method-link">How is this calculated?</a>
-                </div>
-                
-                <div class="card real">
-                    <h3>Real Cash Flow Share</h3>
-                    <p class="amount" id="realAmount">$0</p>
-                    <a href="#" class="method-link">How is this calculated?</a>
-                </div>
-            </div>
-
-            <div id="taxResults"></div>
-
-            <div class="follow-ups">
-                <p><a href="#">Where did this money go instead?</a></p>
-                <p><a href="#">What did the CEO make?</a></p>
-                <a href="#" id="unionLink" class="btn-union" target="_blank">Take Action: Join the Union</a>
-            </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+                    <small
