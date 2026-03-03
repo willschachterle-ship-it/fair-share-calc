@@ -1,6 +1,3 @@
-const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
-const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
-
 const PRIVATE_COMPANIES = {
     "GENENTECH": "Genentech is a private subsidiary of Roche and does not publicly report financials.",
     "SPACEX": "SpaceX is privately held and does not publicly report financials.",
@@ -39,6 +36,7 @@ const FALLBACK_DB = {
     "PFE": { name: "Pfizer Inc.", emps: 88000, profit: -2800000000, ebitda: 5000000000, logo: "https://logo.clearbit.com/pfizer.com" },
     "FDX": { name: "FedEx Corporation", emps: 547000, profit: 3965000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/fedex.com" },
     "UBER": { name: "Uber Technologies, Inc.", emps: 32200, profit: 1887000000, ebitda: 4000000000, logo: "https://logo.clearbit.com/uber.com" },
+    "LYFT": { name: "Lyft, Inc.", emps: 7000, profit: -340000000, ebitda: 200000000, logo: "https://logo.clearbit.com/lyft.com" },
     "NKE": { name: "Nike, Inc.", emps: 83700, profit: 5070000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/nike.com" },
     "BA": { name: "The Boeing Company", emps: 172000, profit: -2200000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/boeing.com" },
     "CVX": { name: "Chevron Corporation", emps: 45600, profit: 21369000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/chevron.com" },
@@ -59,7 +57,7 @@ const TICKER_ALIASES = {
     "FACEBOOK": "META", "NVIDIA": "NVDA", "WALMART": "WMT",
     "NETFLIX": "NFLX", "DISNEY": "DIS", "FORD": "F",
     "STARBUCKS": "SBUX", "MCDONALDS": "MCD", "MCDONALD'S": "MCD",
-    "PFIZER": "PFE", "FEDEX": "FDX", "UBER": "UBER",
+    "PFIZER": "PFE", "FEDEX": "FDX", "UBER": "UBER", "LYFT": "LYFT",
     "AIRBNB": "ABNB", "SPOTIFY": "SPOT", "SNAPCHAT": "SNAP",
     "BOEING": "BA", "NIKE": "NKE", "VISA": "V",
     "MASTERCARD": "MA", "COCACOLA": "KO", "COCA COLA": "KO",
@@ -79,114 +77,42 @@ document.addEventListener('DOMContentLoaded', function() {
     var resultsArea = document.getElementById('results');
     var loadingMsg = document.getElementById('loadingMsg');
 
-    async function resolveToTicker(input) {
-        try {
-            var res = await fetch('https://finnhub.io/api/v1/search?q=' + encodeURIComponent(input) + '&token=' + FINNHUB_KEY);
-            if (!res.ok) throw new Error('Finnhub search HTTP ' + res.status);
-            var json = await res.json();
-            var results = (json && json.result) || [];
-            var match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'); });
-            if (!match) match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol; });
-            if (!match) match = results.find(function(r) { return r.symbol; });
-            if (match) {
-                console.log('Resolved "' + input + '" -> ' + match.symbol);
-                return match.symbol;
-            }
-        } catch(e) { console.warn('Finnhub search failed:', e.message); }
-        throw new Error('Could not resolve ticker for: ' + input);
-    }
-
-    async function fetchFromFMP(symbol) {
-        var profileRes = await fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + FMP_KEY);
-        if (!profileRes.ok) throw new Error('FMP profile HTTP ' + profileRes.status);
-        var profileArr = await profileRes.json();
-        if (!profileArr || profileArr.length === 0 || !profileArr[0]) throw new Error('FMP: no profile data');
-        if (profileArr['Error Message']) throw new Error('FMP error: ' + profileArr['Error Message']);
-        var p = profileArr[0];
-        if (!p.companyName) throw new Error('FMP: empty profile');
-        var emps = p.fullTimeEmployees;
-        if (!emps || emps === 0) throw new Error('FMP: employee count missing');
-        var incomeRes = await fetch('https://financialmodelingprep.com/api/v3/income-statement/' + symbol + '?limit=1&apikey=' + FMP_KEY);
-        if (!incomeRes.ok) throw new Error('FMP income HTTP ' + incomeRes.status);
-        var incomeArr = await incomeRes.json();
-        var inc = (incomeArr && incomeArr[0]) || {};
-        var profit = inc.netIncome || 0;
-        var ebitda = inc.ebitda || (profit > 0 ? profit * 1.3 : 0);
-        return {
-            name: p.companyName,
-            emps: parseInt(emps),
-            profit: profit,
-            ebitda: ebitda,
-            logo: p.image || '',
-        };
-    }
-
-    async function fetchFromFinnhub(symbol) {
-        var profileRes = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + symbol + '&token=' + FINNHUB_KEY);
-        var finRes = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + symbol + '&metric=all&token=' + FINNHUB_KEY);
-        var profileData = await profileRes.json();
-        var financialsData = await finRes.json();
-        if (!profileData || !profileData.name) throw new Error('Finnhub: no profile');
-        var emps = profileData.employeeTotal;
-        if (!emps || emps === 0) throw new Error('Finnhub: employee count missing');
-        var metrics = financialsData.metric || {};
-        var netIncome = (metrics.netIncomePerShareAnnual * metrics.sharesOutstanding) || 0;
-        var ebitda = (metrics.ebitdaPerShareAnnual * metrics.sharesOutstanding) || (netIncome > 0 ? netIncome * 1.3 : 0);
-        var logo = profileData.logo || '';
-        if (!logo && profileData.weburl) {
-            try { logo = 'https://logo.clearbit.com/' + new URL(profileData.weburl).hostname; } catch(e) {}
-        }
-        return {
-            name: profileData.name,
-            emps: parseInt(emps),
-            profit: netIncome,
-            ebitda: ebitda,
-            logo: logo,
-        };
+    async function fetchFromAPI(symbol, resolve) {
+        var url = '/api/company?symbol=' + encodeURIComponent(symbol);
+        if (resolve) url += '&resolve=1';
+        var res = await fetch(url);
+        var json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'API error');
+        return json;
     }
 
     async function fetchCompanyData(rawInput) {
-        var symbol = rawInput.trim().toUpperCase();
+        var input = rawInput.trim();
+        var upper = input.toUpperCase();
 
-        // Check for known private companies first
-        var privateMsg = PRIVATE_COMPANIES[symbol];
+        var privateMsg = PRIVATE_COMPANIES[upper];
         if (privateMsg) {
             alert(privateMsg + '\n\nThis tool only works with publicly traded companies.');
             return null;
         }
 
-        // Check hardcoded aliases
-        symbol = TICKER_ALIASES[symbol] || symbol;
-
-        // If it looks like a name rather than a ticker, resolve it
+        var symbol = TICKER_ALIASES[upper] || upper;
         var looksLikeTicker = /^[A-Z0-9]{1,6}(\.[A-Z]{1,2})?$/.test(symbol);
-        if (!looksLikeTicker) {
-            try {
-                symbol = await resolveToTicker(rawInput.trim());
-            } catch(err) {
-                console.warn('Name resolution failed: ' + err.message);
+
+        try {
+            if (looksLikeTicker) {
+                console.log('Fetching ticker: ' + symbol);
+                return await fetchFromAPI(symbol, false);
+            } else {
+                console.log('Resolving name: ' + input);
+                return await fetchFromAPI(input, true);
             }
-        }
-
-        // 1. FMP
-        try {
-            console.log('[1/3] FMP for ' + symbol);
-            return await fetchFromFMP(symbol);
         } catch(err) {
-            console.warn('FMP failed: ' + err.message);
+            console.warn('API failed: ' + err.message);
         }
 
-        // 2. Finnhub
-        try {
-            console.log('[2/3] Finnhub for ' + symbol);
-            return await fetchFromFinnhub(symbol);
-        } catch(err) {
-            console.warn('Finnhub failed: ' + err.message);
-        }
-
-        // 3. Fallback DB
         if (FALLBACK_DB[symbol]) {
-            console.log('[3/3] Fallback DB for ' + symbol);
+            console.log('Using fallback DB for: ' + symbol);
             return FALLBACK_DB[symbol];
         }
 
@@ -197,21 +123,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function calculateTax(income) {
         var taxable = Math.max(0, income - 14600);
         var brackets = [
-            [11600,  0.10],
-            [47150,  0.12],
-            [100525, 0.22],
-            [191950, 0.24],
-            [243725, 0.32],
-            [609350, 0.35],
+            [11600, 0.10], [47150, 0.12], [100525, 0.22],
+            [191950, 0.24], [243725, 0.32], [609350, 0.35],
             [Infinity, 0.37],
         ];
         var tax = 0, prev = 0;
         for (var i = 0; i < brackets.length; i++) {
-            var cap = brackets[i][0];
-            var rate = brackets[i][1];
             if (taxable <= prev) break;
-            tax += (Math.min(taxable, cap) - prev) * rate;
-            prev = cap;
+            tax += (Math.min(taxable, brackets[i][0]) - prev) * brackets[i][1];
+            prev = brackets[i][0];
         }
         return Math.round(tax);
     }
