@@ -171,6 +171,12 @@ document.addEventListener('DOMContentLoaded', function() {
             var netTotal    = income + distributedSurplus;
             var ebitdaTotal = income + accountingSurplus;
 
+            // Helper: format surplus as "X more" or "X less"
+            var fmtSurplus = function(n) {
+                if (n >= 0) return '$' + n.toLocaleString() + ' more';
+                return '$' + Math.abs(n).toLocaleString() + ' less';
+            };
+
             var yourEarningsBlock = isHourly
                 ? '<div style="margin-bottom:20px; padding:15px; background:#f0f4ff; border-radius:8px;">' +
                     '<p style="margin:0 0 4px 0; font-size:0.85em; color:#555;">Your annual earnings</p>' +
@@ -190,11 +196,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
-                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>$' + distributedSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:25px;">' +
-                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> - that is <strong>$' + accountingSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
