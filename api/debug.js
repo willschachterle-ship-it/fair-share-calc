@@ -51,5 +51,26 @@ module.exports = async function handler(req, res) {
         out.wikipedia = { pageTitle, empLines, infobox_snippet: infobox.substring(0, 800) };
     } catch(e) { out.wikipedia = { error: e.message }; }
 
+    // Show raw values from each source for diagnosis
+    try {
+        const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
+        const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
+        const [profileRes, finRes] = await Promise.all([
+            fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`),
+            fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${FINNHUB_KEY}`)
+        ]);
+        const p = await profileRes.json();
+        const f = await finRes.json();
+        const m = f.metric || {};
+        out.finnhub_raw = {
+            employeeTotal: p.employeeTotal,
+            netIncomePerShareAnnual: m.netIncomePerShareAnnual,
+            sharesOutstanding: m.sharesOutstanding,
+            computedProfit: m.netIncomePerShareAnnual && m.sharesOutstanding ? Math.round(m.netIncomePerShareAnnual * m.sharesOutstanding) : null,
+            ebitdaPerShareAnnual: m.ebitdaPerShareAnnual,
+            computedEbitda: m.ebitdaPerShareAnnual && m.sharesOutstanding ? Math.round(m.ebitdaPerShareAnnual * m.sharesOutstanding) : null,
+        };
+    } catch(e) { out.finnhub_raw = { error: e.message }; }
+
     return res.status(200).json(out);
 };
