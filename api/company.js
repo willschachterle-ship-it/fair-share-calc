@@ -153,7 +153,6 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Search Wikipedia for the company page
     const searchRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
         encodeURIComponent(companyName) + '&format=json'
@@ -165,7 +164,6 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
 
     const pageTitle = pages[0].title;
 
-    // Fetch the raw wikitext to parse the infobox
     const pageRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&titles=' +
         encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json'
@@ -176,25 +174,21 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     const page = Object.values(pages2)[0];
     const wikitext = page?.revisions?.[0]?.['*'] || '';
 
-    // Extract employee count from infobox - looks like: | num_employees = 300,000
-    const patterns = [
-        /num_employees\s*=\s*([\d,]+(?:\.[\d]+)?\s*(?:million|billion)?)/i,
-        /employees\s*=\s*([\d,]+(?:\.[\d]+)?\s*(?:million|billion)?)/i,
-        /number_of_employees\s*=\s*([\d,]+)/i,
-    ];
+    // Match lines like: | num_employees = {{circa|300,000}} or plain 300,000
+    const wikitextLines = wikitext.split('\n');
+    const empLine = wikitextLines.find(function(l) {
+        return l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0;
+    });
 
-    for (const pattern of patterns) {
-        const match = wikitext.match(pattern);
-        if (match) {
-            let val = match[1].trim();
-            // Remove citations like {{circa|...}} or <ref>...</ref>
-            val = val.replace(/<[^>]+>/g, '').replace(/{{[^}]+}}/g, '').trim();
-            const num = parseFloat(val.replace(/,/g, ''));
-            if (!isNaN(num) && num > 0) {
-                // Handle million suffix
-                if (val.toLowerCase().includes('million')) return Math.round(num * 1000000);
-                return Math.round(num);
-            }
+    if (empLine) {
+        // Extract from {{circa|300,000}} or {{formatnum:300,000}} template
+        var templateMatch = empLine.match(/{{[^|]+\|([\d,]+)}}/);
+        // Or plain number like 300,000
+        var plainMatch = empLine.match(/([\d]{2,}[,\d]*)/);
+        var raw = templateMatch ? templateMatch[1] : (plainMatch ? plainMatch[1] : null);
+        if (raw) {
+            var num = parseInt(raw.replace(/,/g, ''), 10);
+            if (!isNaN(num) && num > 100) return num;
         }
     }
     throw new Error('Wikipedia: employee count not found in infobox');
