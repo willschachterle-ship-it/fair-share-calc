@@ -1,17 +1,53 @@
 const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
+const AV_KEY = '17JNK5S9J44QAXTV';
+
+// Alpha Vantage - free, 25 calls/day, no CORS, employee count + financials
+async function fetchFromAlphaVantage(symbol) {
+    const [overviewRes, incomeRes] = await Promise.all([
+        fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${AV_KEY}`),
+        fetch(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${AV_KEY}`)
+    ]);
+    if (!overviewRes.ok) throw new Error('AV overview HTTP ' + overviewRes.status);
+    if (!incomeRes.ok) throw new Error('AV income HTTP ' + incomeRes.status);
+
+    const overview = await overviewRes.json();
+    const income = await incomeRes.json();
+
+    if (!overview || !overview.Name) throw new Error('AV: no overview data');
+    if (overview.Note) throw new Error('AV: rate limit hit');
+    if (overview.Information) throw new Error('AV: API limit - ' + overview.Information);
+
+    const emps = parseInt(overview.FullTimeEmployees);
+    if (!emps || emps === 0) throw new Error('AV: employee count missing');
+
+    // Get most recent annual income statement
+    const annualReports = income.annualReports || [];
+    const latest = annualReports[0] || {};
+    const profit = parseInt(latest.netIncome) || 0;
+    const ebitda = parseInt(latest.ebitda) || (profit > 0 ? profit * 1.3 : 0);
+
+    const logo = `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
+
+    return {
+        name: overview.Name,
+        emps,
+        profit,
+        ebitda,
+        logo,
+        source: 'alphavantage'
+    };
+}
 
 // SEC EDGAR - free, official, no key needed
 async function fetchFromEDGAR(symbol) {
-    // Resolve ticker to CIK
     const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
     if (!tickerRes.ok) throw new Error('EDGAR tickers HTTP ' + tickerRes.status);
     const tickers = await tickerRes.json();
 
-    let cik = null;
-    let companyName = null;
+    let cik = null, companyName = null;
     for (const entry of Object.values(tickers)) {
         if (entry.ticker && entry.ticker.toUpperCase() === symbol.toUpperCase()) {
             cik = String(entry.cik_str).padStart(10, '0');
@@ -21,7 +57,6 @@ async function fetchFromEDGAR(symbol) {
     }
     if (!cik) throw new Error('EDGAR: ticker not found');
 
-    // Get company facts
     const factsRes = await fetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`, {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
@@ -31,10 +66,8 @@ async function fetchFromEDGAR(symbol) {
     const us_gaap = facts.facts['us-gaap'] || {};
     const dei = facts.facts['dei'] || {};
 
-    // Employee count - try multiple field names
     let emps = 0;
-    const empFields = ['EntityNumberOfEmployees', 'NumberOfEmployees'];
-    for (const field of empFields) {
+    for (const field of ['EntityNumberOfEmployees', 'NumberOfEmployees']) {
         const empFact = dei[field];
         if (empFact && empFact.units && empFact.units['pure']) {
             const sorted = empFact.units['pure']
@@ -45,10 +78,8 @@ async function fetchFromEDGAR(symbol) {
     }
     if (!emps || emps === 0) throw new Error('EDGAR: employee count missing');
 
-    // Net income - try multiple field names
     let profit = 0;
-    const profitFields = ['NetIncomeLoss', 'NetIncome', 'ProfitLoss'];
-    for (const field of profitFields) {
+    for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
         if (fact && fact.units && fact.units['USD']) {
             const sorted = fact.units['USD']
@@ -58,7 +89,6 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
-    // EBITDA = Operating Income + D&A
     let ebitda = 0;
     const opFact = us_gaap['OperatingIncomeLoss'];
     if (opFact && opFact.units && opFact.units['USD']) {
@@ -67,8 +97,8 @@ async function fetchFromEDGAR(symbol) {
             .sort((a, b) => b.end.localeCompare(a.end));
         if (sorted.length > 0) {
             let dna = 0;
-            for (const dnaField of ['DepreciationDepletionAndAmortization', 'DepreciationAndAmortization', 'Depreciation']) {
-                const dnaFact = us_gaap[dnaField];
+            for (const f of ['DepreciationDepletionAndAmortization', 'DepreciationAndAmortization', 'Depreciation']) {
+                const dnaFact = us_gaap[f];
                 if (dnaFact && dnaFact.units && dnaFact.units['USD']) {
                     const dnaSorted = dnaFact.units['USD']
                         .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
@@ -84,48 +114,9 @@ async function fetchFromEDGAR(symbol) {
     return {
         name: companyName || symbol,
         emps: parseInt(emps),
-        profit,
-        ebitda,
+        profit, ebitda,
         logo: `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
         source: 'edgar'
-    };
-}
-
-// Yahoo Finance - try both query1 and query2 endpoints
-async function fetchFromYahoo(symbol) {
-    let json = null;
-    for (const host of ['query1', 'query2']) {
-        try {
-            const url = `https://${host}.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=assetProfile,defaultKeyStatistics,financialData`;
-            const res = await fetch(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                }
-            });
-            if (res.ok) { json = await res.json(); break; }
-        } catch(e) { continue; }
-    }
-    if (!json) throw new Error('Yahoo: both endpoints failed');
-
-    const result = json?.quoteSummary?.result?.[0];
-    if (!result) throw new Error('Yahoo: no data');
-    const profile = result.assetProfile || {};
-    const keyStats = result.defaultKeyStatistics || {};
-    const financialData = result.financialData || {};
-    const emps = profile.fullTimeEmployees;
-    if (!emps) throw new Error('Yahoo: employee count missing');
-    const profit = financialData.netIncomeToCommon?.raw || keyStats.netIncomeToCommon?.raw || 0;
-    const ebitda = financialData.ebitda?.raw || (profit > 0 ? profit * 1.3 : 0);
-    const website = profile.website || '';
-    let logo = '';
-    try { logo = website ? `https://logo.clearbit.com/${new URL(website).hostname}` : ''; } catch(e) {}
-    return {
-        name: profile.longName || profile.shortName || symbol,
-        emps: parseInt(emps),
-        profit, ebitda, logo,
-        source: 'yahoo'
     };
 }
 
@@ -195,21 +186,21 @@ module.exports = async function handler(req, res) {
 
     const errors = [];
 
-    // 1. Yahoo
-    try { return res.status(200).json({ ...await fetchFromYahoo(symbol), resolvedSymbol: symbol }); }
-    catch(e) { errors.push('Yahoo: ' + e.message); }
-
-    // 2. SEC EDGAR (free, official, covers all US public companies)
+    // 1. SEC EDGAR (free, official SEC data)
     try { return res.status(200).json({ ...await fetchFromEDGAR(symbol), resolvedSymbol: symbol }); }
     catch(e) { errors.push('EDGAR: ' + e.message); }
 
-    // 3. FMP
+    // 2. FMP
     try { return res.status(200).json({ ...await fetchFromFMP(symbol), resolvedSymbol: symbol }); }
     catch(e) { errors.push('FMP: ' + e.message); }
 
-    // 4. Finnhub
+    // 3. Finnhub
     try { return res.status(200).json({ ...await fetchFromFinnhub(symbol), resolvedSymbol: symbol }); }
     catch(e) { errors.push('Finnhub: ' + e.message); }
+
+    // 4. Alpha Vantage (25 calls/day limit - last resort)
+    try { return res.status(200).json({ ...await fetchFromAlphaVantage(symbol), resolvedSymbol: symbol }); }
+    catch(e) { errors.push('AV: ' + e.message); }
 
     return res.status(404).json({ error: 'Could not find company data', details: errors });
 };
