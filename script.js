@@ -63,12 +63,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsArea = document.getElementById('results');
     const loadingMsg = document.getElementById('loadingMsg');
 
+    // Fetch a Yahoo Finance URL via a CORS proxy, trying multiple proxies in order
+    async function yahooFetch(yahooUrl) {
+        const proxies = [
+            'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
+            'https://api.allorigins.win/get?url=' + encodeURIComponent(yahooUrl),
+        ];
+        for (let i = 0; i < proxies.length; i++) {
+            try {
+                const res = await fetch(proxies[i]);
+                if (!res.ok) continue;
+                const raw = await res.json();
+                // allorigins wraps response in { contents: "..." }
+                const text = raw.contents !== undefined ? raw.contents : JSON.stringify(raw);
+                return JSON.parse(text);
+            } catch (e) {
+                console.warn('Proxy ' + i + ' failed: ' + e.message);
+            }
+        }
+        throw new Error('All proxies failed for: ' + yahooUrl);
+    }
+
     // Resolve a plain company name to a ticker using Yahoo Finance search
     async function resolveToTicker(input) {
-        const url = 'https://query2.finance.yahoo.com/v1/finance/search?q=' + encodeURIComponent(input) + '&quotesCount=5&newsCount=0';
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!res.ok) throw new Error('Yahoo search HTTP ' + res.status);
-        const json = await res.json();
+        const yahooUrl = 'https://query2.finance.yahoo.com/v1/finance/search?q=' + encodeURIComponent(input) + '&quotesCount=5&newsCount=0';
+        const json = await yahooFetch(yahooUrl);
 
         const quotes = (json && json.finance && json.finance.result && json.finance.result[0] && json.finance.result[0].quotes) || [];
         // Prefer US-listed equities (no dot in symbol)
@@ -82,10 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Primary: Yahoo Finance quoteSummary
     async function fetchFromYahoo(symbol) {
-        const url = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' + symbol + '?modules=assetProfile,defaultKeyStatistics,financialData';
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (!res.ok) throw new Error('Yahoo HTTP ' + res.status);
-        const json = await res.json();
+        const yahooUrl = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' + symbol + '?modules=assetProfile,defaultKeyStatistics,financialData';
+        const json = await yahooFetch(yahooUrl);
 
         const result = json && json.quoteSummary && json.quoteSummary.result && json.quoteSummary.result[0];
         if (!result) throw new Error('No Yahoo data');
