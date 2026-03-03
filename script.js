@@ -267,14 +267,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + (income + accountingSurplus).toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
-                            '<p><strong>' + data.name + '</strong> kept <strong>$' + distributedSurplus.toLocaleString() + '</strong> from your labor.</p>' +
+                            '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor (based on EBITDA).</p>' +
                             '<p>The federal government kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
-                            '<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #666;">' +
-                                '<p style="margin:0; font-style: italic; color: #444;">' +
-                                    '"The government paid for schools, healthcare, and roads with your money. ' +
-                                    'What did <strong>' + data.name + '</strong> do for you with your money?"' +
-                                '</p>' +
-                            '</div>' +
                         '</div>' +
                     '</div>';
                 resultsArea.classList.remove('hidden');
