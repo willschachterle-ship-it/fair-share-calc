@@ -1,16 +1,11 @@
-// Vercel serverless function — runs server-side, no CORS issues
-// GET /api/company?symbol=CVS
-// GET /api/company?symbol=Lyft&resolve=1
-
 const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 
-// ── SEC EDGAR: free, no key, covers all US public companies ─────────────────
-// Gets employee count + financials from official SEC filings
+// SEC EDGAR - free, official, no key needed
 async function fetchFromEDGAR(symbol) {
-    // Step 1: resolve ticker to CIK number
+    // Resolve ticker to CIK
     const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
-        headers: { 'User-Agent': 'YourFairShare contact@example.com' }
+        headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
     if (!tickerRes.ok) throw new Error('EDGAR tickers HTTP ' + tickerRes.status);
     const tickers = await tickerRes.json();
@@ -26,9 +21,9 @@ async function fetchFromEDGAR(symbol) {
     }
     if (!cik) throw new Error('EDGAR: ticker not found');
 
-    // Step 2: get company facts (financials + employee count)
+    // Get company facts
     const factsRes = await fetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`, {
-        headers: { 'User-Agent': 'YourFairShare contact@example.com' }
+        headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
     if (!factsRes.ok) throw new Error('EDGAR facts HTTP ' + factsRes.status);
     const facts = await factsRes.json();
@@ -36,73 +31,84 @@ async function fetchFromEDGAR(symbol) {
     const us_gaap = facts.facts['us-gaap'] || {};
     const dei = facts.facts['dei'] || {};
 
-    // Employee count — from DEI (Document and Entity Information)
-    const empFact = dei['EntityNumberOfEmployees'];
+    // Employee count - try multiple field names
     let emps = 0;
-    if (empFact && empFact.units && empFact.units['pure']) {
-        const sorted = empFact.units['pure']
-            .filter(e => e.form === '10-K')
-            .sort((a, b) => b.end.localeCompare(a.end));
-        if (sorted.length > 0) emps = sorted[0].val;
+    const empFields = ['EntityNumberOfEmployees', 'NumberOfEmployees'];
+    for (const field of empFields) {
+        const empFact = dei[field];
+        if (empFact && empFact.units && empFact.units['pure']) {
+            const sorted = empFact.units['pure']
+                .filter(e => e.form === '10-K' || e.form === '10-K/A')
+                .sort((a, b) => b.end.localeCompare(a.end));
+            if (sorted.length > 0) { emps = sorted[0].val; break; }
+        }
     }
     if (!emps || emps === 0) throw new Error('EDGAR: employee count missing');
 
-    // Net income — NetIncomeLoss
+    // Net income - try multiple field names
     let profit = 0;
-    const niFactAnnual = us_gaap['NetIncomeLoss'];
-    if (niFactAnnual && niFactAnnual.units && niFactAnnual.units['USD']) {
-        const sorted = niFactAnnual.units['USD']
-            .filter(e => e.form === '10-K' && e.start)
-            .sort((a, b) => b.end.localeCompare(a.end));
-        if (sorted.length > 0) profit = sorted[0].val;
-    }
-
-    // EBITDA proxy: OperatingIncomeLoss + DepreciationDepletionAndAmortization
-    let ebitda = 0;
-    const opIncome = us_gaap['OperatingIncomeLoss'];
-    const dna = us_gaap['DepreciationDepletionAndAmortization']
-             || us_gaap['DepreciationAndAmortization'];
-    if (opIncome && opIncome.units && opIncome.units['USD']) {
-        const sorted = opIncome.units['USD']
-            .filter(e => e.form === '10-K' && e.start)
-            .sort((a, b) => b.end.localeCompare(a.end));
-        if (sorted.length > 0) {
-            let dnaVal = 0;
-            if (dna && dna.units && dna.units['USD']) {
-                const dnaSorted = dna.units['USD']
-                    .filter(e => e.form === '10-K' && e.start)
-                    .sort((a, b) => b.end.localeCompare(a.end));
-                if (dnaSorted.length > 0) dnaVal = dnaSorted[0].val;
-            }
-            ebitda = sorted[0].val + dnaVal;
+    const profitFields = ['NetIncomeLoss', 'NetIncome', 'ProfitLoss'];
+    for (const field of profitFields) {
+        const fact = us_gaap[field];
+        if (fact && fact.units && fact.units['USD']) {
+            const sorted = fact.units['USD']
+                .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
+                .sort((a, b) => b.end.localeCompare(a.end));
+            if (sorted.length > 0) { profit = sorted[0].val; break; }
         }
     }
-    if (!ebitda && profit > 0) ebitda = profit * 1.3;
 
-    // Logo via Clearbit
-    const logo = `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
+    // EBITDA = Operating Income + D&A
+    let ebitda = 0;
+    const opFact = us_gaap['OperatingIncomeLoss'];
+    if (opFact && opFact.units && opFact.units['USD']) {
+        const sorted = opFact.units['USD']
+            .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
+            .sort((a, b) => b.end.localeCompare(a.end));
+        if (sorted.length > 0) {
+            let dna = 0;
+            for (const dnaField of ['DepreciationDepletionAndAmortization', 'DepreciationAndAmortization', 'Depreciation']) {
+                const dnaFact = us_gaap[dnaField];
+                if (dnaFact && dnaFact.units && dnaFact.units['USD']) {
+                    const dnaSorted = dnaFact.units['USD']
+                        .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
+                        .sort((a, b) => b.end.localeCompare(a.end));
+                    if (dnaSorted.length > 0) { dna = dnaSorted[0].val; break; }
+                }
+            }
+            ebitda = sorted[0].val + dna;
+        }
+    }
+    if (!ebitda) ebitda = profit > 0 ? profit * 1.3 : 0;
 
     return {
         name: companyName || symbol,
         emps: parseInt(emps),
         profit,
         ebitda,
-        logo,
+        logo: `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
         source: 'edgar'
     };
 }
 
-// ── Yahoo Finance ────────────────────────────────────────────────────────────
+// Yahoo Finance - try both query1 and query2 endpoints
 async function fetchFromYahoo(symbol) {
-    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=assetProfile,defaultKeyStatistics,financialData`;
-    const res = await fetch(url, {
-        headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        }
-    });
-    if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}`);
-    const json = await res.json();
+    let json = null;
+    for (const host of ['query1', 'query2']) {
+        try {
+            const url = `https://${host}.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=assetProfile,defaultKeyStatistics,financialData`;
+            const res = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                }
+            });
+            if (res.ok) { json = await res.json(); break; }
+        } catch(e) { continue; }
+    }
+    if (!json) throw new Error('Yahoo: both endpoints failed');
+
     const result = json?.quoteSummary?.result?.[0];
     if (!result) throw new Error('Yahoo: no data');
     const profile = result.assetProfile || {};
@@ -118,20 +124,17 @@ async function fetchFromYahoo(symbol) {
     return {
         name: profile.longName || profile.shortName || symbol,
         emps: parseInt(emps),
-        profit,
-        ebitda,
-        logo,
+        profit, ebitda, logo,
         source: 'yahoo'
     };
 }
 
-// ── FMP ──────────────────────────────────────────────────────────────────────
+// FMP
 async function fetchFromFMP(symbol) {
     const profileRes = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
     const profileArr = await profileRes.json();
     if (!profileArr?.[0]?.companyName) throw new Error('FMP: no profile');
-    if (profileArr['Error Message']) throw new Error('FMP: ' + profileArr['Error Message']);
     const p = profileArr[0];
     const emps = p.fullTimeEmployees;
     if (!emps || emps === 0) throw new Error('FMP: employee count missing');
@@ -144,7 +147,7 @@ async function fetchFromFMP(symbol) {
     return { name: p.companyName, emps: parseInt(emps), profit, ebitda, logo: p.image || '', source: 'fmp' };
 }
 
-// ── Finnhub ──────────────────────────────────────────────────────────────────
+// Finnhub
 async function fetchFromFinnhub(symbol) {
     const [profileRes, finRes] = await Promise.all([
         fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`),
@@ -163,7 +166,7 @@ async function fetchFromFinnhub(symbol) {
     return { name: p.name, emps: parseInt(emps), profit, ebitda, logo, source: 'finnhub' };
 }
 
-// ── Ticker resolver ──────────────────────────────────────────────────────────
+// Ticker resolver
 async function resolveTicker(input) {
     const res = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(input)}&token=${FINNHUB_KEY}`);
     if (!res.ok) throw new Error(`Finnhub search HTTP ${res.status}`);
@@ -176,7 +179,6 @@ async function resolveTicker(input) {
     return match.symbol;
 }
 
-// ── Main handler ─────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
@@ -197,7 +199,7 @@ module.exports = async function handler(req, res) {
     try { return res.status(200).json({ ...await fetchFromYahoo(symbol), resolvedSymbol: symbol }); }
     catch(e) { errors.push('Yahoo: ' + e.message); }
 
-    // 2. SEC EDGAR (free, no limits, covers all US public companies)
+    // 2. SEC EDGAR (free, official, covers all US public companies)
     try { return res.status(200).json({ ...await fetchFromEDGAR(symbol), resolvedSymbol: symbol }); }
     catch(e) { errors.push('EDGAR: ' + e.message); }
 
@@ -210,4 +212,4 @@ module.exports = async function handler(req, res) {
     catch(e) { errors.push('Finnhub: ' + e.message); }
 
     return res.status(404).json({ error: 'Could not find company data', details: errors });
-}
+};
