@@ -206,11 +206,17 @@ async function resolveTicker(input) {
     return match.symbol;
 }
 
-// Sanity check: profit/employee > $5M or < -$2M is almost certainly bad data
+// Sanity check: profit/employee > $2M or < -$1M is almost certainly bad data
 function isSaneProfit(profit, emps) {
     if (!emps || profit === null) return false;
     const perEmp = profit / emps;
-    return perEmp < 5000000 && perEmp > -2000000;
+    return perEmp < 2000000 && perEmp > -1000000;
+}
+
+// Sanity check: employee count must be at least 100 and not suspiciously small
+// for a public company (< 500 is a red flag for most public companies)
+function isSaneEmps(emps) {
+    return emps && emps >= 500;
 }
 
 // Merge sources - for each field, use first non-null value across sources in priority order
@@ -218,7 +224,7 @@ function merge(results) {
     const out = { name: null, emps: null, profit: null, ebitda: null, logo: null };
     for (const r of results) {
         if (!out.name  && r.name)  out.name  = r.name;
-        if (!out.emps  && r.emps)  out.emps  = r.emps;
+        if (!out.emps  && isSaneEmps(r.emps))  out.emps  = r.emps;
         if (out.logo === null && r.logo) out.logo = r.logo;
     }
     // For financials, pick first value that passes sanity check
@@ -232,6 +238,7 @@ function merge(results) {
     }
     // Last resort: use insane values if nothing sane found (better than nothing)
     for (const r of results) {
+        if (!out.emps  && r.emps)   out.emps  = r.emps;
         if (out.profit === null && r.profit !== null) out.profit = r.profit;
         if (out.ebitda === null && r.ebitda !== null) out.ebitda = r.ebitda;
     }
