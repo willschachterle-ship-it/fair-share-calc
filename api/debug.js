@@ -25,14 +25,14 @@ module.exports = async function handler(req, res) {
         const companyName = out.alphavantage?.Name || out.finnhub?.name || symbol;
         const searchRes = await fetch(
             'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-            encodeURIComponent(companyName) + '&format=json&origin=*'
+            encodeURIComponent(companyName) + '&format=json'
         );
         const searchJson = await searchRes.json();
         const pageTitle = searchJson?.query?.search?.[0]?.title;
 
         const pageRes = await fetch(
             'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-            encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json&origin=*'
+            encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json'
         );
         const pageJson = await pageRes.json();
         const pages = pageJson?.query?.pages || {};
