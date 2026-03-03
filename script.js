@@ -63,46 +63,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsArea = document.getElementById('results');
     const loadingMsg = document.getElementById('loadingMsg');
 
-    // Fetch a Yahoo Finance URL via a CORS proxy, trying multiple proxies in order
-    async function yahooFetch(yahooUrl) {
-        const proxies = [
-            'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
-            'https://api.allorigins.win/get?url=' + encodeURIComponent(yahooUrl),
-        ];
-        for (let i = 0; i < proxies.length; i++) {
-            try {
-                const res = await fetch(proxies[i]);
-                if (!res.ok) continue;
+    // Fetch via proxy with multiple fallbacks
+    async function proxyFetch(targetUrl) {
+        // Try corsproxy.io
+        try {
+            const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(targetUrl));
+            if (res.ok) return await res.json();
+        } catch(e) { console.warn('corsproxy.io failed:', e.message); }
+
+        // Try allorigins (wraps response in {contents:"..."})
+        try {
+            const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl));
+            if (res.ok) {
                 const raw = await res.json();
-                // allorigins wraps response in { contents: "..." }
-                const text = raw.contents !== undefined ? raw.contents : JSON.stringify(raw);
-                return JSON.parse(text);
-            } catch (e) {
-                console.warn('Proxy ' + i + ' failed: ' + e.message);
+                return JSON.parse(raw.contents);
             }
-        }
-        throw new Error('All proxies failed for: ' + yahooUrl);
+        } catch(e) { console.warn('allorigins failed:', e.message); }
+
+        throw new Error('All proxies failed for: ' + targetUrl);
     }
 
-    // Resolve a plain company name to a ticker using Yahoo Finance search
+    // Resolve company name to ticker
+    // Uses Finnhub symbol search (no CORS issues) then falls back to Yahoo via proxy
     async function resolveToTicker(input) {
-        const yahooUrl = 'https://query2.finance.yahoo.com/v1/finance/search?q=' + encodeURIComponent(input) + '&quotesCount=5&newsCount=0';
-        const json = await yahooFetch(yahooUrl);
+        // Try Finnhub search first - no CORS issues, works directly
+        try {
+            const res = await fetch('https://finnhub.io/api/v1/search?q=' + encodeURIComponent(input) + '&token=' + FINNHUB_KEY);
+            if (res.ok) {
+                const json = await res.json();
+                const results = (json && json.result) || [];
+                const match = results.find(r => r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'))
+                           || results.find(r => r.symbol && !r.symbol.includes('.'));
+                if (match) {
+                    console.log('Finnhub resolved "' + input + '" -> ' + match.symbol);
+                    return match.symbol;
+                }
+            }
+        } catch(e) { console.warn('Finnhub search failed:', e.message); }
 
-        const quotes = (json && json.finance && json.finance.result && json.finance.result[0] && json.finance.result[0].quotes) || [];
-        // Prefer US-listed equities (no dot in symbol)
-        const equity = quotes.find(q => q.quoteType === 'EQUITY' && q.symbol && !q.symbol.includes('.'))
-                    || quotes.find(q => q.quoteType === 'EQUITY' && q.symbol);
-        if (!equity) throw new Error('No equity found for "' + input + '"');
+        // Fallback: Yahoo Finance search via proxy
+        try {
+            const url = 'https://query2.finance.yahoo.com/v1/finance/search?q=' + encodeURIComponent(input) + '&quotesCount=6&newsCount=0';
+            const json = await proxyFetch(url);
+            const quotes = (json && json.finance && json.finance.result && json.finance.result[0] && json.finance.result[0].quotes) || [];
+            const equity = quotes.find(q => q.quoteType === 'EQUITY' && q.symbol && !q.symbol.includes('.'))
+                        || quotes.find(q => q.quoteType === 'EQUITY' && q.symbol);
+            if (equity) {
+                console.log('Yahoo resolved "' + input + '" -> ' + equity.symbol);
+                return equity.symbol;
+            }
+        } catch(e) { console.warn('Yahoo search failed:', e.message); }
 
-        console.log('Resolved "' + input + '" -> ' + equity.symbol);
-        return equity.symbol;
+        throw new Error('Could not resolve ticker for: ' + input);
     }
 
     // Primary: Yahoo Finance quoteSummary
     async function fetchFromYahoo(symbol) {
         const yahooUrl = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' + symbol + '?modules=assetProfile,defaultKeyStatistics,financialData';
-        const json = await yahooFetch(yahooUrl);
+        const json = await proxyFetch(yahooUrl);
 
         const result = json && json.quoteSummary && json.quoteSummary.result && json.quoteSummary.result[0];
         if (!result) throw new Error('No Yahoo data');
