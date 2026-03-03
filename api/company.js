@@ -2,44 +2,9 @@ const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 const AV_KEY = '17JNK5S9J44QAXTV';
 
-// Alpha Vantage - free, 25 calls/day, no CORS, employee count + financials
-async function fetchFromAlphaVantage(symbol) {
-    const [overviewRes, incomeRes] = await Promise.all([
-        fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${AV_KEY}`),
-        fetch(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${AV_KEY}`)
-    ]);
-    if (!overviewRes.ok) throw new Error('AV overview HTTP ' + overviewRes.status);
-    if (!incomeRes.ok) throw new Error('AV income HTTP ' + incomeRes.status);
+// Each source returns whatever it can - no throwing on missing fields
+// The orchestrator merges results to fill gaps
 
-    const overview = await overviewRes.json();
-    const income = await incomeRes.json();
-
-    if (!overview || !overview.Name) throw new Error('AV: no overview data');
-    if (overview.Note) throw new Error('AV: rate limit hit');
-    if (overview.Information) throw new Error('AV: API limit - ' + overview.Information);
-
-    const emps = parseInt(overview.FullTimeEmployees);
-    if (!emps || emps === 0) throw new Error('AV: employee count missing');
-
-    // Get most recent annual income statement
-    const annualReports = income.annualReports || [];
-    const latest = annualReports[0] || {};
-    const profit = parseInt(latest.netIncome) || 0;
-    const ebitda = parseInt(latest.ebitda) || (profit > 0 ? profit * 1.3 : 0);
-
-    const logo = `https://logo.clearbit.com/${symbol.toLowerCase()}.com`;
-
-    return {
-        name: overview.Name,
-        emps,
-        profit,
-        ebitda,
-        logo,
-        source: 'alphavantage'
-    };
-}
-
-// SEC EDGAR - free, official, no key needed
 async function fetchFromEDGAR(symbol) {
     const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
@@ -66,6 +31,7 @@ async function fetchFromEDGAR(symbol) {
     const us_gaap = facts.facts['us-gaap'] || {};
     const dei = facts.facts['dei'] || {};
 
+    // Employee count
     let emps = 0;
     for (const field of ['EntityNumberOfEmployees', 'NumberOfEmployees']) {
         const empFact = dei[field];
@@ -76,8 +42,8 @@ async function fetchFromEDGAR(symbol) {
             if (sorted.length > 0) { emps = sorted[0].val; break; }
         }
     }
-    if (!emps || emps === 0) throw new Error('EDGAR: employee count missing');
 
+    // Net income
     let profit = 0;
     for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
@@ -89,6 +55,7 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
+    // EBITDA
     let ebitda = 0;
     const opFact = us_gaap['OperatingIncomeLoss'];
     if (opFact && opFact.units && opFact.units['USD']) {
@@ -109,36 +76,43 @@ async function fetchFromEDGAR(symbol) {
             ebitda = sorted[0].val + dna;
         }
     }
-    if (!ebitda) ebitda = profit > 0 ? profit * 1.3 : 0;
 
     return {
-        name: companyName || symbol,
-        emps: parseInt(emps),
-        profit, ebitda,
-        logo: `https://logo.clearbit.com/${symbol.toLowerCase()}.com`,
+        name: companyName || null,
+        emps: emps || null,
+        profit: profit || null,
+        ebitda: ebitda || null,
+        logo: null,
         source: 'edgar'
     };
 }
 
-// FMP
 async function fetchFromFMP(symbol) {
     const profileRes = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
     const profileArr = await profileRes.json();
     if (!profileArr?.[0]?.companyName) throw new Error('FMP: no profile');
     const p = profileArr[0];
-    const emps = p.fullTimeEmployees;
-    if (!emps || emps === 0) throw new Error('FMP: employee count missing');
-    const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&apikey=${FMP_KEY}`);
-    if (!incomeRes.ok) throw new Error(`FMP income HTTP ${incomeRes.status}`);
-    const incomeArr = await incomeRes.json();
-    const inc = incomeArr?.[0] || {};
-    const profit = inc.netIncome || 0;
-    const ebitda = inc.ebitda || (profit > 0 ? profit * 1.3 : 0);
-    return { name: p.companyName, emps: parseInt(emps), profit, ebitda, logo: p.image || '', source: 'fmp' };
+    let profit = null, ebitda = null;
+    try {
+        const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&apikey=${FMP_KEY}`);
+        if (incomeRes.ok) {
+            const incomeArr = await incomeRes.json();
+            const inc = incomeArr?.[0] || {};
+            profit = inc.netIncome || null;
+            ebitda = inc.ebitda || null;
+        }
+    } catch(e) {}
+    return {
+        name: p.companyName || null,
+        emps: p.fullTimeEmployees || null,
+        profit,
+        ebitda,
+        logo: p.image || null,
+        source: 'fmp'
+    };
 }
 
-// Finnhub
 async function fetchFromFinnhub(symbol) {
     const [profileRes, finRes] = await Promise.all([
         fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`),
@@ -147,17 +121,52 @@ async function fetchFromFinnhub(symbol) {
     const p = await profileRes.json();
     const f = await finRes.json();
     if (!p?.name) throw new Error('Finnhub: no profile');
-    const emps = p.employeeTotal;
-    if (!emps || emps === 0) throw new Error('Finnhub: employee count missing');
     const m = f.metric || {};
-    const profit = (m.netIncomePerShareAnnual * m.sharesOutstanding) || 0;
-    const ebitda = (m.ebitdaPerShareAnnual * m.sharesOutstanding) || (profit > 0 ? profit * 1.3 : 0);
-    let logo = p.logo || '';
+    const profit = (m.netIncomePerShareAnnual * m.sharesOutstanding) || null;
+    const ebitda = (m.ebitdaPerShareAnnual * m.sharesOutstanding) || null;
+    let logo = p.logo || null;
     if (!logo && p.weburl) try { logo = `https://logo.clearbit.com/${new URL(p.weburl).hostname}`; } catch(e) {}
-    return { name: p.name, emps: parseInt(emps), profit, ebitda, logo, source: 'finnhub' };
+    return {
+        name: p.name || null,
+        emps: p.employeeTotal || null,
+        profit,
+        ebitda,
+        logo,
+        source: 'finnhub'
+    };
 }
 
-// Ticker resolver
+async function fetchFromAlphaVantage(symbol) {
+    const [overviewRes, incomeRes] = await Promise.all([
+        fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${AV_KEY}`),
+        fetch(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${AV_KEY}`)
+    ]);
+    if (!overviewRes.ok) throw new Error('AV overview HTTP ' + overviewRes.status);
+    const overview = await overviewRes.json();
+    if (!overview || !overview.Name) throw new Error('AV: no data');
+    if (overview.Note || overview.Information) throw new Error('AV: rate limited');
+
+    const emps = overview.FullTimeEmployees && overview.FullTimeEmployees !== 'None'
+        ? parseInt(overview.FullTimeEmployees) : null;
+
+    let profit = null, ebitda = null;
+    if (incomeRes.ok) {
+        const income = await incomeRes.json();
+        const latest = (income.annualReports || [])[0] || {};
+        profit = latest.netIncome && latest.netIncome !== 'None' ? parseInt(latest.netIncome) : null;
+        ebitda = latest.ebitda && latest.ebitda !== 'None' ? parseInt(latest.ebitda) : null;
+    }
+
+    return {
+        name: overview.Name || null,
+        emps,
+        profit,
+        ebitda,
+        logo: null,
+        source: 'alphavantage'
+    };
+}
+
 async function resolveTicker(input) {
     const res = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(input)}&token=${FINNHUB_KEY}`);
     if (!res.ok) throw new Error(`Finnhub search HTTP ${res.status}`);
@@ -168,6 +177,21 @@ async function resolveTicker(input) {
                || results.find(r => r.symbol);
     if (!match) throw new Error(`No ticker found for: ${input}`);
     return match.symbol;
+}
+
+// Merge results from multiple sources, preferring earlier sources for each field
+function mergeResults(results) {
+    const merged = { name: null, emps: null, profit: null, ebitda: null, logo: null };
+    for (const r of results) {
+        if (!merged.name && r.name) merged.name = r.name;
+        if (!merged.emps && r.emps) merged.emps = r.emps;
+        if (merged.profit === null && r.profit !== null) merged.profit = r.profit;
+        if (!merged.ebitda && r.ebitda) merged.ebitda = r.ebitda;
+        if (!merged.logo && r.logo) merged.logo = r.logo;
+    }
+    // Fill in ebitda if still missing
+    if (!merged.ebitda && merged.profit > 0) merged.ebitda = Math.round(merged.profit * 1.3);
+    return merged;
 }
 
 module.exports = async function handler(req, res) {
@@ -184,23 +208,43 @@ module.exports = async function handler(req, res) {
         catch(e) { return res.status(404).json({ error: `Could not resolve ticker for: ${rawSymbol}` }); }
     }
 
+    // Collect results from all sources in parallel (except AV which we save for last)
+    const sourceResults = [];
     const errors = [];
 
-    // 1. SEC EDGAR (free, official SEC data)
-    try { return res.status(200).json({ ...await fetchFromEDGAR(symbol), resolvedSymbol: symbol }); }
-    catch(e) { errors.push('EDGAR: ' + e.message); }
+    const [edgarResult, fmpResult, finnhubResult] = await Promise.allSettled([
+        fetchFromEDGAR(symbol),
+        fetchFromFMP(symbol),
+        fetchFromFinnhub(symbol),
+    ]);
 
-    // 2. FMP
-    try { return res.status(200).json({ ...await fetchFromFMP(symbol), resolvedSymbol: symbol }); }
-    catch(e) { errors.push('FMP: ' + e.message); }
+    if (edgarResult.status === 'fulfilled') sourceResults.push(edgarResult.value);
+    else errors.push('EDGAR: ' + edgarResult.reason.message);
 
-    // 3. Finnhub
-    try { return res.status(200).json({ ...await fetchFromFinnhub(symbol), resolvedSymbol: symbol }); }
-    catch(e) { errors.push('Finnhub: ' + e.message); }
+    if (fmpResult.status === 'fulfilled') sourceResults.push(fmpResult.value);
+    else errors.push('FMP: ' + fmpResult.reason.message);
 
-    // 4. Alpha Vantage (25 calls/day limit - last resort)
-    try { return res.status(200).json({ ...await fetchFromAlphaVantage(symbol), resolvedSymbol: symbol }); }
-    catch(e) { errors.push('AV: ' + e.message); }
+    if (finnhubResult.status === 'fulfilled') sourceResults.push(finnhubResult.value);
+    else errors.push('Finnhub: ' + finnhubResult.reason.message);
+
+    // Check if we have enough data without calling AV
+    const merged = mergeResults(sourceResults);
+    if (merged.name && merged.emps) {
+        return res.status(200).json({ ...merged, resolvedSymbol: symbol });
+    }
+
+    // Fall back to Alpha Vantage to fill remaining gaps
+    try {
+        const avResult = await fetchFromAlphaVantage(symbol);
+        sourceResults.push(avResult);
+        const finalMerge = mergeResults(sourceResults);
+        if (finalMerge.name && finalMerge.emps) {
+            return res.status(200).json({ ...finalMerge, resolvedSymbol: symbol });
+        }
+        errors.push('AV returned: ' + JSON.stringify(avResult));
+    } catch(e) {
+        errors.push('AV: ' + e.message);
+    }
 
     return res.status(404).json({ error: 'Could not find company data', details: errors });
 };
