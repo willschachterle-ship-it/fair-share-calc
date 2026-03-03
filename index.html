@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 Labor Value Audit</title>
+    <title>Your Fair Share</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Labor Value Audit</h1>
-            <p>Calculate the true value of your labor vs. corporate profit retention.</p>
+            <h1>Your Fair Share</h1>
+            <p>How much did your employer keep from you?</p>
         </header>
 
         <div class="card">
             <div class="input-group">
-                <label for="company">Company (Ticker)</label>
-                <input type="text" id="company" list="companyList" placeholder="e.g. AAPL, WMT, AMZN">
-                <datalist id="companyList"></datalist>
+                <label for="company">Company Ticker</label>
+                <input type="text" id="company" placeholder="e.g. TSLA, MSFT, NVDA">
             </div>
 
             <div class="toggle-container">
@@ -49,11 +48,11 @@
                 </div>
             </div>
 
-            <button id="calculateBtn">Calculate My Share</button>
+            <button id="calculateBtn">Perform Live Audit</button>
+            <p id="loadingMsg" class="hidden" style="text-align:center; font-size:0.8em; color:#666; margin-top:10px;">Querying SEC Filings...</p>
         </div>
 
-        <div id="results" class="hidden">
-            </div>
+        <div id="results" class="hidden"></div>
     </div>
     <script src="script.js"></script>
 </body>
