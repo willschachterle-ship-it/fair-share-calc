@@ -206,15 +206,34 @@ async function resolveTicker(input) {
     return match.symbol;
 }
 
+// Sanity check: profit/employee > $5M or < -$2M is almost certainly bad data
+function isSaneProfit(profit, emps) {
+    if (!emps || profit === null) return false;
+    const perEmp = profit / emps;
+    return perEmp < 5000000 && perEmp > -2000000;
+}
+
 // Merge sources - for each field, use first non-null value across sources in priority order
 function merge(results) {
     const out = { name: null, emps: null, profit: null, ebitda: null, logo: null };
     for (const r of results) {
-        if (!out.name   && r.name)   out.name   = r.name;
-        if (!out.emps   && r.emps)   out.emps   = r.emps;
-        if (out.profit  === null && r.profit  !== null) out.profit  = r.profit;
-        if (out.ebitda  === null && r.ebitda  !== null) out.ebitda  = r.ebitda;
-        if (!out.logo   && r.logo)   out.logo   = r.logo;
+        if (!out.name  && r.name)  out.name  = r.name;
+        if (!out.emps  && r.emps)  out.emps  = r.emps;
+        if (out.logo === null && r.logo) out.logo = r.logo;
+    }
+    // For financials, pick first value that passes sanity check
+    for (const r of results) {
+        if (out.profit === null && r.profit !== null && isSaneProfit(r.profit, out.emps || r.emps)) {
+            out.profit = r.profit;
+        }
+        if (out.ebitda === null && r.ebitda !== null && isSaneProfit(r.ebitda, out.emps || r.emps)) {
+            out.ebitda = r.ebitda;
+        }
+    }
+    // Last resort: use insane values if nothing sane found (better than nothing)
+    for (const r of results) {
+        if (out.profit === null && r.profit !== null) out.profit = r.profit;
+        if (out.ebitda === null && r.ebitda !== null) out.ebitda = r.ebitda;
     }
     if (!out.ebitda && out.profit > 0) out.ebitda = Math.round(out.profit * 1.3);
     return out;
