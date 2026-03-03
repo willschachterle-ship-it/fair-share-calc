@@ -156,7 +156,7 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     // Search Wikipedia for the company page
     const searchRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-        encodeURIComponent(companyName) + '&format=json&origin=*'
+        encodeURIComponent(companyName) + '&format=json'
     );
     if (!searchRes.ok) throw new Error('Wikipedia search failed');
     const searchJson = await searchRes.json();
@@ -168,7 +168,7 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     // Fetch the raw wikitext to parse the infobox
     const pageRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json&origin=*'
+        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json'
     );
     if (!pageRes.ok) throw new Error('Wikipedia page fetch failed');
     const pageJson = await pageRes.json();
