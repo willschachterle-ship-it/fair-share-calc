@@ -153,9 +153,11 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
+    // Use Wikipedia REST API with explicit JSON accept header
     const searchRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-        encodeURIComponent(companyName) + '&format=json'
+        encodeURIComponent(companyName) + '&format=json&formatversion=2',
+        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
     );
     if (!searchRes.ok) throw new Error('Wikipedia search failed');
     const searchJson = await searchRes.json();
@@ -166,13 +168,14 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
 
     const pageRes = await fetch(
         'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json'
+        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json&formatversion=2',
+        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
     );
     if (!pageRes.ok) throw new Error('Wikipedia page fetch failed');
     const pageJson = await pageRes.json();
-    const pages2 = pageJson?.query?.pages || {};
-    const page = Object.values(pages2)[0];
-    const wikitext = page?.revisions?.[0]?.['*'] || '';
+    const pages2 = pageJson?.query?.pages || [];
+    const page = Array.isArray(pages2) ? pages2[0] : Object.values(pages2)[0];
+    const wikitext = page?.revisions?.[0]?.content || page?.revisions?.[0]?.['*'] || '';
 
     // Match lines like: | num_employees = {{circa|300,000}} or plain 300,000
     const wikitextLines = wikitext.split('\n');
@@ -213,10 +216,13 @@ function isSaneProfit(profit, emps) {
     return perEmp < 2000000 && perEmp > -1000000;
 }
 
-// Sanity check: employee count must be at least 100 and not suspiciously small
-// for a public company (< 500 is a red flag for most public companies)
+// Sanity check: employee count must be >= 100 for a public company
+// We use 100 as minimum but flag < 1000 as lower confidence
 function isSaneEmps(emps) {
-    return emps && emps >= 500;
+    return emps && emps >= 100;
+}
+function isHighConfidenceEmps(emps) {
+    return emps && emps >= 1000;
 }
 
 // Merge sources - for each field, use first non-null value across sources in priority order
@@ -224,7 +230,9 @@ function merge(results) {
     const out = { name: null, emps: null, profit: null, ebitda: null, logo: null };
     for (const r of results) {
         if (!out.name  && r.name)  out.name  = r.name;
-        if (!out.emps  && isSaneEmps(r.emps))  out.emps  = r.emps;
+        // Prefer high-confidence emps (>=1000), accept lower if nothing better
+        if (!out.emps && isHighConfidenceEmps(r.emps)) out.emps = r.emps;
+        else if (!out.emps && isSaneEmps(r.emps) && !results.some(s => isHighConfidenceEmps(s.emps))) out.emps = r.emps;
         if (out.logo === null && r.logo) out.logo = r.logo;
     }
     // For financials, pick first value that passes sanity check
