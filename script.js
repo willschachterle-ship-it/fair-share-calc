@@ -1,106 +1,263 @@
-const DATABASE = {
-    // TECH
-    "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ratio: 1.38 },
-    "MSFT": { name: "Microsoft", emps: 221000, profit: 72361000000, ratio: 1.41 },
-    "GOOGL": { name: "Alphabet (Google)", emps: 182502, profit: 73795000000, ratio: 1.32 },
-    "META": { name: "Meta (Facebook)", emps: 67317, profit: 39098000000, ratio: 1.35 },
-    "NVDA": { name: "NVIDIA", emps: 26196, profit: 29760000000, ratio: 1.19 },
-    "TSLA": { name: "Tesla", emps: 140473, profit: 14974000000, ratio: 1.62 },
-    // RETAIL / FOOD
-    "WMT": { name: "Walmart", emps: 2100000, profit: 15510000000, ratio: 2.43 },
-    "AMZN": { name: "Amazon", emps: 1525000, profit: 30425000000, ratio: 2.80 },
-    "TGT": { name: "Target", emps: 440000, profit: 4130000000, ratio: 2.15 },
-    "SBUX": { name: "Starbucks", emps: 381000, profit: 4120000000, ratio: 1.85 },
-    "MCD": { name: "McDonald's", emps: 150000, profit: 8469000000, ratio: 1.45 },
-    // LOGISTICS / SERVICES
-    "UPS": { name: "UPS", emps: 500000, profit: 6700000000, ratio: 1.75 },
-    "FDX": { name: "FedEx", emps: 529000, profit: 4330000000, ratio: 1.95 },
-    "DIS": { name: "Disney", emps: 225000, profit: 2350000000, ratio: 3.10 },
-    "V": { name: "Visa", emps: 28800, profit: 17273000000, ratio: 1.12 }
+const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
+
+// Expanded fallback DB for when APIs fail
+const FALLBACK_DB = {
+    "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
+    "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ebitda: 130000000000, logo: "https://logo.clearbit.com/apple.com" },
+    "MSFT": { name: "Microsoft Corporation", emps: 221000, profit: 72361000000, ebitda: 102000000000, logo: "https://logo.clearbit.com/microsoft.com" },
+    "GOOGL": { name: "Alphabet Inc.", emps: 182502, profit: 73795000000, ebitda: 100000000000, logo: "https://logo.clearbit.com/google.com" },
+    "AMZN": { name: "Amazon.com, Inc.", emps: 1525000, profit: 30425000000, ebitda: 85000000000, logo: "https://logo.clearbit.com/amazon.com" },
+    "META": { name: "Meta Platforms, Inc.", emps: 67317, profit: 39098000000, ebitda: 54000000000, logo: "https://logo.clearbit.com/meta.com" },
+    "NVDA": { name: "NVIDIA Corporation", emps: 29600, profit: 29760000000, ebitda: 33000000000, logo: "https://logo.clearbit.com/nvidia.com" },
+    "WMT": { name: "Walmart Inc.", emps: 2100000, profit: 11680000000, ebitda: 28000000000, logo: "https://logo.clearbit.com/walmart.com" },
+    "JPM": { name: "JPMorgan Chase & Co.", emps: 308669, profit: 49552000000, ebitda: 55000000000, logo: "https://logo.clearbit.com/jpmorganchase.com" },
+    "XOM": { name: "Exxon Mobil Corporation", emps: 62000, profit: 36010000000, ebitda: 58000000000, logo: "https://logo.clearbit.com/exxonmobil.com" },
+    "BAC": { name: "Bank of America Corp.", emps: 213000, profit: 26515000000, ebitda: 30000000000, logo: "https://logo.clearbit.com/bankofamerica.com" },
+    "UNH": { name: "UnitedHealth Group", emps: 400000, profit: 22381000000, ebitda: 29000000000, logo: "https://logo.clearbit.com/unitedhealthgroup.com" },
+    "COST": { name: "Costco Wholesale Corp.", emps: 316000, profit: 6292000000, ebitda: 9000000000, logo: "https://logo.clearbit.com/costco.com" },
+    "HD": { name: "The Home Depot, Inc.", emps: 465000, profit: 15143000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/homedepot.com" },
+    "NFLX": { name: "Netflix, Inc.", emps: 13000, profit: 5408000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/netflix.com" },
+    "DIS": { name: "The Walt Disney Company", emps: 220000, profit: 3000000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/thewaltdisneycompany.com" },
+    "SBUX": { name: "Starbucks Corporation", emps: 402000, profit: 3582000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/starbucks.com" },
+    "MCD": { name: "McDonald's Corporation", emps: 150000, profit: 8468000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mcdonalds.com" },
+    "FORD": { name: "Ford Motor Company", emps: 177000, profit: 4300000000, ebitda: 12000000000, logo: "https://logo.clearbit.com/ford.com" },
+    "F": { name: "Ford Motor Company", emps: 177000, profit: 4300000000, ebitda: 12000000000, logo: "https://logo.clearbit.com/ford.com" },
+    "GM": { name: "General Motors Company", emps: 163000, profit: 9936000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/gm.com" },
+    "INTC": { name: "Intel Corporation", emps: 124800, profit: -16639000000, ebitda: -5000000000, logo: "https://logo.clearbit.com/intel.com" },
+    "CSCO": { name: "Cisco Systems, Inc.", emps: 84900, profit: 12613000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/cisco.com" },
+    "IBM": { name: "IBM Corporation", emps: 288000, profit: 7502000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/ibm.com" },
+    "GS": { name: "Goldman Sachs Group", emps: 45300, profit: 9457000000, ebitda: 11000000000, logo: "https://logo.clearbit.com/goldmansachs.com" },
+};
+
+// Normalize common aliases
+const TICKER_ALIASES = {
+    "TESLA": "TSLA", "APPLE": "AAPL", "MICROSOFT": "MSFT",
+    "GOOGLE": "GOOGL", "AMAZON": "AMZN", "FACEBOOK": "META",
+    "NVIDIA": "NVDA", "WALMART": "WMT", "NETFLIX": "NFLX",
+    "DISNEY": "DIS", "FORD": "F", "STARBUCKS": "SBUX",
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    const companyInput = document.getElementById('company');
-    const dataList = document.getElementById('companyList');
     const calculateBtn = document.getElementById('calculateBtn');
     const resultsArea = document.getElementById('results');
+    const loadingMsg = document.getElementById('loadingMsg');
 
-    // Populate the dropdown list
-    Object.keys(DATABASE).forEach(ticker => {
-        const opt = document.createElement('option');
-        opt.value = ticker;
-        opt.textContent = `${DATABASE[ticker].name} (${ticker})`;
-        dataList.appendChild(opt);
-    });
+    // ── PRIMARY SOURCE: Yahoo Finance (no API key required) ─────────────────
+    async function fetchFromYahoo(symbol) {
+        // Yahoo Finance's quoteSummary endpoint — free, no key
+        const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=assetProfile,defaultKeyStatistics,financialData,summaryProfile`;
+        const res = await fetch(url, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}`);
+        const json = await res.json();
 
-    function calculateTax(income) {
-        const taxable = Math.max(0, income - 16100);
-        if (taxable <= 12400) return Math.round(taxable * 0.10);
-        if (taxable <= 50400) return Math.round(1240 + (taxable - 12400) * 0.12);
-        return Math.round(5800 + (taxable - 50400) * 0.22);
+        const result = json?.quoteSummary?.result?.[0];
+        if (!result) throw new Error("No Yahoo data");
+
+        const profile = result.assetProfile || {};
+        const keyStats = result.defaultKeyStatistics || {};
+        const financialData = result.financialData || {};
+
+        const emps = profile.fullTimeEmployees;
+        if (!emps) throw new Error("Employee count missing from Yahoo");
+
+        // Net income: try financialData first, then keyStats
+        const profit = financialData.netIncomeToCommon?.raw
+            ?? keyStats.netIncomeToCommon?.raw
+            ?? 0;
+
+        // EBITDA
+        const ebitda = financialData.ebitda?.raw
+            ?? keyStats.enterpriseValue?.raw * 0.15  // rough proxy
+            ?? (profit > 0 ? profit * 1.3 : 0);
+
+        // Logo via Clearbit using website domain
+        const website = profile.website || '';
+        let logo = '';
+        try {
+            logo = website ? `https://logo.clearbit.com/${new URL(website).hostname}` : '';
+        } catch { logo = ''; }
+
+        return {
+            name: profile.longName || profile.shortName || symbol,
+            emps: parseInt(emps),
+            profit,
+            ebitda,
+            logo,
+        };
     }
 
-    calculateBtn.addEventListener('click', () => {
-        const symbol = companyInput.value.toUpperCase().trim();
-        const data = DATABASE[symbol];
+    // ── SECONDARY SOURCE: Finnhub ────────────────────────────────────────────
+    async function fetchFromFinnhub(symbol) {
+        const [profileRes, finRes] = await Promise.all([
+            fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`),
+            fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${FINNHUB_KEY}`)
+        ]);
+        const profileData = await profileRes.json();
+        const financialsData = await finRes.json();
 
-        if (!data) return alert("Please select a ticker from the list.");
+        if (!profileData?.name) throw new Error("Finnhub: no profile");
 
-        let income = 0, timeFrac = 1;
-        const isHourly = !document.getElementById('hourlyInputs').classList.contains('hidden');
+        const emps = profileData.employeeTotal;
+        if (!emps || emps === 0) throw new Error("Finnhub: employee count missing");
 
-        if (isHourly) {
-            const wage = parseFloat(document.getElementById('hourlyWage').value) || 0;
-            const hrs = parseFloat(document.getElementById('hoursPerWeek').value) || 0;
-            const wks = parseFloat(document.getElementById('weeksWorked').value) || 0;
-            income = wage * hrs * wks;
-            timeFrac = (hrs * wks) / 2080;
-        } else {
-            income = parseFloat(document.getElementById('annualSalary').value) || 0;
+        const metrics = financialsData.metric || {};
+        const netIncome = metrics.netIncomePerShareAnnual * metrics.sharesOutstanding || 0;
+        const ebitda = metrics.ebitdaPerShareAnnual * metrics.sharesOutstanding || (netIncome > 0 ? netIncome * 1.3 : 0);
+
+        let logo = profileData.logo || '';
+        if (!logo && profileData.weburl) {
+            try { logo = `https://logo.clearbit.com/${new URL(profileData.weburl).hostname}`; } catch { }
         }
 
-        const distributedSurplus = Math.round((data.profit / data.emps) * timeFrac);
-        const accountingSurplus = Math.round(distributedSurplus * data.ratio);
-        const fedTax = calculateTax(income);
+        return {
+            name: profileData.name,
+            emps: parseInt(emps),
+            profit: netIncome,
+            ebitda,
+            logo,
+        };
+    }
 
-        resultsArea.innerHTML = `
-            <div class="comparison-box" style="padding:25px; background:#fff; border-radius:12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); line-height: 1.6;">
-                <h2 style="margin:0 0 20px 0; color:#1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px;">${data.name} Audit</h2>
-                
-                <div style="margin-bottom:25px;">
-                    <p style="margin-bottom:10px;">If you got to keep all the money <strong>${data.name}</strong> said they made, your salary would be:</p>
-                    <div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$${(income + distributedSurplus).toLocaleString()}</div>
-                </div>
+    // ── ORCHESTRATOR: try sources in order ───────────────────────────────────
+    async function fetchCompanyData(rawInput) {
+        let symbol = rawInput.toUpperCase().trim();
+        symbol = TICKER_ALIASES[symbol] || symbol;
 
-                <div style="margin-bottom:25px;">
-                    <p style="margin-bottom:10px;">If you got to keep all the money <strong>${data.name}</strong> <em>actually</em> made, your salary would be:</p>
-                    <div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$${(income + accountingSurplus).toLocaleString()}</div>
-                </div>
+        // 1. Yahoo Finance
+        try {
+            console.log(`[1/3] Trying Yahoo Finance for ${symbol}...`);
+            const data = await fetchFromYahoo(symbol);
+            console.log(`✓ Yahoo success`, data);
+            return data;
+        } catch (err) {
+            console.warn(`Yahoo failed: ${err.message}`);
+        }
 
-                <div style="margin-top:30px; padding-top:20px; border-top: 1px solid #eee;">
-                    <p><strong>${data.name}</strong> kept <strong>$${distributedSurplus.toLocaleString()}</strong> from you.</p>
-                    <p>The federal government kept <strong>$${fedTax.toLocaleString()}</strong>.</p>
-                    
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #666;">
-                        <p style="margin:0; font-style: italic; color: #444;">
-                            "The government paid for schools, healthcare, and roads with your money. 
-                            What did <strong>${data.name}</strong> do for you with your money?"
-                        </p>
+        // 2. Finnhub
+        try {
+            console.log(`[2/3] Trying Finnhub for ${symbol}...`);
+            const data = await fetchFromFinnhub(symbol);
+            console.log(`✓ Finnhub success`, data);
+            return data;
+        } catch (err) {
+            console.warn(`Finnhub failed: ${err.message}`);
+        }
+
+        // 3. Local fallback DB
+        if (FALLBACK_DB[symbol]) {
+            console.log(`[3/3] Using fallback DB for ${symbol}`);
+            return FALLBACK_DB[symbol];
+        }
+
+        // All sources exhausted
+        alert(`Could not find data for "${symbol}". Try a common ticker like AAPL, TSLA, or MSFT.`);
+        return null;
+    }
+
+    // ── TAX CALC (2024 Single filer) ─────────────────────────────────────────
+    function calculateTax(income) {
+        const taxable = Math.max(0, income - 14600); // 2024 standard deduction
+        const brackets = [
+            [11600,  0.10],
+            [47150,  0.12],
+            [100525, 0.22],
+            [191950, 0.24],
+            [243725, 0.32],
+            [609350, 0.35],
+            [Infinity, 0.37],
+        ];
+        let tax = 0, prev = 0;
+        for (const [cap, rate] of brackets) {
+            if (taxable <= prev) break;
+            tax += (Math.min(taxable, cap) - prev) * rate;
+            prev = cap;
+        }
+        return Math.round(tax);
+    }
+
+    // ── BUTTON CLICK ─────────────────────────────────────────────────────────
+    if (calculateBtn) {
+        calculateBtn.addEventListener('click', async () => {
+            const symbolInput = document.getElementById('company');
+            const symbol = symbolInput ? symbolInput.value.trim() : "";
+            if (!symbol) return alert("Please enter a ticker symbol.");
+
+            if (loadingMsg) loadingMsg.classList.remove('hidden');
+            if (resultsArea) resultsArea.classList.add('hidden');
+
+            const data = await fetchCompanyData(symbol);
+
+            if (loadingMsg) loadingMsg.classList.add('hidden');
+            if (!data) return;
+
+            let income = 0, timeFrac = 1;
+            const hourlyContainer = document.getElementById('hourlyInputs');
+            const isHourly = hourlyContainer && !hourlyContainer.classList.contains('hidden');
+
+            if (isHourly) {
+                const wage = parseFloat(document.getElementById('hourlyWage').value) || 0;
+                const hrs  = parseFloat(document.getElementById('hoursPerWeek').value) || 0;
+                const wks  = parseFloat(document.getElementById('weeksWorked').value) || 0;
+                income = wage * hrs * wks;
+                timeFrac = (hrs * wks) / 2080;
+            } else {
+                const annualInput = document.getElementById('annualSalary');
+                income = annualInput ? parseFloat(annualInput.value) || 0 : 0;
+            }
+
+            const distributedSurplus  = Math.round((data.profit / data.emps) * timeFrac);
+            const accountingSurplus   = Math.round((data.ebitda  / data.emps) * timeFrac);
+            const fedTax = calculateTax(income);
+
+            if (resultsArea) {
+                resultsArea.innerHTML = `
+                    <div class="comparison-box" style="padding:25px; background:#fff; border-radius:12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); line-height: 1.6;">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            ${data.logo ? `<img src="${data.logo}" alt="logo" onerror="this.style.display='none'" style="width:50px; height:50px; border-radius:8px; object-fit:contain; border:1px solid #eee;">` : ''}
+                            <div>
+                                <h2 style="margin:0; color:#1a1a1a; font-size:1.4em;">${data.name}</h2>
+                                <p style="margin:0; font-size:0.75em; color:#888; text-transform:uppercase; letter-spacing:1px;">${data.emps.toLocaleString()} employees</p>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">
+                            <p style="margin-bottom:8px;">If you kept all the money <strong>${data.name}</strong> said they made (net income), your salary would be:</p>
+                            <div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$${(income + distributedSurplus).toLocaleString()}</div>
+                        </div>
+                        <div style="margin-bottom:25px;">
+                            <p style="margin-bottom:8px;">If you kept all the money <strong>${data.name}</strong> <em>actually</em> generated (EBITDA), your salary would be:</p>
+                            <div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$${(income + accountingSurplus).toLocaleString()}</div>
+                        </div>
+                        <div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">
+                            <p><strong>${data.name}</strong> kept <strong>$${distributedSurplus.toLocaleString()}</strong> from your labor.</p>
+                            <p>The federal government kept <strong>$${fedTax.toLocaleString()}</strong> in income tax.</p>
+                            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #666;">
+                                <p style="margin:0; font-style: italic; color: #444;">
+                                    "The government paid for schools, healthcare, and roads with your money. 
+                                    What did <strong>${data.name}</strong> do for you with your money?"
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-        resultsArea.classList.remove('hidden');
-    });
+                `;
+                resultsArea.classList.remove('hidden');
+            }
+        });
+    }
 
-    // UI Toggles
-    document.getElementById('annualToggle').onclick = (e) => toggleUI(e, 'salary');
-    document.getElementById('hourlyToggle').onclick = (e) => toggleUI(e, 'hourly');
+    // ── UI TOGGLE ─────────────────────────────────────────────────────────────
+    const annualToggle = document.getElementById('annualToggle');
+    const hourlyToggle = document.getElementById('hourlyToggle');
+    if (annualToggle) annualToggle.onclick = (e) => toggleUI(e, 'salary');
+    if (hourlyToggle) hourlyToggle.onclick = (e) => toggleUI(e, 'hourly');
 
     function toggleUI(e, mode) {
         document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-        document.getElementById('salaryInputs').classList.toggle('hidden', mode === 'hourly');
-        document.getElementById('hourlyInputs').classList.toggle('hidden', mode === 'salary');
+        const sInputs = document.getElementById('salaryInputs');
+        const hInputs = document.getElementById('hourlyInputs');
+        if (sInputs) sInputs.classList.toggle('hidden', mode === 'hourly');
+        if (hInputs) hInputs.classList.toggle('hidden', mode === 'salary');
     }
 });
