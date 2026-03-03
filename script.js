@@ -1,4 +1,5 @@
 const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
+const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 
 const FALLBACK_DB = {
     "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
@@ -36,9 +37,11 @@ const FALLBACK_DB = {
     "MA": { name: "Mastercard Incorporated", emps: 33000, profit: 11195000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mastercard.com" },
     "KO": { name: "The Coca-Cola Company", emps: 82500, profit: 10714000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/coca-cola.com" },
     "PEP": { name: "PepsiCo, Inc.", emps: 318000, profit: 9166000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/pepsico.com" },
+    "BIIB": { name: "Biogen Inc.", emps: 7400, profit: 1640000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/biogen.com" },
+    "WEN": { name: "The Wendy's Company", emps: 14500, profit: 103000000, ebitda: 490000000, logo: "https://logo.clearbit.com/wendys.com" },
+    "TAK": { name: "Takeda Pharmaceutical", emps: 49000, profit: 1200000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/takeda.com" },
 };
 
-// Hardcoded name-to-ticker aliases (instant, no API call needed)
 const TICKER_ALIASES = {
     "TESLA": "TSLA", "APPLE": "AAPL", "MICROSOFT": "MSFT",
     "GOOGLE": "GOOGL", "ALPHABET": "GOOGL", "AMAZON": "AMZN",
@@ -55,7 +58,8 @@ const TICKER_ALIASES = {
     "COSTCO": "COST", "TARGET": "TGT", "GENERAL MOTORS": "GM",
     "INTEL": "INTC", "CISCO": "CSCO", "UNITEDHEALTH": "UNH",
     "BANK OF AMERICA": "BAC", "JOHNSON & JOHNSON": "JNJ",
-    "JOHNSON AND JOHNSON": "JNJ",
+    "JOHNSON AND JOHNSON": "JNJ", "BIOGEN": "BIIB",
+    "WENDYS": "WEN", "WENDY'S": "WEN", "TAKEDA": "TAK",
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,99 +67,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsArea = document.getElementById('results');
     const loadingMsg = document.getElementById('loadingMsg');
 
-    // Fetch via proxy with multiple fallbacks
-    async function proxyFetch(targetUrl) {
-        // Try corsproxy.io
-        try {
-            const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(targetUrl));
-            if (res.ok) return await res.json();
-        } catch(e) { console.warn('corsproxy.io failed:', e.message); }
-
-        // Try allorigins (wraps response in {contents:"..."})
-        try {
-            const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl));
-            if (res.ok) {
-                const raw = await res.json();
-                return JSON.parse(raw.contents);
-            }
-        } catch(e) { console.warn('allorigins failed:', e.message); }
-
-        throw new Error('All proxies failed for: ' + targetUrl);
-    }
-
-    // Resolve company name to ticker
-    // Uses Finnhub symbol search (no CORS issues) then falls back to Yahoo via proxy
+    // Resolve company name to ticker via Finnhub search (no CORS issues)
     async function resolveToTicker(input) {
-        // Try Finnhub search first - no CORS issues, works directly
         try {
             const res = await fetch('https://finnhub.io/api/v1/search?q=' + encodeURIComponent(input) + '&token=' + FINNHUB_KEY);
-            if (res.ok) {
-                const json = await res.json();
-                const results = (json && json.result) || [];
-                const match = results.find(r => r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'))
-                           || results.find(r => r.symbol && !r.symbol.includes('.'));
-                if (match) {
-                    console.log('Finnhub resolved "' + input + '" -> ' + match.symbol);
-                    return match.symbol;
-                }
+            if (!res.ok) throw new Error('Finnhub search HTTP ' + res.status);
+            const json = await res.json();
+            const results = (json && json.result) || [];
+            const match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'); })
+                       || results.find(function(r) { return r.symbol && !r.symbol.includes('.'); });
+            if (match) {
+                console.log('Resolved "' + input + '" -> ' + match.symbol);
+                return match.symbol;
             }
         } catch(e) { console.warn('Finnhub search failed:', e.message); }
-
-        // Fallback: Yahoo Finance search via proxy
-        try {
-            const url = 'https://query2.finance.yahoo.com/v1/finance/search?q=' + encodeURIComponent(input) + '&quotesCount=6&newsCount=0';
-            const json = await proxyFetch(url);
-            const quotes = (json && json.finance && json.finance.result && json.finance.result[0] && json.finance.result[0].quotes) || [];
-            const equity = quotes.find(q => q.quoteType === 'EQUITY' && q.symbol && !q.symbol.includes('.'))
-                        || quotes.find(q => q.quoteType === 'EQUITY' && q.symbol);
-            if (equity) {
-                console.log('Yahoo resolved "' + input + '" -> ' + equity.symbol);
-                return equity.symbol;
-            }
-        } catch(e) { console.warn('Yahoo search failed:', e.message); }
-
         throw new Error('Could not resolve ticker for: ' + input);
     }
 
-    // Primary: Yahoo Finance quoteSummary
-    async function fetchFromYahoo(symbol) {
-        const yahooUrl = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' + symbol + '?modules=assetProfile,defaultKeyStatistics,financialData';
-        const json = await proxyFetch(yahooUrl);
+    // Primary: Financial Modeling Prep — no CORS, free tier = 250 calls/day
+    async function fetchFromFMP(symbol) {
+        if (FMP_KEY === '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL') throw new Error('FMP key not set');
 
-        const result = json && json.quoteSummary && json.quoteSummary.result && json.quoteSummary.result[0];
-        if (!result) throw new Error('No Yahoo data');
+        const profileRes = await fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + FMP_KEY);
+        if (!profileRes.ok) throw new Error('FMP profile HTTP ' + profileRes.status);
+        const profileArr = await profileRes.json();
+        if (!profileArr || !profileArr[0]) throw new Error('FMP: no profile data');
+        const p = profileArr[0];
 
-        const profile = result.assetProfile || {};
-        const keyStats = result.defaultKeyStatistics || {};
-        const financialData = result.financialData || {};
+        const emps = p.fullTimeEmployees;
+        if (!emps || emps === 0) throw new Error('FMP: employee count missing');
 
-        const emps = profile.fullTimeEmployees;
-        if (!emps) throw new Error('Employee count missing from Yahoo');
+        const incomeRes = await fetch('https://financialmodelingprep.com/api/v3/income-statement/' + symbol + '?limit=1&apikey=' + FMP_KEY);
+        if (!incomeRes.ok) throw new Error('FMP income HTTP ' + incomeRes.status);
+        const incomeArr = await incomeRes.json();
+        const inc = (incomeArr && incomeArr[0]) || {};
 
-        const profit = (financialData.netIncomeToCommon && financialData.netIncomeToCommon.raw)
-            || (keyStats.netIncomeToCommon && keyStats.netIncomeToCommon.raw)
-            || 0;
-
-        const ebitda = (financialData.ebitda && financialData.ebitda.raw)
-            || ((keyStats.enterpriseValue && keyStats.enterpriseValue.raw) ? keyStats.enterpriseValue.raw * 0.15 : 0)
-            || (profit > 0 ? profit * 1.3 : 0);
-
-        const website = profile.website || '';
-        let logo = '';
-        try {
-            logo = website ? 'https://logo.clearbit.com/' + new URL(website).hostname : '';
-        } catch (e) { logo = ''; }
+        const profit = inc.netIncome || 0;
+        const ebitda = inc.ebitda || (profit > 0 ? profit * 1.3 : 0);
 
         return {
-            name: profile.longName || profile.shortName || symbol,
+            name: p.companyName || symbol,
             emps: parseInt(emps),
             profit: profit,
             ebitda: ebitda,
-            logo: logo,
+            logo: p.image || '',
         };
     }
 
-    // Secondary: Finnhub
+    // Fallback: Finnhub (limited financial data but worth trying)
     async function fetchFromFinnhub(symbol) {
         const profileRes = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + symbol + '&token=' + FINNHUB_KEY);
         const finRes = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + symbol + '&metric=all&token=' + FINNHUB_KEY);
@@ -172,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let logo = profileData.logo || '';
         if (!logo && profileData.weburl) {
-            try { logo = 'https://logo.clearbit.com/' + new URL(profileData.weburl).hostname; } catch (e) {}
+            try { logo = 'https://logo.clearbit.com/' + new URL(profileData.weburl).hostname; } catch(e) {}
         }
 
         return {
@@ -184,40 +143,40 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Orchestrator: resolve name -> ticker, then fetch data from sources in order
+    // Orchestrator: resolve name -> ticker, then try data sources in order
     async function fetchCompanyData(rawInput) {
         let symbol = rawInput.trim().toUpperCase();
 
         // Check hardcoded aliases first
         symbol = TICKER_ALIASES[symbol] || symbol;
 
-        // If it still looks like a name (not a short all-caps ticker), use Yahoo search to resolve
-        const looksLikeTicker = /^[A-Z]{1,5}$/.test(symbol);
+        // If it looks like a name rather than a ticker, resolve it
+        var looksLikeTicker = /^[A-Z]{1,5}$/.test(symbol);
         if (!looksLikeTicker) {
             try {
                 symbol = await resolveToTicker(rawInput.trim());
-            } catch (err) {
+            } catch(err) {
                 console.warn('Name resolution failed: ' + err.message);
             }
         }
 
-        // Try Yahoo Finance
+        // 1. FMP
         try {
-            console.log('[1/3] Yahoo Finance for ' + symbol);
-            return await fetchFromYahoo(symbol);
-        } catch (err) {
-            console.warn('Yahoo failed: ' + err.message);
+            console.log('[1/3] FMP for ' + symbol);
+            return await fetchFromFMP(symbol);
+        } catch(err) {
+            console.warn('FMP failed: ' + err.message);
         }
 
-        // Try Finnhub
+        // 2. Finnhub
         try {
             console.log('[2/3] Finnhub for ' + symbol);
             return await fetchFromFinnhub(symbol);
-        } catch (err) {
+        } catch(err) {
             console.warn('Finnhub failed: ' + err.message);
         }
 
-        // Fallback DB
+        // 3. Fallback DB
         if (FALLBACK_DB[symbol]) {
             console.log('[3/3] Fallback DB for ' + symbol);
             return FALLBACK_DB[symbol];
@@ -229,8 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Federal income tax estimate (2024, single filer)
     function calculateTax(income) {
-        const taxable = Math.max(0, income - 14600);
-        const brackets = [
+        var taxable = Math.max(0, income - 14600);
+        var brackets = [
             [11600,  0.10],
             [47150,  0.12],
             [100525, 0.22],
@@ -239,10 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
             [609350, 0.35],
             [Infinity, 0.37],
         ];
-        let tax = 0, prev = 0;
-        for (let i = 0; i < brackets.length; i++) {
-            const cap = brackets[i][0];
-            const rate = brackets[i][1];
+        var tax = 0, prev = 0;
+        for (var i = 0; i < brackets.length; i++) {
+            var cap = brackets[i][0];
+            var rate = brackets[i][1];
             if (taxable <= prev) break;
             tax += (Math.min(taxable, cap) - prev) * rate;
             prev = cap;
@@ -252,47 +211,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (calculateBtn) {
         calculateBtn.addEventListener('click', async () => {
-            const symbolInput = document.getElementById('company');
-            const symbol = symbolInput ? symbolInput.value.trim() : '';
+            var symbolInput = document.getElementById('company');
+            var symbol = symbolInput ? symbolInput.value.trim() : '';
             if (!symbol) return alert('Please enter a company name or ticker symbol.');
 
             if (loadingMsg) loadingMsg.classList.remove('hidden');
             if (resultsArea) resultsArea.classList.add('hidden');
 
-            const data = await fetchCompanyData(symbol);
+            var data = await fetchCompanyData(symbol);
 
             if (loadingMsg) loadingMsg.classList.add('hidden');
             if (!data) return;
 
-            let income = 0, timeFrac = 1;
-            const hourlyContainer = document.getElementById('hourlyInputs');
-            const isHourly = hourlyContainer && !hourlyContainer.classList.contains('hidden');
+            var income = 0, timeFrac = 1;
+            var hourlyContainer = document.getElementById('hourlyInputs');
+            var isHourly = hourlyContainer && !hourlyContainer.classList.contains('hidden');
 
             if (isHourly) {
-                const wage = parseFloat(document.getElementById('hourlyWage').value) || 0;
-                const hrs  = parseFloat(document.getElementById('hoursPerWeek').value) || 0;
-                const wks  = parseFloat(document.getElementById('weeksWorked').value) || 0;
+                var wage = parseFloat(document.getElementById('hourlyWage').value) || 0;
+                var hrs  = parseFloat(document.getElementById('hoursPerWeek').value) || 0;
+                var wks  = parseFloat(document.getElementById('weeksWorked').value) || 0;
                 income = wage * hrs * wks;
                 timeFrac = (hrs * wks) / 2080;
             } else {
-                const annualInput = document.getElementById('annualSalary');
+                var annualInput = document.getElementById('annualSalary');
                 income = annualInput ? parseFloat(annualInput.value) || 0 : 0;
             }
 
-            const distributedSurplus = Math.round((data.profit / data.emps) * timeFrac);
-            const accountingSurplus  = Math.round((data.ebitda  / data.emps) * timeFrac);
-            const fedTax = calculateTax(income);
+            var distributedSurplus = Math.round((data.profit / data.emps) * timeFrac);
+            var accountingSurplus  = Math.round((data.ebitda  / data.emps) * timeFrac);
+            var fedTax = calculateTax(income);
+            var netTotal   = income + distributedSurplus;
+            var ebitdaTotal = income + accountingSurplus;
+
+            var yourEarningsBlock = isHourly
+                ? '<div style="margin-bottom:20px; padding:15px; background:#f0f4ff; border-radius:8px;">' +
+                    '<p style="margin:0 0 4px 0; font-size:0.85em; color:#555;">Your annual earnings</p>' +
+                    '<div style="font-size:1.6em; font-weight:bold; color:#333;">$' + income.toLocaleString() + '</div>' +
+                  '</div>'
+                : '';
 
             if (resultsArea) {
-                const netTotal = income + distributedSurplus;
-                const ebitdaTotal = income + accountingSurplus;
-                const yourEarningsBlock = isHourly
-                    ? '<div style="margin-bottom:20px; padding:15px; background:#f0f4ff; border-radius:8px;">' +
-                        '<p style="margin:0 0 4px 0; font-size:0.85em; color:#555;">Your annual earnings</p>' +
-                        '<div style="font-size:1.6em; font-weight:bold; color:#333;">$' + income.toLocaleString() + '</div>' +
-                      '</div>'
-                    : '';
-
                 resultsArea.innerHTML =
                     yourEarningsBlock +
                     '<div class="comparison-box" style="padding:25px; background:#fff; border-radius:12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); line-height: 1.6;">' +
@@ -322,16 +281,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // UI toggle
-    const annualToggle = document.getElementById('annualToggle');
-    const hourlyToggle = document.getElementById('hourlyToggle');
+    var annualToggle = document.getElementById('annualToggle');
+    var hourlyToggle = document.getElementById('hourlyToggle');
     if (annualToggle) annualToggle.onclick = function(e) { toggleUI(e, 'salary'); };
     if (hourlyToggle) hourlyToggle.onclick = function(e) { toggleUI(e, 'hourly'); };
 
     function toggleUI(e, mode) {
         document.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
         e.target.classList.add('active');
-        const sInputs = document.getElementById('salaryInputs');
-        const hInputs = document.getElementById('hourlyInputs');
+        var sInputs = document.getElementById('salaryInputs');
+        var hInputs = document.getElementById('hourlyInputs');
         if (sInputs) sInputs.classList.toggle('hidden', mode === 'hourly');
         if (hInputs) hInputs.classList.toggle('hidden', mode === 'salary');
     }
