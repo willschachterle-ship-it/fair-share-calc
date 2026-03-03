@@ -1,6 +1,16 @@
 const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 
+const PRIVATE_COMPANIES = {
+    "GENENTECH": "Genentech is a private subsidiary of Roche and does not publicly report financials.",
+    "SPACEX": "SpaceX is privately held and does not publicly report financials.",
+    "CARGILL": "Cargill is privately held and does not publicly report financials.",
+    "IKEA": "IKEA is privately held and does not publicly report financials.",
+    "STRIPE": "Stripe is privately held and does not publicly report financials.",
+    "DELOITTE": "Deloitte is privately held and does not publicly report financials.",
+    "MCKINSEY": "McKinsey is privately held and does not publicly report financials.",
+};
+
 const FALLBACK_DB = {
     "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
     "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ebitda: 130000000000, logo: "https://logo.clearbit.com/apple.com" },
@@ -40,6 +50,7 @@ const FALLBACK_DB = {
     "BIIB": { name: "Biogen Inc.", emps: 7400, profit: 1640000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/biogen.com" },
     "WEN": { name: "The Wendy's Company", emps: 14500, profit: 103000000, ebitda: 490000000, logo: "https://logo.clearbit.com/wendys.com" },
     "TAK": { name: "Takeda Pharmaceutical", emps: 49000, profit: 1200000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/takeda.com" },
+    "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
 };
 
 const TICKER_ALIASES = {
@@ -60,22 +71,23 @@ const TICKER_ALIASES = {
     "BANK OF AMERICA": "BAC", "JOHNSON & JOHNSON": "JNJ",
     "JOHNSON AND JOHNSON": "JNJ", "BIOGEN": "BIIB",
     "WENDYS": "WEN", "WENDY'S": "WEN", "TAKEDA": "TAK",
+    "ASTELLAS": "4503.T",
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const calculateBtn = document.getElementById('calculateBtn');
-    const resultsArea = document.getElementById('results');
-    const loadingMsg = document.getElementById('loadingMsg');
+document.addEventListener('DOMContentLoaded', function() {
+    var calculateBtn = document.getElementById('calculateBtn');
+    var resultsArea = document.getElementById('results');
+    var loadingMsg = document.getElementById('loadingMsg');
 
-    // Resolve company name to ticker via Finnhub search (no CORS issues)
     async function resolveToTicker(input) {
         try {
-            const res = await fetch('https://finnhub.io/api/v1/search?q=' + encodeURIComponent(input) + '&token=' + FINNHUB_KEY);
+            var res = await fetch('https://finnhub.io/api/v1/search?q=' + encodeURIComponent(input) + '&token=' + FINNHUB_KEY);
             if (!res.ok) throw new Error('Finnhub search HTTP ' + res.status);
-            const json = await res.json();
-            const results = (json && json.result) || [];
-            const match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'); })
-                       || results.find(function(r) { return r.symbol && !r.symbol.includes('.'); });
+            var json = await res.json();
+            var results = (json && json.result) || [];
+            var match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'); });
+            if (!match) match = results.find(function(r) { return r.type === 'Common Stock' && r.symbol; });
+            if (!match) match = results.find(function(r) { return r.symbol; });
             if (match) {
                 console.log('Resolved "' + input + '" -> ' + match.symbol);
                 return match.symbol;
@@ -84,29 +96,24 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Could not resolve ticker for: ' + input);
     }
 
-    // Primary: Financial Modeling Prep — no CORS, free tier = 250 calls/day
     async function fetchFromFMP(symbol) {
-        if (FMP_KEY === '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL') throw new Error('FMP key not set');
-
-        const profileRes = await fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + FMP_KEY);
+        var profileRes = await fetch('https://financialmodelingprep.com/api/v3/profile/' + symbol + '?apikey=' + FMP_KEY);
         if (!profileRes.ok) throw new Error('FMP profile HTTP ' + profileRes.status);
-        const profileArr = await profileRes.json();
-        if (!profileArr || !profileArr[0]) throw new Error('FMP: no profile data');
-        const p = profileArr[0];
-
-        const emps = p.fullTimeEmployees;
+        var profileArr = await profileRes.json();
+        if (!profileArr || profileArr.length === 0 || !profileArr[0]) throw new Error('FMP: no profile data');
+        if (profileArr['Error Message']) throw new Error('FMP error: ' + profileArr['Error Message']);
+        var p = profileArr[0];
+        if (!p.companyName) throw new Error('FMP: empty profile');
+        var emps = p.fullTimeEmployees;
         if (!emps || emps === 0) throw new Error('FMP: employee count missing');
-
-        const incomeRes = await fetch('https://financialmodelingprep.com/api/v3/income-statement/' + symbol + '?limit=1&apikey=' + FMP_KEY);
+        var incomeRes = await fetch('https://financialmodelingprep.com/api/v3/income-statement/' + symbol + '?limit=1&apikey=' + FMP_KEY);
         if (!incomeRes.ok) throw new Error('FMP income HTTP ' + incomeRes.status);
-        const incomeArr = await incomeRes.json();
-        const inc = (incomeArr && incomeArr[0]) || {};
-
-        const profit = inc.netIncome || 0;
-        const ebitda = inc.ebitda || (profit > 0 ? profit * 1.3 : 0);
-
+        var incomeArr = await incomeRes.json();
+        var inc = (incomeArr && incomeArr[0]) || {};
+        var profit = inc.netIncome || 0;
+        var ebitda = inc.ebitda || (profit > 0 ? profit * 1.3 : 0);
         return {
-            name: p.companyName || symbol,
+            name: p.companyName,
             emps: parseInt(emps),
             profit: profit,
             ebitda: ebitda,
@@ -114,26 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Fallback: Finnhub (limited financial data but worth trying)
     async function fetchFromFinnhub(symbol) {
-        const profileRes = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + symbol + '&token=' + FINNHUB_KEY);
-        const finRes = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + symbol + '&metric=all&token=' + FINNHUB_KEY);
-        const profileData = await profileRes.json();
-        const financialsData = await finRes.json();
-
+        var profileRes = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + symbol + '&token=' + FINNHUB_KEY);
+        var finRes = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + symbol + '&metric=all&token=' + FINNHUB_KEY);
+        var profileData = await profileRes.json();
+        var financialsData = await finRes.json();
         if (!profileData || !profileData.name) throw new Error('Finnhub: no profile');
-        const emps = profileData.employeeTotal;
+        var emps = profileData.employeeTotal;
         if (!emps || emps === 0) throw new Error('Finnhub: employee count missing');
-
-        const metrics = financialsData.metric || {};
-        const netIncome = (metrics.netIncomePerShareAnnual * metrics.sharesOutstanding) || 0;
-        const ebitda = (metrics.ebitdaPerShareAnnual * metrics.sharesOutstanding) || (netIncome > 0 ? netIncome * 1.3 : 0);
-
-        let logo = profileData.logo || '';
+        var metrics = financialsData.metric || {};
+        var netIncome = (metrics.netIncomePerShareAnnual * metrics.sharesOutstanding) || 0;
+        var ebitda = (metrics.ebitdaPerShareAnnual * metrics.sharesOutstanding) || (netIncome > 0 ? netIncome * 1.3 : 0);
+        var logo = profileData.logo || '';
         if (!logo && profileData.weburl) {
             try { logo = 'https://logo.clearbit.com/' + new URL(profileData.weburl).hostname; } catch(e) {}
         }
-
         return {
             name: profileData.name,
             emps: parseInt(emps),
@@ -143,15 +145,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Orchestrator: resolve name -> ticker, then try data sources in order
     async function fetchCompanyData(rawInput) {
-        let symbol = rawInput.trim().toUpperCase();
+        var symbol = rawInput.trim().toUpperCase();
 
-        // Check hardcoded aliases first
+        // Check for known private companies first
+        var privateMsg = PRIVATE_COMPANIES[symbol];
+        if (privateMsg) {
+            alert(privateMsg + '\n\nThis tool only works with publicly traded companies.');
+            return null;
+        }
+
+        // Check hardcoded aliases
         symbol = TICKER_ALIASES[symbol] || symbol;
 
         // If it looks like a name rather than a ticker, resolve it
-        var looksLikeTicker = /^[A-Z]{1,5}$/.test(symbol);
+        var looksLikeTicker = /^[A-Z0-9]{1,6}(\.[A-Z]{1,2})?$/.test(symbol);
         if (!looksLikeTicker) {
             try {
                 symbol = await resolveToTicker(rawInput.trim());
@@ -182,11 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return FALLBACK_DB[symbol];
         }
 
-        alert('Could not find data for "' + rawInput + '". Try a ticker like AAPL, or a well-known company name.');
+        alert('"' + rawInput + '" could not be found. This may be because:\n- It is privately held (e.g. Genentech, SpaceX)\n- It trades under a different name (try the ticker symbol)\n- It is a subsidiary of another company');
         return null;
     }
 
-    // Federal income tax estimate (2024, single filer)
     function calculateTax(income) {
         var taxable = Math.max(0, income - 14600);
         var brackets = [
@@ -210,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (calculateBtn) {
-        calculateBtn.addEventListener('click', async () => {
+        calculateBtn.addEventListener('click', async function() {
             var symbolInput = document.getElementById('company');
             var symbol = symbolInput ? symbolInput.value.trim() : '';
             if (!symbol) return alert('Please enter a company name or ticker symbol.');
@@ -241,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             var distributedSurplus = Math.round((data.profit / data.emps) * timeFrac);
             var accountingSurplus  = Math.round((data.ebitda  / data.emps) * timeFrac);
             var fedTax = calculateTax(income);
-            var netTotal   = income + distributedSurplus;
+            var netTotal    = income + distributedSurplus;
             var ebitdaTotal = income + accountingSurplus;
 
             var yourEarningsBlock = isHourly
@@ -280,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // UI toggle
     var annualToggle = document.getElementById('annualToggle');
     var hourlyToggle = document.getElementById('hourlyToggle');
     if (annualToggle) annualToggle.onclick = function(e) { toggleUI(e, 'salary'); };
