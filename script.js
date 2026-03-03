@@ -269,11 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
-                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that's <strong>$' + distributedSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>$' + distributedSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:25px;">' +
-                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> - that's <strong>$' + accountingSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> - that is <strong>$' + accountingSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
