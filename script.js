@@ -249,7 +249,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const fedTax = calculateTax(income);
 
             if (resultsArea) {
+                const netTotal = income + distributedSurplus;
+                const ebitdaTotal = income + accountingSurplus;
+                const yourEarningsBlock = isHourly
+                    ? '<div style="margin-bottom:20px; padding:15px; background:#f0f4ff; border-radius:8px;">' +
+                        '<p style="margin:0 0 4px 0; font-size:0.85em; color:#555;">Your annual earnings</p>' +
+                        '<div style="font-size:1.6em; font-weight:bold; color:#333;">$' + income.toLocaleString() + '</div>' +
+                      '</div>'
+                    : '';
+
                 resultsArea.innerHTML =
+                    yourEarningsBlock +
                     '<div class="comparison-box" style="padding:25px; background:#fff; border-radius:12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); line-height: 1.6;">' +
                         '<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">' +
                             (data.logo ? '<img src="' + data.logo + '" alt="logo" onerror="this.style.display=\'none\'" style="width:50px; height:50px; border-radius:8px; object-fit:contain; border:1px solid #eee;">' : '') +
@@ -259,12 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
-                            '<p style="margin-bottom:8px;">If you kept all the money <strong>' + data.name + '</strong> said they made (net income), your salary would be:</p>' +
-                            '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + (income + distributedSurplus).toLocaleString() + '</div>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> — that's <strong>$' + distributedSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:25px;">' +
-                            '<p style="margin-bottom:8px;">If you kept all the money <strong>' + data.name + '</strong> <em>actually</em> generated (EBITDA), your salary would be:</p>' +
-                            '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + (income + accountingSurplus).toLocaleString() + '</div>' +
+                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> — that's <strong>$' + accountingSurplus.toLocaleString() + ' more</strong> than what you made.</p>' +
+                            '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor (based on EBITDA).</p>' +
