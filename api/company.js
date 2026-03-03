@@ -2,9 +2,6 @@ const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 const AV_KEY = '17JNK5S9J44QAXTV';
 
-// Each source returns whatever it can - no throwing on missing fields
-// The orchestrator merges results to fill gaps
-
 async function fetchFromEDGAR(symbol) {
     const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
@@ -31,8 +28,8 @@ async function fetchFromEDGAR(symbol) {
     const us_gaap = facts.facts['us-gaap'] || {};
     const dei = facts.facts['dei'] || {};
 
-    // Employee count
-    let emps = 0;
+    // Employee count - many companies don't file this
+    let emps = null;
     for (const field of ['EntityNumberOfEmployees', 'NumberOfEmployees']) {
         const empFact = dei[field];
         if (empFact && empFact.units && empFact.units['pure']) {
@@ -44,7 +41,7 @@ async function fetchFromEDGAR(symbol) {
     }
 
     // Net income
-    let profit = 0;
+    let profit = null;
     for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
         if (fact && fact.units && fact.units['USD']) {
@@ -55,8 +52,8 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
-    // EBITDA
-    let ebitda = 0;
+    // EBITDA = operating income + D&A
+    let ebitda = null;
     const opFact = us_gaap['OperatingIncomeLoss'];
     if (opFact && opFact.units && opFact.units['USD']) {
         const sorted = opFact.units['USD']
@@ -77,14 +74,7 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
-    return {
-        name: companyName || null,
-        emps: emps || null,
-        profit: profit || null,
-        ebitda: ebitda || null,
-        logo: null,
-        source: 'edgar'
-    };
+    return { name: companyName || null, emps, profit, ebitda, logo: null, source: 'edgar' };
 }
 
 async function fetchFromFMP(symbol) {
@@ -106,8 +96,7 @@ async function fetchFromFMP(symbol) {
     return {
         name: p.companyName || null,
         emps: p.fullTimeEmployees || null,
-        profit,
-        ebitda,
+        profit, ebitda,
         logo: p.image || null,
         source: 'fmp'
     };
@@ -122,16 +111,16 @@ async function fetchFromFinnhub(symbol) {
     const f = await finRes.json();
     if (!p?.name) throw new Error('Finnhub: no profile');
     const m = f.metric || {};
-    const profit = (m.netIncomePerShareAnnual * m.sharesOutstanding) || null;
-    const ebitda = (m.ebitdaPerShareAnnual * m.sharesOutstanding) || null;
+    const profit = (m.netIncomePerShareAnnual && m.sharesOutstanding)
+        ? Math.round(m.netIncomePerShareAnnual * m.sharesOutstanding) : null;
+    const ebitda = (m.ebitdaPerShareAnnual && m.sharesOutstanding)
+        ? Math.round(m.ebitdaPerShareAnnual * m.sharesOutstanding) : null;
     let logo = p.logo || null;
     if (!logo && p.weburl) try { logo = `https://logo.clearbit.com/${new URL(p.weburl).hostname}`; } catch(e) {}
     return {
         name: p.name || null,
         emps: p.employeeTotal || null,
-        profit,
-        ebitda,
-        logo,
+        profit, ebitda, logo,
         source: 'finnhub'
     };
 }
@@ -141,30 +130,74 @@ async function fetchFromAlphaVantage(symbol) {
         fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${AV_KEY}`),
         fetch(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${AV_KEY}`)
     ]);
-    if (!overviewRes.ok) throw new Error('AV overview HTTP ' + overviewRes.status);
+    if (!overviewRes.ok) throw new Error('AV HTTP ' + overviewRes.status);
     const overview = await overviewRes.json();
     if (!overview || !overview.Name) throw new Error('AV: no data');
     if (overview.Note || overview.Information) throw new Error('AV: rate limited');
 
-    const emps = overview.FullTimeEmployees && overview.FullTimeEmployees !== 'None'
-        ? parseInt(overview.FullTimeEmployees) : null;
+    // AV returns numbers as strings, and missing values as "None" or "-"
+    const parseAV = (v) => (v && v !== 'None' && v !== '-' && v !== 'N/A') ? parseInt(v) : null;
 
-    let profit = null, ebitda = null;
+    const emps = parseAV(overview.FullTimeEmployees);
+    let profit = null, ebitda = parseAV(overview.EBITDA);
+
     if (incomeRes.ok) {
         const income = await incomeRes.json();
         const latest = (income.annualReports || [])[0] || {};
-        profit = latest.netIncome && latest.netIncome !== 'None' ? parseInt(latest.netIncome) : null;
-        ebitda = latest.ebitda && latest.ebitda !== 'None' ? parseInt(latest.ebitda) : null;
+        profit = parseAV(latest.netIncome);
+        if (!ebitda) ebitda = parseAV(latest.ebitda);
     }
 
-    return {
-        name: overview.Name || null,
-        emps,
-        profit,
-        ebitda,
-        logo: null,
-        source: 'alphavantage'
-    };
+    return { name: overview.Name || null, emps, profit, ebitda, logo: null, source: 'alphavantage' };
+}
+
+
+async function fetchEmployeeCountFromWikipedia(companyName) {
+    // Search Wikipedia for the company page
+    const searchRes = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
+        encodeURIComponent(companyName) + '&format=json&origin=*'
+    );
+    if (!searchRes.ok) throw new Error('Wikipedia search failed');
+    const searchJson = await searchRes.json();
+    const pages = searchJson?.query?.search || [];
+    if (!pages.length) throw new Error('Wikipedia: no results for ' + companyName);
+
+    const pageTitle = pages[0].title;
+
+    // Fetch the raw wikitext to parse the infobox
+    const pageRes = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&titles=' +
+        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json&origin=*'
+    );
+    if (!pageRes.ok) throw new Error('Wikipedia page fetch failed');
+    const pageJson = await pageRes.json();
+    const pages2 = pageJson?.query?.pages || {};
+    const page = Object.values(pages2)[0];
+    const wikitext = page?.revisions?.[0]?.['*'] || '';
+
+    // Extract employee count from infobox - looks like: | num_employees = 300,000
+    const patterns = [
+        /num_employees\s*=\s*([\d,]+(?:\.[\d]+)?\s*(?:million|billion)?)/i,
+        /employees\s*=\s*([\d,]+(?:\.[\d]+)?\s*(?:million|billion)?)/i,
+        /number_of_employees\s*=\s*([\d,]+)/i,
+    ];
+
+    for (const pattern of patterns) {
+        const match = wikitext.match(pattern);
+        if (match) {
+            let val = match[1].trim();
+            // Remove citations like {{circa|...}} or <ref>...</ref>
+            val = val.replace(/<[^>]+>/g, '').replace(/{{[^}]+}}/g, '').trim();
+            const num = parseFloat(val.replace(/,/g, ''));
+            if (!isNaN(num) && num > 0) {
+                // Handle million suffix
+                if (val.toLowerCase().includes('million')) return Math.round(num * 1000000);
+                return Math.round(num);
+            }
+        }
+    }
+    throw new Error('Wikipedia: employee count not found in infobox');
 }
 
 async function resolveTicker(input) {
@@ -179,19 +212,18 @@ async function resolveTicker(input) {
     return match.symbol;
 }
 
-// Merge results from multiple sources, preferring earlier sources for each field
-function mergeResults(results) {
-    const merged = { name: null, emps: null, profit: null, ebitda: null, logo: null };
+// Merge sources - for each field, use first non-null value across sources in priority order
+function merge(results) {
+    const out = { name: null, emps: null, profit: null, ebitda: null, logo: null };
     for (const r of results) {
-        if (!merged.name && r.name) merged.name = r.name;
-        if (!merged.emps && r.emps) merged.emps = r.emps;
-        if (merged.profit === null && r.profit !== null) merged.profit = r.profit;
-        if (!merged.ebitda && r.ebitda) merged.ebitda = r.ebitda;
-        if (!merged.logo && r.logo) merged.logo = r.logo;
+        if (!out.name   && r.name)   out.name   = r.name;
+        if (!out.emps   && r.emps)   out.emps   = r.emps;
+        if (out.profit  === null && r.profit  !== null) out.profit  = r.profit;
+        if (out.ebitda  === null && r.ebitda  !== null) out.ebitda  = r.ebitda;
+        if (!out.logo   && r.logo)   out.logo   = r.logo;
     }
-    // Fill in ebitda if still missing
-    if (!merged.ebitda && merged.profit > 0) merged.ebitda = Math.round(merged.profit * 1.3);
-    return merged;
+    if (!out.ebitda && out.profit > 0) out.ebitda = Math.round(out.profit * 1.3);
+    return out;
 }
 
 module.exports = async function handler(req, res) {
@@ -205,46 +237,58 @@ module.exports = async function handler(req, res) {
 
     if (resolve === '1') {
         try { symbol = await resolveTicker(rawSymbol.trim()); }
-        catch(e) { return res.status(404).json({ error: `Could not resolve ticker for: ${rawSymbol}` }); }
+        catch(e) { return res.status(404).json({ error: `Could not resolve: ${rawSymbol}` }); }
     }
 
-    // Collect results from all sources in parallel (except AV which we save for last)
-    const sourceResults = [];
     const errors = [];
 
-    const [edgarResult, fmpResult, finnhubResult] = await Promise.allSettled([
+    // Round 1: EDGAR + FMP + Finnhub in parallel
+    const [edgarR, fmpR, finnhubR] = await Promise.allSettled([
         fetchFromEDGAR(symbol),
         fetchFromFMP(symbol),
         fetchFromFinnhub(symbol),
     ]);
 
-    if (edgarResult.status === 'fulfilled') sourceResults.push(edgarResult.value);
-    else errors.push('EDGAR: ' + edgarResult.reason.message);
+    const round1 = [];
+    if (edgarR.status   === 'fulfilled') round1.push(edgarR.value);
+    else errors.push('EDGAR: ' + edgarR.reason.message);
+    if (fmpR.status     === 'fulfilled') round1.push(fmpR.value);
+    else errors.push('FMP: ' + fmpR.reason.message);
+    if (finnhubR.status === 'fulfilled') round1.push(finnhubR.value);
+    else errors.push('Finnhub: ' + finnhubR.reason.message);
 
-    if (fmpResult.status === 'fulfilled') sourceResults.push(fmpResult.value);
-    else errors.push('FMP: ' + fmpResult.reason.message);
+    const merged = merge(round1);
 
-    if (finnhubResult.status === 'fulfilled') sourceResults.push(finnhubResult.value);
-    else errors.push('Finnhub: ' + finnhubResult.reason.message);
-
-    // Check if we have enough data without calling AV
-    const merged = mergeResults(sourceResults);
-    if (merged.name && merged.emps) {
-        return res.status(200).json({ ...merged, resolvedSymbol: symbol });
-    }
-
-    // Fall back to Alpha Vantage to fill remaining gaps
-    try {
-        const avResult = await fetchFromAlphaVantage(symbol);
-        sourceResults.push(avResult);
-        const finalMerge = mergeResults(sourceResults);
-        if (finalMerge.name && finalMerge.emps) {
-            return res.status(200).json({ ...finalMerge, resolvedSymbol: symbol });
+    // Only call AV if we're still missing employee count (preserve 25/day limit)
+    if (merged.name && !merged.emps) {
+        try {
+            const avResult = await fetchFromAlphaVantage(symbol);
+            round1.push(avResult);
+            const remerged = merge(round1);
+            Object.assign(merged, remerged);
+        } catch(e) {
+            errors.push('AV: ' + e.message);
         }
-        errors.push('AV returned: ' + JSON.stringify(avResult));
-    } catch(e) {
-        errors.push('AV: ' + e.message);
     }
 
-    return res.status(404).json({ error: 'Could not find company data', details: errors });
+    // Last resort: Wikipedia infobox scrape for employee count
+    if (merged.name && !merged.emps) {
+        try {
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name);
+            if (wikiEmps) merged.emps = wikiEmps;
+        } catch(e) {
+            errors.push('Wikipedia: ' + e.message);
+        }
+    }
+
+    if (!merged.name) {
+        return res.status(404).json({ error: 'Could not find company data', details: errors });
+    }
+
+    // If we still have no employee count after all sources, fail clearly
+    if (!merged.emps) {
+        return res.status(404).json({ error: 'Could not find employee count for ' + symbol, details: errors });
+    }
+
+    return res.status(200).json({ ...merged, resolvedSymbol: symbol });
 };
