@@ -36,7 +36,7 @@ const FALLBACK_DB = {
     "PFE": { name: "Pfizer Inc.", emps: 88000, profit: -2800000000, ebitda: 5000000000, logo: "https://logo.clearbit.com/pfizer.com" },
     "FDX": { name: "FedEx Corporation", emps: 547000, profit: 3965000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/fedex.com" },
     "UBER": { name: "Uber Technologies, Inc.", emps: 32200, profit: 1887000000, ebitda: 4000000000, logo: "https://logo.clearbit.com/uber.com" },
-    "LYFT": { name: "Lyft, Inc.", emps: 7200, profit: 22784000, ebitda: -33247000, logo: "https://logo.clearbit.com/lyft.com" },
+    "LYFT": { name: "Lyft, Inc.", emps: 3913, profit: 2844008000, ebitda: 528800000, logo: "https://logo.clearbit.com/lyft.com" },
     "NKE": { name: "Nike, Inc.", emps: 83700, profit: 5070000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/nike.com" },
     "BA": { name: "The Boeing Company", emps: 172000, profit: -2200000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/boeing.com" },
     "CVX": { name: "Chevron Corporation", emps: 45600, profit: 21369000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/chevron.com" },
