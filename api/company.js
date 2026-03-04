@@ -185,13 +185,19 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     });
 
     if (empLine) {
-        // Handle {{circa|300,000}}, {{formatnum:300000}}, or plain 300,000
-        const templateMatch = empLine.match(/{{[^|]+\|([\d,]+)}}/);
-        const plainMatch = empLine.match(/([\d]{2,}[,\d]*)/);
-        const raw = templateMatch ? templateMatch[1] : (plainMatch ? plainMatch[1] : null);
-        if (raw) {
-            const num = parseInt(raw.replace(/,/g, ''), 10);
-            if (!isNaN(num) && num > 100) return num;
+        // Strip wiki templates like {{circa|...}} to expose the number
+        const stripped = empLine.replace(/{{[^}]+}}/g, (match) => {
+            // Keep the number inside the template e.g. {{circa|3,913}} -> 3,913
+            const inner = match.match(/\|([$\d,]+)/);
+            return inner ? inner[1] : '';
+        });
+        // Find all numbers on the line and take the largest (most likely the employee count)
+        const allNums = stripped.match(/[\d,]+/g) || [];
+        const parsed = allNums
+            .map(n => parseInt(n.replace(/,/g, ''), 10))
+            .filter(n => !isNaN(n) && n > 100);
+        if (parsed.length > 0) {
+            return Math.max(...parsed);
         }
     }
     throw new Error('Wikipedia: employee count not found in infobox for ' + pageTitle);
