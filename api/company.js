@@ -303,7 +303,11 @@ module.exports = async function handler(req, res) {
     // Last resort: Wikipedia infobox scrape for employee count
     if (merged.name && !merged.emps) {
         try {
-            const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name);
+            // Strip legal suffixes for better Wikipedia search results
+            const searchName = merged.name
+                .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
+                .trim();
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(searchName);
             if (wikiEmps) merged.emps = wikiEmps;
         } catch(e) {
             errors.push('Wikipedia: ' + e.message);
@@ -314,10 +318,6 @@ module.exports = async function handler(req, res) {
         return res.status(404).json({ error: 'Could not find company data', details: errors });
     }
 
-    // If we still have no employee count after all sources, fail clearly
-    if (!merged.emps) {
-        return res.status(404).json({ error: 'Could not find employee count for ' + symbol, details: errors });
-    }
-
+    // If still no employee count, return what we have and let the client use fallback DB
     return res.status(200).json({ ...merged, resolvedSymbol: symbol });
 };
