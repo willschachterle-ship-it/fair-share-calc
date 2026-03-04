@@ -153,49 +153,46 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Use Wikipedia REST API with explicit JSON accept header
+    // Step 1: search for the page using REST API (always returns JSON)
     const searchRes = await fetch(
-        'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
-        encodeURIComponent(companyName) + '&format=json&formatversion=2',
-        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
+        'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
+        encodeURIComponent(companyName) + '&limit=1',
+        { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
     );
-    if (!searchRes.ok) throw new Error('Wikipedia search failed');
+    if (!searchRes.ok) throw new Error('Wikipedia search HTTP ' + searchRes.status);
     const searchJson = await searchRes.json();
-    const pages = searchJson?.query?.search || [];
+    const pages = searchJson.pages || [];
     if (!pages.length) throw new Error('Wikipedia: no results for ' + companyName);
 
     const pageTitle = pages[0].title;
 
+    // Step 2: get raw wikitext via REST API
     const pageRes = await fetch(
-        'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-        encodeURIComponent(pageTitle) + '&prop=revisions&rvprop=content&format=json&formatversion=2',
-        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
+        'https://en.wikipedia.org/api/rest_v1/page/wikitext/' + encodeURIComponent(pageTitle),
+        { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
     );
-    if (!pageRes.ok) throw new Error('Wikipedia page fetch failed');
-    const pageJson = await pageRes.json();
-    const pages2 = pageJson?.query?.pages || [];
-    const page = Array.isArray(pages2) ? pages2[0] : Object.values(pages2)[0];
-    const wikitext = page?.revisions?.[0]?.content || page?.revisions?.[0]?.['*'] || '';
+    if (!pageRes.ok) throw new Error('Wikipedia wikitext HTTP ' + pageRes.status);
+    const wikitext = await pageRes.text();
 
-    // Match lines like: | num_employees = {{circa|300,000}} or plain 300,000
-    const wikitextLines = wikitext.split('\n');
-    const empLine = wikitextLines.find(function(l) {
+    // Step 3: find employee count line in infobox
+    const lines = wikitext.split('\n');
+    const empLine = lines.find(function(l) {
         return l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0;
     });
 
     if (empLine) {
-        // Extract from {{circa|300,000}} or {{formatnum:300,000}} template
-        var templateMatch = empLine.match(/{{[^|]+\|([\d,]+)}}/);
-        // Or plain number like 300,000
-        var plainMatch = empLine.match(/([\d]{2,}[,\d]*)/);
-        var raw = templateMatch ? templateMatch[1] : (plainMatch ? plainMatch[1] : null);
+        // Handle {{circa|300,000}}, {{formatnum:300000}}, or plain 300,000
+        const templateMatch = empLine.match(/{{[^|]+\|([\d,]+)}}/);
+        const plainMatch = empLine.match(/([\d]{2,}[,\d]*)/);
+        const raw = templateMatch ? templateMatch[1] : (plainMatch ? plainMatch[1] : null);
         if (raw) {
-            var num = parseInt(raw.replace(/,/g, ''), 10);
+            const num = parseInt(raw.replace(/,/g, ''), 10);
             if (!isNaN(num) && num > 100) return num;
         }
     }
-    throw new Error('Wikipedia: employee count not found in infobox');
+    throw new Error('Wikipedia: employee count not found in infobox for ' + pageTitle);
 }
+
 
 async function resolveTicker(input) {
     const res = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(input)}&token=${FINNHUB_KEY}`);
