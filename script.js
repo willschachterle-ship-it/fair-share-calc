@@ -83,6 +83,14 @@ document.addEventListener('DOMContentLoaded', function() {
         var res = await fetch(url);
         var json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'API error');
+        // If API returned data but missing emps, fill from fallback DB
+        if (!json.emps && FALLBACK_DB[symbol]) {
+            json.emps = json.emps || FALLBACK_DB[symbol].emps;
+            json.profit = (json.profit !== null && json.profit !== undefined) ? json.profit : FALLBACK_DB[symbol].profit;
+            json.ebitda = (json.ebitda !== null && json.ebitda !== undefined) ? json.ebitda : FALLBACK_DB[symbol].ebitda;
+            json.name = json.name || FALLBACK_DB[symbol].name;
+            json.logo = json.logo || FALLBACK_DB[symbol].logo;
+        }
         return json;
     }
 
