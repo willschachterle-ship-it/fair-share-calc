@@ -40,13 +40,14 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
-    // Net income
+    // Net income - exclude future periods (end date must be in the past)
+    const today = new Date().toISOString().split('T')[0];
     let profit = null;
     for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
         if (fact && fact.units && fact.units['USD']) {
             const sorted = fact.units['USD']
-                .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
+                .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start && e.end <= today)
                 .sort((a, b) => b.end.localeCompare(a.end));
             if (sorted.length > 0) { profit = sorted[0].val; break; }
         }
@@ -57,7 +58,7 @@ async function fetchFromEDGAR(symbol) {
     const opFact = us_gaap['OperatingIncomeLoss'];
     if (opFact && opFact.units && opFact.units['USD']) {
         const sorted = opFact.units['USD']
-            .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start)
+            .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start && e.end <= today)
             .sort((a, b) => b.end.localeCompare(a.end));
         if (sorted.length > 0) {
             let dna = 0;
@@ -153,18 +154,21 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Step 1: search for the page using REST API (always returns JSON)
-    const searchRes = await fetch(
-        'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
-        encodeURIComponent(companyName) + '&limit=1',
-        { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-    );
-    if (!searchRes.ok) throw new Error('Wikipedia search HTTP ' + searchRes.status);
-    const searchJson = await searchRes.json();
-    const pages = searchJson.pages || [];
-    if (!pages.length) throw new Error('Wikipedia: no results for ' + companyName);
-
-    const pageTitle = pages[0].title;
+    // Step 1: search for the page - try clean name first, then full name
+    const cleanName = companyName.replace(/\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited)\s*$/i, '').trim();
+    let pageTitle = null;
+    for (const query of [cleanName, companyName]) {
+        const searchRes = await fetch(
+            'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
+            encodeURIComponent(query) + '&limit=3',
+            { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
+        );
+        if (!searchRes.ok) continue;
+        const searchJson = await searchRes.json();
+        const pages = searchJson.pages || [];
+        if (pages.length) { pageTitle = pages[0].title; break; }
+    }
+    if (!pageTitle) throw new Error('Wikipedia: no results for ' + companyName);
 
     // Step 2: get raw wikitext via REST API
     const pageRes = await fetch(
