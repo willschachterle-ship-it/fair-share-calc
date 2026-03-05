@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
 
     if (source === 'wikipedia' || source === 'all') {
         try {
-            const companyName = req.query.name || out.alphavantage?.Name || out.finnhub?.name || symbol;
+            const companyName = req.query.name || (source !== "wikipedia" ? (out.alphavantage?.Name || out.finnhub?.name) : null) || symbol;
             const cleanName = (companyName || symbol).replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '').trim();
             const firstWord = cleanName.split(' ')[0];
             out.wikipedia_query = cleanName;
