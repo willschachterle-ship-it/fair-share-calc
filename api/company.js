@@ -176,27 +176,42 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     let wikitext = null;
     let foundTitle = null;
 
+    const blocklist = ['middle-earth', 'lord of the rings', 'disambiguation', 'film', 'novel', 'song', 'graphics', 'gpu', 'nvidia'];
     for (const query of candidates) {
         if (!query || query.length < 2) continue;
         try {
-            // Use action API with explicit JSON accept header
             const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
-                encodeURIComponent(query) + '&limit=5&format=json';
+                encodeURIComponent(query) + '&limit=8&format=json';
             const searchRes = await fetch(searchUrl, {
                 headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
             });
             if (!searchRes.ok) continue;
             const searchJson = await searchRes.json();
-            // opensearch returns [query, [titles], [descriptions], [urls]]
             const titles = searchJson[1] || [];
-            // Prefer exact clean name match, then partial, skip fantasy/disambiguation pages
-            const blocklist = ['middle-earth', 'lord of the rings', 'disambiguation', 'film', 'novel', 'song'];
-            const match = titles.find(t => t.toLowerCase() === cleanName.toLowerCase())
-                || titles.find(t => t.toLowerCase().includes(cleanName.toLowerCase()))
-                || titles.find(t => t.toLowerCase().includes(firstWord.toLowerCase()) && !blocklist.some(b => t.toLowerCase().includes(b)));
+            const descs = searchJson[2] || [];
+
+            // First try exact match on the query itself
+            let match = titles.find(t => t.toLowerCase() === query.toLowerCase());
+
+            // Then try: title contains cleanName AND description mentions company/corporation
+            if (!match) match = titles.find((t, i) => {
+                const tl = t.toLowerCase();
+                const dl = (descs[i] || '').toLowerCase();
+                return tl.includes(cleanName.toLowerCase()) &&
+                    !blocklist.some(b => tl.includes(b)) &&
+                    (dl.includes('company') || dl.includes('corporation') || dl.includes('conglomerate') ||
+                     dl.includes('manufacturer') || dl.includes('aerospace') || dl.includes('defense') ||
+                     dl.includes('american') || dl.includes('founded') || tl === cleanName.toLowerCase());
+            });
+
+            // Fallback: any title containing cleanName not in blocklist
+            if (!match) match = titles.find(t =>
+                t.toLowerCase().includes(cleanName.toLowerCase()) &&
+                !blocklist.some(b => t.toLowerCase().includes(b))
+            );
+
             if (!match) continue;
 
-            // Fetch wikitext for matched page
             const pageUrl = 'https://en.wikipedia.org/w/api.php?action=query&titles=' +
                 encodeURIComponent(match) + '&prop=revisions&rvprop=content&rvslots=main&format=json';
             const pageRes = await fetch(pageUrl, {
