@@ -36,7 +36,7 @@ const FALLBACK_DB = {
     "PFE": { name: "Pfizer Inc.", emps: 88000, profit: -2800000000, ebitda: 5000000000, logo: "https://logo.clearbit.com/pfizer.com" },
     "FDX": { name: "FedEx Corporation", emps: 547000, profit: 3965000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/fedex.com" },
     "UBER": { name: "Uber Technologies, Inc.", emps: 32200, profit: 1887000000, ebitda: 4000000000, logo: "https://logo.clearbit.com/uber.com" },
-    "LYFT": { name: "Lyft, Inc.", emps: 3913, profit: 2844008000, ebitda: 528800000, logo: "https://logo.clearbit.com/lyft.com" },
+    "LYFT": { name: "Lyft, Inc.", emps: 3913, profit: 22784000, ebitda: 528800000, logo: "https://logo.clearbit.com/lyft.com" },
     "NKE": { name: "Nike, Inc.", emps: 83700, profit: 5070000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/nike.com" },
     "BA": { name: "The Boeing Company", emps: 172000, profit: -2200000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/boeing.com" },
     "CVX": { name: "Chevron Corporation", emps: 45600, profit: 21369000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/chevron.com" },
@@ -83,13 +83,14 @@ document.addEventListener('DOMContentLoaded', function() {
         var res = await fetch(url);
         var json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'API error');
-        // If API returned data but missing emps, fill from fallback DB
-        if (!json.emps && FALLBACK_DB[symbol]) {
-            json.emps = json.emps || FALLBACK_DB[symbol].emps;
-            json.profit = (json.profit !== null && json.profit !== undefined) ? json.profit : FALLBACK_DB[symbol].profit;
-            json.ebitda = (json.ebitda !== null && json.ebitda !== undefined) ? json.ebitda : FALLBACK_DB[symbol].ebitda;
-            json.name = json.name || FALLBACK_DB[symbol].name;
-            json.logo = json.logo || FALLBACK_DB[symbol].logo;
+        // Fill any missing fields from fallback DB, but API values take priority
+        if (FALLBACK_DB[symbol]) {
+            var db = FALLBACK_DB[symbol];
+            if (!json.emps)   json.emps   = db.emps;
+            if (json.profit === null || json.profit === undefined) json.profit = db.profit;
+            if (json.ebitda === null || json.ebitda === undefined) json.ebitda = db.ebitda;
+            json.name = json.name || db.name;
+            json.logo = json.logo || db.logo;
         }
         return json;
     }
@@ -204,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
+                            (data.hasOneTimeItem ? '<p style="font-size:0.8em; color:#e65100; margin-bottom:4px;">⚠️ Net income may include one-time items (e.g. tax benefits, write-offs) that inflate or deflate the figure.</p>' : '') +
                             '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                         '</div>' +
