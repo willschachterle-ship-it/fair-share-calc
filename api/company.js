@@ -165,6 +165,8 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     // Try multiple name variations to find the Wikipedia page
     const cleanName = companyName
         .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
+        .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // remove state suffixes like /DE/
+        .replace(/\s+/g, ' ')
         .trim();
     const firstWord = cleanName.split(' ')[0];
     const candidates = [cleanName, companyName, firstWord + ' company', firstWord];
@@ -217,10 +219,16 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     );
 
     if (empLine) {
-        const stripped = empLine.replace(/{{[^}]+}}/g, (match) => {
-            const inner = match.match(/\|([\d,]+)/);
-            return inner ? inner[1] : '';
-        });
+        // Strip templates, handle ~approx prefix, refs like [1]
+        const stripped = empLine
+            .replace(/{{[^}]+}}/g, (match) => {
+                const inner = match.match(/\|([~\d,]+)/);
+                return inner ? inner[1] : '';
+            })
+            .replace(/<ref[^>]*>.*?<\/ref>/g, '')
+            .replace(/<ref[^/]*\/>/g, '')
+            .replace(/~/g, '')
+            .replace(/\[\d+\]/g, '');
         const allNums = stripped.match(/[\d,]+/g) || [];
         const parsed = allNums.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n) && n > 100);
         if (parsed.length > 0) return Math.max(...parsed);
