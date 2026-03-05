@@ -174,7 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 income = annualInput ? parseFloat(annualInput.value) || 0 : 0;
             }
 
-            var distributedSurplus = Math.round((data.profit / data.emps) * timeFrac);
+            // If net income has a one-time item, use EBITDA as a proxy for "real" profit
+            var effectiveProfit = (data.hasOneTimeItem && data.ebitda !== null)
+                ? data.ebitda : data.profit;
+            var distributedSurplus = Math.round((effectiveProfit / data.emps) * timeFrac);
             var accountingSurplus  = Math.round((data.ebitda  / data.emps) * timeFrac);
             var fedTax = calculateTax(income);
             var netTotal    = income + distributedSurplus;
@@ -205,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
-                            (data.hasOneTimeItem ? '<p style="font-size:0.8em; color:#e65100; margin-bottom:4px;">⚠️ Net income may include one-time items (e.g. tax benefits, write-offs) that inflate or deflate the figure.</p>' : '') +
+                            (data.hasOneTimeItem ? '<p style="font-size:0.8em; color:#e65100; margin-bottom:4px;">⚠️ Net income appears to include one-time items (e.g. a tax benefit or write-off) that distort the figure. Using EBITDA as a proxy for recurring profit instead.</p>' : '') +
                             '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                         '</div>' +
