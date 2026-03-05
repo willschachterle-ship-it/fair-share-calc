@@ -125,13 +125,14 @@ async function fetchEmployeeCountFrom10K(cik) {
     // Find the main 10-K document (largest .htm file, or type "10-K")
     const files = index.documents || [];
     let docUrl = null;
-    // Prefer the document explicitly typed as 10-K
-    const mainDoc = files.find(f => f.type === '10-K' && (f.document?.endsWith('.htm') || f.document?.endsWith('.html')))
-        || files.find(f => f.document?.endsWith('.htm') && !f.document?.includes('ex'))
-        || files.find(f => f.document?.endsWith('.htm'));
+    // Prefer the document explicitly typed as 10-K, try both 'document' and 'name' fields
+    const getDoc = (f) => f.document || f.name || '';
+    const mainDoc = files.find(f => f.type === '10-K' && (getDoc(f).endsWith('.htm') || getDoc(f).endsWith('.html')))
+        || files.find(f => getDoc(f).endsWith('.htm') && !getDoc(f).includes('ex') && !getDoc(f).includes('Ex'))
+        || files.find(f => getDoc(f).endsWith('.htm'));
 
     if (!mainDoc) throw new Error('No .htm document found in 10-K filing');
-    docUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${mainDoc.document}`;
+    docUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${getDoc(mainDoc)}`;
 
     // Step 3: Fetch the document - but only first ~200KB to find employee count
     // Employee count is almost always in Item 1 (first ~50 pages)
@@ -378,7 +379,28 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
             const page = Object.values(pages)[0];
             const text = page?.revisions?.[0]?.slots?.main?.['*']
                       || page?.revisions?.[0]?.['*'] || '';
-            if (text) { wikitext = text; foundTitle = match; break; }
+            if (text) {
+                // Follow redirects e.g. "L3Harris" -> "L3Harris Technologies"
+                const redirectMatch = text.match(/^#(?:REDIRECT|redirect)\s*\[\[([^\]]+)\]\]/m);
+                if (redirectMatch) {
+                    const redirectTitle = redirectMatch[1].split('|')[0].trim();
+                    const redirRes = await fetch(
+                        'https://en.wikipedia.org/w/api.php?action=query&titles=' +
+                        encodeURIComponent(redirectTitle) + '&prop=revisions&rvprop=content&rvslots=main&format=json',
+                        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
+                    );
+                    if (redirRes.ok) {
+                        const redirJson = await redirRes.json();
+                        const redirPages = redirJson?.query?.pages || {};
+                        const redirPage = Object.values(redirPages)[0];
+                        const redirText = redirPage?.revisions?.[0]?.slots?.main?.['*']
+                                       || redirPage?.revisions?.[0]?.['*'] || '';
+                        if (redirText) { wikitext = redirText; foundTitle = redirectTitle; break; }
+                    }
+                } else {
+                    wikitext = text; foundTitle = match; break;
+                }
+            }
         } catch(e) { continue; }
     }
 
