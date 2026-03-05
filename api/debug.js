@@ -68,20 +68,36 @@ module.exports = async function handler(req, res) {
         const firstWord = cleanName.split(' ')[0];
         out.wikipedia_searchName = { companyName, cleanName, firstWord };
 
+        // Search
         const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
             encodeURIComponent(cleanName) + '&limit=5&format=json';
-        const searchRes = await fetch(searchUrl, {
-            headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
-        });
-        out.wikipedia_status = searchRes.status;
-        out.wikipedia_contentType = searchRes.headers.get('content-type');
+        const searchRes = await fetch(searchUrl, { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } });
         const rawText = await searchRes.text();
-        out.wikipedia_rawSnippet = rawText.substring(0, 300);
-        try {
-            const json = JSON.parse(rawText);
-            out.wikipedia_titles = json[1] || [];
-        } catch(e) { out.wikipedia_parseError = e.message; }
-    } catch(e) { out.wikipedia = { error: e.message }; }
+        const searchJson = JSON.parse(rawText);
+        const titles = searchJson[1] || [];
+        out.wikipedia_titles = titles;
 
-    return res.status(200).json(out);
+        // Pick best title
+        const blocklist = ['middle-earth', 'lord of the rings', 'disambiguation', 'film', 'novel', 'song'];
+        const match = titles.find(t => t.toLowerCase() === cleanName.toLowerCase())
+            || titles.find(t => t.toLowerCase().includes(cleanName.toLowerCase()))
+            || titles.find(t => t.toLowerCase().includes(firstWord.toLowerCase()) && !blocklist.some(b => t.toLowerCase().includes(b)));
+        out.wikipedia_match = match || null;
+        if (!match) throw new Error('No matching title found');
+
+        // Fetch wikitext
+        const pageUrl = 'https://en.wikipedia.org/w/api.php?action=query&titles=' +
+            encodeURIComponent(match) + '&prop=revisions&rvprop=content&rvslots=main&format=json';
+        const pageRes = await fetch(pageUrl, { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } });
+        const pageJson = await pageRes.json();
+        const pages = pageJson?.query?.pages || {};
+        const page = Object.values(pages)[0];
+        const wikitext = page?.revisions?.[0]?.slots?.main?.['*'] || page?.revisions?.[0]?.['*'] || '';
+        out.wikipedia_wikitextLength = wikitext.length;
+
+        // Find employee line
+        const empLine = wikitext.split('\n').find(l => l.includes('num_employees') || l.includes('number_of_employees'));
+        out.wikipedia_empLine = empLine || 'NOT FOUND';
+        out.wikipedia_wikitextSnippet = wikitext.substring(0, 500);
+    } catch(e) { out.wikipedia_error = e.message; }
 };
