@@ -636,7 +636,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Try Wikipedia first (fast, reliable for large public companies)
-    if (!merged.emps) {
+    if (merged.emps == null || merged.emps === 0) {
         try {
             const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
                 .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
@@ -679,5 +679,5 @@ module.exports = async function handler(req, res) {
     }
 
     // If still no employee count, return what we have and let the client use fallback DB
-    return res.status(200).json({ ...merged, resolvedSymbol: symbol });
+    return res.status(200).json({ ...merged, resolvedSymbol: symbol, _errors: errors });
 };
