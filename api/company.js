@@ -86,6 +86,117 @@ async function fetchFromEDGAR(symbol) {
     return { name: companyName || null, emps, profit, ebitda, logo: null, source: 'edgar' };
 }
 
+
+async function fetchEmployeeCountFrom10K(cik) {
+    // Step 1: Get recent filings from submissions API
+    const subRes = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+        headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
+    });
+    if (!subRes.ok) throw new Error('EDGAR submissions HTTP ' + subRes.status);
+    const sub = await subRes.json();
+
+    // Find most recent 10-K accession number
+    const filings = sub.filings?.recent || {};
+    const forms = filings.form || [];
+    const accessions = filings.accessionNumber || [];
+    const dates = filings.filingDate || [];
+
+    let accession = null;
+    for (let i = 0; i < forms.length; i++) {
+        if (forms[i] === '10-K' || forms[i] === '10-K/A') {
+            accession = accessions[i];
+            break;
+        }
+    }
+    if (!accession) throw new Error('No 10-K found in submissions');
+
+    // Step 2: Fetch the filing index to find the main document
+    const accDashes = accession; // already has dashes e.g. "0001321655-25-000022"
+    const accNoDashes = accession.replace(/-/g, '');
+    const numericCik = cik.replace(/^0+/, '');
+    const indexUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${accDashes}-index.json`;
+
+    const indexRes = await fetch(indexUrl, {
+        headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
+    });
+    if (!indexRes.ok) throw new Error('Filing index HTTP ' + indexRes.status);
+    const index = await indexRes.json();
+
+    // Find the main 10-K document (largest .htm file, or type "10-K")
+    const files = index.documents || [];
+    let docUrl = null;
+    // Prefer the document explicitly typed as 10-K
+    const mainDoc = files.find(f => f.type === '10-K' && (f.document?.endsWith('.htm') || f.document?.endsWith('.html')))
+        || files.find(f => f.document?.endsWith('.htm') && !f.document?.includes('ex'))
+        || files.find(f => f.document?.endsWith('.htm'));
+
+    if (!mainDoc) throw new Error('No .htm document found in 10-K filing');
+    docUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${mainDoc.document}`;
+
+    // Step 3: Fetch the document - but only first ~200KB to find employee count
+    // Employee count is almost always in Item 1 (first ~50 pages)
+    const docRes = await fetch(docUrl, {
+        headers: {
+            'User-Agent': 'YourFairShare admin@yourfairshare.com',
+            'Range': 'bytes=0-400000'
+        }
+    });
+    if (!docRes.ok && docRes.status !== 206) throw new Error('10-K document HTTP ' + docRes.status);
+    const html = await docRes.text();
+
+    // Strip HTML tags to get plain text
+    const text = html
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&#[0-9]+;/g, ' ')
+        .replace(/\s+/g, ' ');
+
+    // Search for employee count patterns
+    const patterns = [
+        // "approximately 95,000 employees" or "approximately 95,000 full-time employees"
+        /(?:approximately|about|around|had|have|employs?|employed|employ)\s+([\d,]+)\s+(?:full[- ]time\s+)?(?:and\s+part[- ]time\s+)?employees/gi,
+        // "workforce of approximately 95,000"
+        /workforce\s+of\s+(?:approximately|about)?\s*([\d,]+)/gi,
+        // "95,000 employees worldwide" or "95,000 full-time employees"
+        /([\d,]+)\s+(?:full[- ]time\s+)?employees\s+(?:worldwide|globally|as of)/gi,
+        // "headcount of 95,000"
+        /headcount\s+of\s+(?:approximately)?\s*([\d,]+)/gi,
+    ];
+
+    const candidates = [];
+    for (const pattern of patterns) {
+        let match;
+        pattern.lastIndex = 0;
+        while ((match = pattern.exec(text)) !== null) {
+            // Find the captured group that looks like a number
+            for (let g = 1; g < match.length; g++) {
+                if (match[g]) {
+                    const n = parseInt(match[g].replace(/,/g, ''), 10);
+                    if (!isNaN(n) && n >= 100 && n <= 5000000) {
+                        candidates.push(n);
+                    }
+                }
+            }
+            if (candidates.length >= 10) break; // enough samples
+        }
+        if (candidates.length >= 3) break;
+    }
+
+    if (!candidates.length) throw new Error('Employee count not found in 10-K text');
+
+    // The first mention is usually the official count in Item 1
+    // But take the most common value as a sanity check
+    const freq = {};
+    for (const n of candidates) {
+        // Round to nearest 100 for grouping
+        const key = Math.round(n / 100) * 100;
+        freq[key] = (freq[key] || 0) + 1;
+    }
+    const mostCommon = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+    return parseInt(mostCommon[0]);
+}
+
 async function fetchFromFMP(symbol) {
     const profileRes = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
@@ -428,10 +539,35 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // Last resort: Wikipedia infobox scrape for employee count
-    if (merged.name && !merged.emps) {
+    // If still no employee count, try parsing the actual 10-K document text
+    if (!merged.emps) {
         try {
-            // Strip legal suffixes for better Wikipedia search results
+            // Re-fetch CIK (already fetched in EDGAR but not stored - fetch submissions directly)
+            const tickerRes2 = await fetch('https://www.sec.gov/files/company_tickers.json', {
+                headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
+            });
+            if (tickerRes2.ok) {
+                const tickers2 = await tickerRes2.json();
+                let cik10k = null;
+                for (const entry of Object.values(tickers2)) {
+                    if (entry.ticker && entry.ticker.toUpperCase() === symbol.toUpperCase()) {
+                        cik10k = String(entry.cik_str).padStart(10, '0');
+                        break;
+                    }
+                }
+                if (cik10k) {
+                    const tenKEmps = await fetchEmployeeCountFrom10K(cik10k);
+                    if (tenKEmps) merged.emps = tenKEmps;
+                }
+            }
+        } catch(e) {
+            errors.push('10-K text: ' + e.message);
+        }
+    }
+
+    // Last resort: Wikipedia infobox scrape for employee count
+    if (!merged.emps) {
+        try {
             const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
                 .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
