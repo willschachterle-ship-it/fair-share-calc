@@ -60,27 +60,27 @@ module.exports = async function handler(req, res) {
         }
     } catch(e) { out.edgar = { error: e.message }; }
 
-    // Wikipedia REST API
+
+    // Wikipedia - detailed diagnostics
     try {
         const companyName = out.alphavantage?.Name || out.finnhub?.name || symbol;
         const cleanName = companyName.replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '').trim();
-        out.wikipedia_searchName = { companyName, cleanName };
-        const searchRes = await fetch(
-            'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' + encodeURIComponent(companyName) + '&limit=1',
-            { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-        );
-        const searchJson = await searchRes.json();
-        const pageTitle = searchJson.pages?.[0]?.title;
-        if (!pageTitle) throw new Error('No Wikipedia page found');
+        const firstWord = cleanName.split(' ')[0];
+        out.wikipedia_searchName = { companyName, cleanName, firstWord };
 
-        const pageRes = await fetch(
-            'https://en.wikipedia.org/api/rest_v1/page/wikitext/' + encodeURIComponent(pageTitle),
-            { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-        );
-        const wikitext = await pageRes.text();
-        const lines = wikitext.split('\n');
-        const empLine = lines.find(l => l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0);
-        out.wikipedia = { pageTitle, empLine: empLine || 'NOT FOUND', wikitextSnippet: wikitext.substring(0, 400) };
+        const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
+            encodeURIComponent(firstWord) + '&limit=5&format=json';
+        const searchRes = await fetch(searchUrl, {
+            headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
+        });
+        out.wikipedia_status = searchRes.status;
+        out.wikipedia_contentType = searchRes.headers.get('content-type');
+        const rawText = await searchRes.text();
+        out.wikipedia_rawSnippet = rawText.substring(0, 300);
+        try {
+            const json = JSON.parse(rawText);
+            out.wikipedia_titles = json[1] || [];
+        } catch(e) { out.wikipedia_parseError = e.message; }
     } catch(e) { out.wikipedia = { error: e.message }; }
 
     return res.status(200).json(out);
