@@ -9,6 +9,15 @@ const PRIVATE_COMPANIES = {
 };
 
 const FALLBACK_DB = {
+    // International companies (ADRs) - financials in USD equivalent
+    "BAESY": { name: "BAE Systems", emps: 110000, profit: 2060000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/baesystems.com" },
+    "SHEL":  { name: "Shell", emps: 103000, profit: 19359000000, ebitda: 42000000000, logo: "https://logo.clearbit.com/shell.com" },
+    "BP":    { name: "BP", emps: 90000, profit: 8900000000, ebitda: 26000000000, logo: "https://logo.clearbit.com/bp.com" },
+    "TM":    { name: "Toyota", emps: 375235, profit: 27000000000, ebitda: 44000000000, logo: "https://logo.clearbit.com/toyota.com" },
+    "EADSY": { name: "Airbus", emps: 150000, profit: 4800000000, ebitda: 8200000000, logo: "https://logo.clearbit.com/airbus.com" },
+    "RYCEY": { name: "Rolls-Royce", emps: 42000, profit: 2700000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/rolls-royce.com" },
+    "TSM":   { name: "TSMC", emps: 77552, profit: 34600000000, ebitda: 46000000000, logo: "https://logo.clearbit.com/tsmc.com" },
+    "BABA":  { name: "Alibaba", emps: 204891, profit: 11600000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/alibaba.com" },
     "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
     "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ebitda: 130000000000, logo: "https://logo.clearbit.com/apple.com" },
     "MSFT": { name: "Microsoft Corporation", emps: 221000, profit: 72361000000, ebitda: 102000000000, logo: "https://logo.clearbit.com/microsoft.com" },
@@ -87,7 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Use resolved symbol to also check fallback DB (e.g. "palantir" resolves to "PLTR")
         var resolvedSym = (json.resolvedSymbol || symbol).toUpperCase();
-        var db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[symbol];
+        console.log('resolvedSym:', resolvedSym, 'profit:', json.profit, 'ebitda:', json.ebitda);
+        var db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[symbol.toUpperCase()];
+        console.log('db found:', !!db, db ? db.profit : 'none');
         if (db) {
             if (!json.emps)   json.emps   = db.emps;
             if (json.profit === null || json.profit === undefined) json.profit = db.profit;
