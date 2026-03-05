@@ -161,7 +161,31 @@ async function fetchFromAlphaVantage(symbol) {
 }
 
 
+// Known Wikipedia page titles for ambiguous tickers/names
+const WIKI_TITLE_MAP = {
+    'RTX': 'RTX Corporation',
+    'RTX CORP': 'RTX Corporation',
+    'META': 'Meta Platforms',
+    'GOOGL': 'Alphabet Inc.',
+    'GOOGLE': 'Alphabet Inc.',
+    'ALPHABET': 'Alphabet Inc.',
+    'BRK': 'Berkshire Hathaway',
+    'BERKSHIRE': 'Berkshire Hathaway',
+    'JPM': 'JPMorgan Chase',
+    'JPMORGAN': 'JPMorgan Chase',
+    'GS': 'Goldman Sachs',
+    'MS': 'Morgan Stanley',
+    'BAC': 'Bank of America',
+    'WFC': 'Wells Fargo',
+    'C': 'Citigroup',
+    'USB': 'U.S. Bancorp',
+};
+
 async function fetchEmployeeCountFromWikipedia(companyName) {
+    // Check if we have a known Wikipedia title for this company
+    const upperName = companyName.toUpperCase().trim();
+    const knownTitle = WIKI_TITLE_MAP[upperName];
+
     // Try multiple name variations to find the Wikipedia page
     const cleanName = companyName
         .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
@@ -171,7 +195,9 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
     const firstWord = cleanName.split(' ')[0];
     // Also try name with common alternative suffixes for better Wikipedia matching
     const nameWithCorp = cleanName + ' Corporation';
-    const candidates = [cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord + ' company', firstWord];
+    const candidates = knownTitle
+        ? [knownTitle, cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord]
+        : [cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord + ' company', firstWord];
 
     let wikitext = null;
     let foundTitle = null;
@@ -406,7 +432,7 @@ module.exports = async function handler(req, res) {
     if (merged.name && !merged.emps) {
         try {
             // Strip legal suffixes for better Wikipedia search results
-            const searchName = merged.name
+            const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
                 .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
                 .trim();
