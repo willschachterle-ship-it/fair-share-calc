@@ -222,13 +222,14 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
         // Strip templates, handle ~approx prefix, refs like [1]
         const stripped = empLine
             .replace(/{{[^}]+}}/g, (match) => {
-                const inner = match.match(/\|([~\d,]+)/);
-                return inner ? inner[1] : '';
+                // Only keep content if it looks like an employee number, otherwise drop
+                const inner = match.match(/\|([~\d,]{3,})/);
+                return inner ? ' ' + inner[1] + ' ' : ' ';
             })
-            .replace(/<ref[^>]*>.*?<\/ref>/g, '')
-            .replace(/<ref[^/]*\/>/g, '')
+            .replace(/<ref[^>]*\/>/g, ' ')
+            .replace(/<ref[^>]*>.*?<\/ref>/g, ' ')
             .replace(/~/g, '')
-            .replace(/\[\d+\]/g, '');
+            .replace(/\[\d+\]/g, ' ');
         const allNums = stripped.match(/[\d,]+/g) || [];
         const parsed = allNums.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n) && n > 100);
         if (parsed.length > 0) return Math.max(...parsed);
