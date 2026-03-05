@@ -159,7 +159,7 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
         .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
         .trim();
     const firstWord = cleanName.split(' ')[0];
-    const candidates = [cleanName, companyName, firstWord];
+    const candidates = [cleanName, companyName, firstWord + ' company', firstWord];
 
     let wikitext = null;
     let foundTitle = null;
@@ -169,7 +169,7 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
         try {
             // Use action API with explicit JSON accept header
             const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
-                encodeURIComponent(query) + '&limit=3&format=json';
+                encodeURIComponent(query) + '&limit=5&format=json';
             const searchRes = await fetch(searchUrl, {
                 headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
             });
@@ -177,7 +177,11 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
             const searchJson = await searchRes.json();
             // opensearch returns [query, [titles], [descriptions], [urls]]
             const titles = searchJson[1] || [];
-            const match = titles.find(t => t.toLowerCase().includes(firstWord.toLowerCase()));
+            // Prefer exact clean name match, then partial, skip fantasy/disambiguation pages
+            const blocklist = ['middle-earth', 'lord of the rings', 'disambiguation', 'film', 'novel', 'song'];
+            const match = titles.find(t => t.toLowerCase() === cleanName.toLowerCase())
+                || titles.find(t => t.toLowerCase().includes(cleanName.toLowerCase()))
+                || titles.find(t => t.toLowerCase().includes(firstWord.toLowerCase()) && !blocklist.some(b => t.toLowerCase().includes(b)));
             if (!match) continue;
 
             // Fetch wikitext for matched page
