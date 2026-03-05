@@ -216,50 +216,95 @@ async function resolveTicker(input) {
     return match.symbol;
 }
 
-// Sanity check: profit/employee > $2M or < -$1M is almost certainly bad data
-function isSaneProfit(profit, emps) {
-    if (!emps || profit === null) return false;
-    const perEmp = profit / emps;
-    return perEmp < 2000000 && perEmp > -1000000;
+// ── Smart cross-validation merge ─────────────────────────────────────────────
+// Collects all values per field, rejects outliers, picks best estimate
+
+function median(arr) {
+    if (!arr.length) return null;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-// Sanity check: employee count must be >= 100 for a public company
-// We use 100 as minimum but flag < 1000 as lower confidence
-function isSaneEmps(emps) {
-    return emps && emps >= 100;
-}
-function isHighConfidenceEmps(emps) {
-    return emps && emps >= 1000;
+function rejectOutliers(values) {
+    if (values.length <= 1) return values;
+    const med = median(values);
+    if (med === 0) return values;
+    // Reject any value that is more than 10x away from the median
+    return values.filter(v => Math.abs(v / med) < 10 && Math.abs(med / (v || 1)) < 10);
 }
 
-// Merge sources - for each field, use first non-null value across sources in priority order
-function merge(results) {
-    const out = { name: null, emps: null, profit: null, ebitda: null, logo: null };
-    for (const r of results) {
-        if (!out.name  && r.name)  out.name  = r.name;
-        // Prefer high-confidence emps (>=1000), accept lower if nothing better
-        if (!out.emps && isHighConfidenceEmps(r.emps)) out.emps = r.emps;
-        else if (!out.emps && isSaneEmps(r.emps) && !results.some(s => isHighConfidenceEmps(s.emps))) out.emps = r.emps;
-        if (out.logo === null && r.logo) out.logo = r.logo;
-    }
-    // For financials, pick first value that passes sanity check
-    for (const r of results) {
-        if (out.profit === null && r.profit !== null && isSaneProfit(r.profit, out.emps || r.emps)) {
-            out.profit = r.profit;
-        }
-        if (out.ebitda === null && r.ebitda !== null && isSaneProfit(r.ebitda, out.emps || r.emps)) {
-            out.ebitda = r.ebitda;
-        }
-    }
-    // Last resort: use insane values if nothing sane found (better than nothing)
-    for (const r of results) {
-        if (!out.emps  && r.emps)   out.emps  = r.emps;
-        if (out.profit === null && r.profit !== null) out.profit = r.profit;
-        if (out.ebitda === null && r.ebitda !== null) out.ebitda = r.ebitda;
-    }
-    if (!out.ebitda && out.profit > 0) out.ebitda = Math.round(out.profit * 1.3);
-    return out;
+function bestFinancial(values) {
+    // values is array of {val, source} objects
+    const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v));
+    if (!nums.length) return null;
+    const clean = rejectOutliers(nums);
+    if (!clean.length) return median(nums); // all outliers - use median of raw
+    // Prefer EDGAR if it survived outlier rejection, else median of clean values
+    const edgarVal = values.find(v => v.source === 'edgar' && clean.includes(v.val));
+    if (edgarVal) return edgarVal.val;
+    return Math.round(median(clean));
 }
+
+function bestEmps(values) {
+    // values is array of {val, source} objects
+    const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v) && v >= 100);
+    if (!nums.length) return null;
+    const clean = rejectOutliers(nums);
+    if (!clean.length) return Math.round(median(nums));
+    // Prefer Wikipedia (most up to date) > Finnhub > EDGAR > AV
+    const priority = ['wikipedia', 'finnhub', 'edgar', 'alphavantage', 'fmp'];
+    for (const src of priority) {
+        const match = values.find(v => v.source === src && clean.includes(v.val));
+        if (match) return match.val;
+    }
+    return Math.round(median(clean));
+}
+
+function detectOneTimeItem(profit, ebitda) {
+    // If net income is > 3x EBITDA (in absolute terms), it likely contains a one-time item
+    // In that case, flag it so the caller can decide what to show
+    if (profit === null || ebitda === null || ebitda === 0) return false;
+    return Math.abs(profit) > Math.abs(ebitda) * 3;
+}
+
+function smartMerge(results) {
+    // Gather all values per field with source tags
+    const nameVals   = results.filter(r => r.name).map(r => r.name);
+    const logoVals   = results.filter(r => r.logo).map(r => r.logo);
+    const empsVals   = results.filter(r => r.emps).map(r => ({ val: r.emps,   source: r.source }));
+    const profitVals = results.filter(r => r.profit !== null && r.profit !== undefined)
+                              .map(r => ({ val: r.profit, source: r.source }));
+    const ebitdaVals = results.filter(r => r.ebitda !== null && r.ebitda !== undefined)
+                              .map(r => ({ val: r.ebitda, source: r.source }));
+
+    const emps   = bestEmps(empsVals);
+    let profit   = bestFinancial(profitVals);
+    let ebitda   = bestFinancial(ebitdaVals);
+
+    // If profit looks like it contains a one-time item vs ebitda, note it
+    // and use an ebitda-derived estimate as a cross-check
+    const hasOneTimeItem = detectOneTimeItem(profit, ebitda);
+    if (hasOneTimeItem && ebitda !== null) {
+        // Don't discard profit - but flag it in the response so the UI can handle it
+        profit = profit; // keep as-is, flagged below
+    }
+
+    // If ebitda missing but profit exists, estimate it
+    if (ebitda === null && profit !== null) {
+        ebitda = profit > 0 ? Math.round(profit * 1.3) : null;
+    }
+
+    return {
+        name:          nameVals[0] || null,
+        logo:          logoVals[0] || null,
+        emps,
+        profit,
+        ebitda,
+        hasOneTimeItem // flag for UI to optionally show a note
+    };
+}
+
 
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -292,14 +337,14 @@ module.exports = async function handler(req, res) {
     if (finnhubR.status === 'fulfilled') round1.push(finnhubR.value);
     else errors.push('Finnhub: ' + finnhubR.reason.message);
 
-    const merged = merge(round1);
+    const merged = smartMerge(round1);
 
     // Only call AV if we're still missing employee count (preserve 25/day limit)
     if (merged.name && !merged.emps) {
         try {
             const avResult = await fetchFromAlphaVantage(symbol);
             round1.push(avResult);
-            const remerged = merge(round1);
+            const remerged = smartMerge(round1);
             Object.assign(merged, remerged);
         } catch(e) {
             errors.push('AV: ' + e.message);
