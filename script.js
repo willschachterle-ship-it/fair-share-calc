@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
                 .trim()
                 .replace(/\b([A-Z])([A-Z]+)\b/g, function(m, first, rest) {
+                    // Keep short all-caps words (2-4 chars) as-is: RTX, IBM, CVS, AT&T
+                    if (m.length <= 4) return m;
                     return first + rest.toLowerCase();
                 });
         }
