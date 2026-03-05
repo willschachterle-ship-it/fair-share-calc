@@ -69,7 +69,7 @@ module.exports = async function handler(req, res) {
         out.wikipedia_searchName = { companyName, cleanName, firstWord };
 
         const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
-            encodeURIComponent(firstWord) + '&limit=5&format=json';
+            encodeURIComponent(cleanName) + '&limit=5&format=json';
         const searchRes = await fetch(searchUrl, {
             headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
         });
