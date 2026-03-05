@@ -84,14 +84,26 @@ document.addEventListener('DOMContentLoaded', function() {
         var res = await fetch(url);
         var json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'API error');
-        // Fill any missing fields from fallback DB, but API values take priority
-        if (FALLBACK_DB[symbol]) {
-            var db = FALLBACK_DB[symbol];
+
+        // Use resolved symbol to also check fallback DB (e.g. "palantir" resolves to "PLTR")
+        var resolvedSym = (json.resolvedSymbol || symbol).toUpperCase();
+        var db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[symbol];
+        if (db) {
             if (!json.emps)   json.emps   = db.emps;
             if (json.profit === null || json.profit === undefined) json.profit = db.profit;
             if (json.ebitda === null || json.ebitda === undefined) json.ebitda = db.ebitda;
             json.name = json.name || db.name;
             json.logo = json.logo || db.logo;
+        }
+        // Clean up ugly legal names from EDGAR e.g. "NORTHROP GRUMMAN CORP /DE/"
+        if (json.name) {
+            json.name = json.name
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
+                .replace(/,?\s+(CORP|INC|LTD|LLC|CO|HOLDINGS?|GROUP|CORPORATION|LIMITED|PLC)\.?\s*$/i, (m) => {
+                    // Keep a clean version e.g. "Corp" not "CORP"
+                    return m.trim().charAt(0).toUpperCase() + m.trim().slice(1).toLowerCase();
+                })
+                .trim();
         }
         return json;
     }
@@ -178,7 +190,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Null guards - default to 0 if missing
             if (data.profit === null || data.profit === undefined) data.profit = 0;
             if (data.ebitda === null || data.ebitda === undefined) data.ebitda = data.profit > 0 ? Math.round(data.profit * 1.3) : 0;
-            if (!data.emps) { alert('Could not find employee count for ' + (data.name || 'this company') + '. Try the ticker symbol directly.'); if (loadingMsg) loadingMsg.classList.add('hidden'); return; }
+            // If emps missing, we can't calculate - but give a helpful message
+            if (!data.emps) {
+                var ticker = data.resolvedSymbol || symbol;
+                var msg = 'Could not find employee count for ' + (data.name || ticker) + '.';
+                if (ticker && ticker !== symbol.toUpperCase()) msg += ' (resolved to ticker: ' + ticker + ')';
+                msg += '\n\nThis usually means the company does not publicly disclose headcount. Try searching by ticker symbol: ' + ticker;
+                alert(msg);
+                if (loadingMsg) loadingMsg.classList.add('hidden');
+                return;
+            }
 
             // If net income has a one-time item, use EBITDA as a proxy for "real" profit
             var effectiveProfit = (data.hasOneTimeItem && data.ebitda !== null)
