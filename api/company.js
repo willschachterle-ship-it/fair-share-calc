@@ -169,7 +169,9 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
         .replace(/\s+/g, ' ')
         .trim();
     const firstWord = cleanName.split(' ')[0];
-    const candidates = [cleanName, companyName, firstWord + ' company', firstWord];
+    // Also try name with common alternative suffixes for better Wikipedia matching
+    const nameWithCorp = cleanName + ' Corporation';
+    const candidates = [cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord + ' company', firstWord];
 
     let wikitext = null;
     let foundTitle = null;
