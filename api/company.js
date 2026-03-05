@@ -390,6 +390,7 @@ module.exports = async function handler(req, res) {
             // Strip legal suffixes for better Wikipedia search results
             const searchName = merged.name
                 .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
                 .trim();
             const wikiEmps = await fetchEmployeeCountFromWikipedia(searchName);
             if (wikiEmps) merged.emps = wikiEmps;
