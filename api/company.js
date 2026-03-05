@@ -154,62 +154,66 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Step 1: try multiple search variations to find the Wikipedia page
+    // Try multiple name variations to find the Wikipedia page
     const cleanName = companyName
         .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
         .trim();
-    // Also try first word only (e.g. "Palantir" from "Palantir Technologies")
     const firstWord = cleanName.split(' ')[0];
-    let pageTitle = null;
-    for (const query of [cleanName, companyName, firstWord + ' company', firstWord]) {
+    const candidates = [cleanName, companyName, firstWord];
+
+    let wikitext = null;
+    let foundTitle = null;
+
+    for (const query of candidates) {
         if (!query || query.length < 2) continue;
         try {
-            const searchRes = await fetch(
-                'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
-                encodeURIComponent(query) + '&limit=5',
-                { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-            );
+            // Use action API with explicit JSON accept header
+            const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
+                encodeURIComponent(query) + '&limit=3&format=json';
+            const searchRes = await fetch(searchUrl, {
+                headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
+            });
             if (!searchRes.ok) continue;
             const searchJson = await searchRes.json();
-            const pages = (searchJson.pages || []).filter(p =>
-                p.title.toLowerCase().includes(firstWord.toLowerCase())
-            );
-            if (pages.length) { pageTitle = pages[0].title; break; }
+            // opensearch returns [query, [titles], [descriptions], [urls]]
+            const titles = searchJson[1] || [];
+            const match = titles.find(t => t.toLowerCase().includes(firstWord.toLowerCase()));
+            if (!match) continue;
+
+            // Fetch wikitext for matched page
+            const pageUrl = 'https://en.wikipedia.org/w/api.php?action=query&titles=' +
+                encodeURIComponent(match) + '&prop=revisions&rvprop=content&rvslots=main&format=json';
+            const pageRes = await fetch(pageUrl, {
+                headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
+            });
+            if (!pageRes.ok) continue;
+            const pageJson = await pageRes.json();
+            const pages = pageJson?.query?.pages || {};
+            const page = Object.values(pages)[0];
+            const text = page?.revisions?.[0]?.slots?.main?.['*']
+                      || page?.revisions?.[0]?.['*'] || '';
+            if (text) { wikitext = text; foundTitle = match; break; }
         } catch(e) { continue; }
     }
-    if (!pageTitle) throw new Error('Wikipedia: no results for ' + companyName);
 
-    // Step 2: get raw wikitext via REST API
-    const pageRes = await fetch(
-        'https://en.wikipedia.org/api/rest_v1/page/wikitext/' + encodeURIComponent(pageTitle),
-        { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-    );
-    if (!pageRes.ok) throw new Error('Wikipedia wikitext HTTP ' + pageRes.status);
-    const wikitext = await pageRes.text();
+    if (!wikitext) throw new Error('Wikipedia: page not found for ' + companyName);
 
-    // Step 3: find employee count line in infobox
+    // Find employee count line in infobox
     const lines = wikitext.split('\n');
-    const empLine = lines.find(function(l) {
-        return l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0;
-    });
+    const empLine = lines.find(l =>
+        l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0
+    );
 
     if (empLine) {
-        // Strip wiki templates like {{circa|...}} to expose the number
         const stripped = empLine.replace(/{{[^}]+}}/g, (match) => {
-            // Keep the number inside the template e.g. {{circa|3,913}} -> 3,913
-            const inner = match.match(/\|([$\d,]+)/);
+            const inner = match.match(/\|([\d,]+)/);
             return inner ? inner[1] : '';
         });
-        // Find all numbers on the line and take the largest (most likely the employee count)
         const allNums = stripped.match(/[\d,]+/g) || [];
-        const parsed = allNums
-            .map(n => parseInt(n.replace(/,/g, ''), 10))
-            .filter(n => !isNaN(n) && n > 100);
-        if (parsed.length > 0) {
-            return Math.max(...parsed);
-        }
+        const parsed = allNums.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n) && n > 100);
+        if (parsed.length > 0) return Math.max(...parsed);
     }
-    throw new Error('Wikipedia: employee count not found in infobox for ' + pageTitle);
+    throw new Error('Wikipedia: employee count not found for ' + foundTitle);
 }
 
 
