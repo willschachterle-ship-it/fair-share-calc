@@ -70,6 +70,7 @@ const TICKER_ALIASES = {
     "JOHNSON AND JOHNSON": "JNJ", "BIOGEN": "BIIB",
     "WENDYS": "WEN", "WENDY'S": "WEN", "TAKEDA": "TAK",
     "ASTELLAS": "4503.T",
+    "PALANTIR": "PLTR",
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -173,6 +174,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 var annualInput = document.getElementById('annualSalary');
                 income = annualInput ? parseFloat(annualInput.value) || 0 : 0;
             }
+
+            // Null guards - default to 0 if missing
+            if (data.profit === null || data.profit === undefined) data.profit = 0;
+            if (data.ebitda === null || data.ebitda === undefined) data.ebitda = data.profit > 0 ? Math.round(data.profit * 1.3) : 0;
+            if (!data.emps) { alert('Could not find employee count for ' + (data.name || 'this company') + '. Try the ticker symbol directly.'); if (loadingMsg) loadingMsg.classList.add('hidden'); return; }
 
             // If net income has a one-time item, use EBITDA as a proxy for "real" profit
             var effectiveProfit = (data.hasOneTimeItem && data.ebitda !== null)
