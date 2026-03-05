@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
     try {
         const r = await fetch('https://www.alphavantage.co/query?function=OVERVIEW&symbol=' + symbol + '&apikey=' + AV_KEY);
         const j = await r.json();
-        out.alphavantage = { Name: j.Name, FullTimeEmployees: j.FullTimeEmployees, EBITDA: j.EBITDA, note: j.Note || j.Information || null };
+        out.alphavantage = { Name: j.Name, FullTimeEmployees: j.FullTimeEmployees, FullTimeEmployeesRaw: j["FullTimeEmployees"], EBITDA: j.EBITDA, allKeys: Object.keys(j).filter(k => k.toLowerCase().includes("employ")), note: j.Note || j.Information || null };
     } catch(e) { out.alphavantage = { error: e.message }; }
 
     // Finnhub profile + metrics
@@ -63,6 +63,8 @@ module.exports = async function handler(req, res) {
     // Wikipedia REST API
     try {
         const companyName = out.alphavantage?.Name || out.finnhub?.name || symbol;
+        const cleanName = companyName.replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '').trim();
+        out.wikipedia_searchName = { companyName, cleanName };
         const searchRes = await fetch(
             'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' + encodeURIComponent(companyName) + '&limit=1',
             { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
