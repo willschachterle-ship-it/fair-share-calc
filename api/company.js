@@ -154,19 +154,28 @@ async function fetchFromAlphaVantage(symbol) {
 
 
 async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Step 1: search for the page - try clean name first, then full name
-    const cleanName = companyName.replace(/\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited)\s*$/i, '').trim();
+    // Step 1: try multiple search variations to find the Wikipedia page
+    const cleanName = companyName
+        .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
+        .trim();
+    // Also try first word only (e.g. "Palantir" from "Palantir Technologies")
+    const firstWord = cleanName.split(' ')[0];
     let pageTitle = null;
-    for (const query of [cleanName, companyName]) {
-        const searchRes = await fetch(
-            'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
-            encodeURIComponent(query) + '&limit=3',
-            { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
-        );
-        if (!searchRes.ok) continue;
-        const searchJson = await searchRes.json();
-        const pages = searchJson.pages || [];
-        if (pages.length) { pageTitle = pages[0].title; break; }
+    for (const query of [cleanName, companyName, firstWord + ' company', firstWord]) {
+        if (!query || query.length < 2) continue;
+        try {
+            const searchRes = await fetch(
+                'https://en.wikipedia.org/api/rest_v1/page/search/title?q=' +
+                encodeURIComponent(query) + '&limit=5',
+                { headers: { 'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)' } }
+            );
+            if (!searchRes.ok) continue;
+            const searchJson = await searchRes.json();
+            const pages = (searchJson.pages || []).filter(p =>
+                p.title.toLowerCase().includes(firstWord.toLowerCase())
+            );
+            if (pages.length) { pageTitle = pages[0].title; break; }
+        } catch(e) { continue; }
     }
     if (!pageTitle) throw new Error('Wikipedia: no results for ' + companyName);
 
