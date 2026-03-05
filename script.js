@@ -99,11 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (json.name) {
             json.name = json.name
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
-                .replace(/,?\s+(CORP|INC|LTD|LLC|CO|HOLDINGS?|GROUP|CORPORATION|LIMITED|PLC)\.?\s*$/i, (m) => {
-                    // Keep a clean version e.g. "Corp" not "CORP"
-                    return m.trim().charAt(0).toUpperCase() + m.trim().slice(1).toLowerCase();
-                })
-                .trim();
+                .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
+                .trim()
+                .replace(/\b([A-Z])([A-Z]+)\b/g, function(m, first, rest) {
+                    return first + rest.toLowerCase();
+                });
         }
         return json;
     }
