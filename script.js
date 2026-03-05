@@ -98,13 +98,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clean up ugly legal names from EDGAR e.g. "NORTHROP GRUMMAN CORP /DE/"
         if (json.name) {
             json.name = json.name
-                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')   // strip /DE/ first
                 .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
+                .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '') // run twice for "TECHNOLOGIES, INC."
                 .trim()
-                .replace(/\b([A-Z])([A-Z]+)\b/g, function(m, first, rest) {
-                    // Keep short all-caps words (2-4 chars) as-is: RTX, IBM, CVS, AT&T
+                .replace(/(?<![a-z])([A-Z]{2,})(?![a-z])/g, function(m) {
+                    // Keep short all-caps tokens as-is: RTX, IBM, CVS
                     if (m.length <= 4) return m;
-                    return first + rest.toLowerCase();
+                    // Title-case longer all-caps words: HARRIS -> Harris, TECHNOLOGIES -> Technologies
+                    return m.charAt(0) + m.slice(1).toLowerCase();
+                })
+                .replace(/\b(L\d+)([A-Z]+)/g, function(m, prefix, rest) {
+                    // Handle alphanumeric prefixes: L3HARRIS -> L3Harris
+                    return prefix + rest.charAt(0) + rest.slice(1).toLowerCase();
                 });
         }
         return json;
