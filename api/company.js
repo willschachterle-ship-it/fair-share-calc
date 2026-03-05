@@ -635,10 +635,23 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // If still no employee count, try parsing the actual 10-K document text
+    // Try Wikipedia first (fast, reliable for large public companies)
     if (!merged.emps) {
         try {
-            // Re-fetch CIK (already fetched in EDGAR but not stored - fetch submissions directly)
+            const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
+                .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
+                .trim();
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(searchName);
+            if (wikiEmps) merged.emps = wikiEmps;
+        } catch(e) {
+            errors.push('Wikipedia: ' + e.message);
+        }
+    }
+
+    // Last resort: parse actual 10-K document text (slow but comprehensive)
+    if (!merged.emps) {
+        try {
             const tickerRes2 = await fetch('https://www.sec.gov/files/company_tickers.json', {
                 headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
             });
@@ -658,20 +671,6 @@ module.exports = async function handler(req, res) {
             }
         } catch(e) {
             errors.push('10-K text: ' + e.message);
-        }
-    }
-
-    // Last resort: Wikipedia infobox scrape for employee count
-    if (!merged.emps) {
-        try {
-            const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
-                .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
-                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
-                .trim();
-            const wikiEmps = await fetchEmployeeCountFromWikipedia(searchName);
-            if (wikiEmps) merged.emps = wikiEmps;
-        } catch(e) {
-            errors.push('Wikipedia: ' + e.message);
         }
     }
 
