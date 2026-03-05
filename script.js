@@ -209,15 +209,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
                             (data.hasOneTimeItem ? '<p style="font-size:0.85em; color:#e65100; margin:0 0 12px 0; padding:10px 12px; background:#fff3e0; border-left:3px solid #e65100; border-radius:4px;">⚠️ <strong>Heads up:</strong> ' + data.name + ' officially reported <strong>$' + (data.profit/1e9).toFixed(2) + 'B in net income</strong> this year — which would have meant <strong>$' + Math.round(data.profit / data.emps).toLocaleString() + ' per worker</strong> if it had been shared. But this figure includes a one-time windfall (like a tax benefit or asset write-off), or an accounting error (math is hard), unrelated to the day-to-day work of its employees. The company still received that cash — it just did not go to workers. The calculations below use EBITDA, which reflects recurring operational profit and gives a more typical picture of what the company actually earns through its business.</p>' : '') +
-                            '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (' + (data.hasOneTimeItem ? 'adjusted profit' : 'net income') + '), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
-                            '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
+                            (!data.hasOneTimeItem ? '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
+                            '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' : '') +
                         '</div>' +
                         '<div style="margin-bottom:25px;">' +
                             '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
-                            '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor (based on EBITDA).</p>' +
+                            (accountingSurplus >= 0
+                            ? '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor (based on EBITDA).</p>'
+                            : '<p><strong>' + data.name + '</strong> did not profit from your labor this period (based on EBITDA).</p>') +
                             '<p>The federal government kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
                         '</div>' +
                     '</div>';
