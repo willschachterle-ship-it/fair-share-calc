@@ -40,16 +40,24 @@ async function fetchFromEDGAR(symbol) {
         }
     }
 
-    // Net income - exclude future periods (end date must be in the past)
+    // Net income - exclude future periods, prefer entries where filed date
+    // is within 6 months of end date (avoids picking up restatements filed years later)
     const today = new Date().toISOString().split('T')[0];
+    // Use last completed fiscal year - filed within 12 months of period end
     let profit = null;
     for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
         if (fact && fact.units && fact.units['USD']) {
-            const sorted = fact.units['USD']
+            const entries = fact.units['USD']
                 .filter(e => (e.form === '10-K' || e.form === '10-K/A') && e.start && e.end <= today)
+                .filter(e => {
+                    // Only use entries filed within 12 months of the period end
+                    const endYear = parseInt(e.end.substring(0, 4));
+                    const filedYear = parseInt(e.filed.substring(0, 4));
+                    return filedYear <= endYear + 1;
+                })
                 .sort((a, b) => b.end.localeCompare(a.end));
-            if (sorted.length > 0) { profit = sorted[0].val; break; }
+            if (entries.length > 0) { profit = entries[0].val; break; }
         }
     }
 
