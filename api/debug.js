@@ -104,8 +104,13 @@ module.exports = async function handler(req, res) {
                 const pages = pageJson?.query?.pages || {};
                 const page = Object.values(pages)[0];
                 const wikitext = page?.revisions?.[0]?.slots?.main?.['*'] || page?.revisions?.[0]?.['*'] || '';
-                const empLine = wikitext.split('\n').find(l => l.includes('num_employees') || l.includes('number_of_employees'));
+                const wikitextLines = wikitext.split('\n');
+                const empLine = wikitextLines.find(l => l.includes('num_employees') || l.includes('number_of_employees'));
+                // Also show all infobox lines for diagnosis
+                const infoboxStart = wikitextLines.findIndex(l => l.includes('{{Infobox'));
+                const infoboxLines = infoboxStart >= 0 ? wikitextLines.slice(infoboxStart, infoboxStart + 60) : [];
                 out.wikipedia_empLine = empLine || 'NOT FOUND';
+                out.wikipedia_infoboxLines = infoboxLines;
             }
         } catch(e) { out.wikipedia_error = e.message; }
     }
