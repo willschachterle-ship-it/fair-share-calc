@@ -96,9 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Use resolved symbol to also check fallback DB (e.g. "palantir" resolves to "PLTR")
         var resolvedSym = (json.resolvedSymbol || symbol).toUpperCase();
-        console.log('resolvedSym:', resolvedSym, 'profit:', json.profit, 'ebitda:', json.ebitda);
         var db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[symbol.toUpperCase()];
-        console.log('db found:', !!db, db ? db.profit : 'none');
         if (db) {
             if (!json.emps)   json.emps   = db.emps;
             if (json.profit === null || json.profit === undefined) json.profit = db.profit;
