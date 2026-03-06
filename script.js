@@ -10,6 +10,7 @@ const PRIVATE_COMPANIES = {
 
 const FALLBACK_DB = {
     // International companies (ADRs) - financials in USD equivalent
+    "CAE": { name: "CAE Inc.", emps: 13000, profit: 288600000, ebitda: 980800000, logo: "https://logo.clearbit.com/cae.com" },
     "FINMY": { name: "Leonardo S.p.A.", emps: 60500, profit: 1188000000, ebitda: 2268000000, logo: "https://logo.clearbit.com/leonardocompany.com" },
     "THLEF": { name: "Thales Group", emps: 81000, profit: 1800000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/thalesgroup.com" },
     "SAABF": { name: "Saab", emps: 24000, profit: 420000000, ebitda: 780000000, logo: "https://logo.clearbit.com/saabgroup.com" },
@@ -90,6 +91,7 @@ const TICKER_ALIASES = {
     "AT&T": "T", "VERIZON": "VZ", "COMCAST": "CMCSA",
     "CATERPILLAR": "CAT", "3M": "MMM", "IBM": "IBM",
     "LEIDOS": "LDOS", "BOOZ ALLEN": "BAH", "BOOZ ALLEN HAMILTON": "BAH", "SAIC": "SAIC", "TEXTRON": "TXT", "TRANSDIGM": "TDG",
+    "CAE": "CAE", "CAE INC": "CAE", "CAE INC.": "CAE",
     "INTEL": "INTC", "AMD": "AMD", "SALESFORCE": "CRM", "ORACLE": "ORCL",
     // International (ADRs)
     "BAE SYSTEMS": "BAESY", "BAE": "BAESY",
