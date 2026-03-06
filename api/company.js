@@ -359,7 +359,7 @@ const WIKI_TITLE_MAP = {
     'KTOS': 'Kratos Defense & Security Solutions',
     'OSK':  'Oshkosh Corporation',
     'BWXT': 'BWX Technologies',
-    'VSAT': 'Viasat (company)',
+    'VSAT': 'Viasat',
     'MOG.A':'Moog Inc.',
     'PH':   'Parker Hannifin',
     'HXL':  'Hexcel',
