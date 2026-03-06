@@ -152,6 +152,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var res = await fetch(url);
         var json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'API error');
+        // If ticker not recognized (OTC pink sheet), treat as failure
+        if (!json.name || json.name === 'undefined') throw new Error('Ticker not recognized');
 
         // Use resolved symbol to also check fallback DB (e.g. "palantir" resolves to "PLTR")
         var resolvedSym = (json.resolvedSymbol || symbol).toUpperCase();
