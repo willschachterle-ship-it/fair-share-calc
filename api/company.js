@@ -351,11 +351,17 @@ const WIKI_TITLE_MAP = {
     'ETN':  'Eaton Corporation',
     'PLTR': 'Palantir Technologies',
     'MOG.A':'Moog Inc.',
+    'PH':   'Parker Hannifin',
     'HEI':  'HEICO',
     'HWM':  'Howmet Aerospace',
     'KEYS': 'Keysight Technologies',
     'TDY':  'Teledyne Technologies',
     'KTOS': 'Kratos Defense & Security Solutions',
+    'OSK':  'Oshkosh Corporation',
+    'BWXT': 'BWX Technologies',
+    'VSAT': 'Viasat (company)',
+    'MOG.A':'Moog Inc.',
+    'PH':   'Parker Hannifin',
     'HXL':  'Hexcel',
     'FINMY': 'Leonardo S.p.A.',
     'THLEF': 'Thales Group',
@@ -383,10 +389,13 @@ const WIKI_TITLE_MAP = {
     'USB': 'U.S. Bancorp',
 };
 
-async function fetchEmployeeCountFromWikipedia(companyName) {
-    // Check if we have a known Wikipedia title for this company
+async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null) {
+    // Strategy: build a rich candidate list using multiple general approaches
+    // so we don't need to hardcode every company in WIKI_TITLE_MAP
+
+    // Also check WIKI_TITLE_MAP by the uppercased name itself
     const upperName = companyName.toUpperCase().trim();
-    const knownTitle = WIKI_TITLE_MAP[upperName];
+    if (!knownTitle) knownTitle = WIKI_TITLE_MAP[upperName] || null;
 
     // Try multiple name variations to find the Wikipedia page
     const cleanName = companyName
@@ -395,11 +404,27 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
         .replace(/\s+/g, ' ')
         .trim();
     const firstWord = cleanName.split(' ')[0];
-    // Also try name with common alternative suffixes for better Wikipedia matching
-    const nameWithCorp = cleanName + ' Corporation';
-    const candidates = knownTitle
-        ? [knownTitle, cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord]
-        : [cleanName, nameWithCorp, companyName, firstWord + ' Corporation', firstWord + ' company', firstWord];
+    // Build rich candidate list using general strategies:
+    // 1. Known title from WIKI_TITLE_MAP (most reliable)
+    // 2. Clean name as-is (e.g. "Parker Hannifin")
+    // 3. Clean name + " Corporation" / " Company" / " Group" / " Inc"
+    // 4. Original Finnhub name (may include Corp/Inc which helps disambiguation)
+    // 5. First two words (handles "Lockheed Martin Corp" -> "Lockheed Martin")
+    // 6. First word only (last resort)
+    const firstTwo = cleanName.split(' ').slice(0, 2).join(' ');
+    const candidates = [
+        knownTitle,                        // exact known title
+        cleanName,                         // clean name
+        companyName,                       // original finnhub name (may have Corp/Inc)
+        cleanName + ' Corporation',        // try adding Corporation
+        cleanName + ' Company',            // try adding Company
+        cleanName + ' Group',              // try adding Group
+        cleanName + ' Inc.',               // try adding Inc.
+        firstTwo,                          // first two words
+        firstTwo + ' Corporation',         // first two + Corporation
+        firstWord + ' Corporation',        // first word + Corporation
+        firstWord,                         // first word only
+    ].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i); // dedupe, remove nulls
 
     let wikitext = null;
     let foundTitle = null;
@@ -418,21 +443,28 @@ async function fetchEmployeeCountFromWikipedia(companyName) {
             const titles = searchJson[1] || [];
             const descs = searchJson[2] || [];
 
-            // First try exact match on the query itself
+            // Strategy 1: exact match on the query
             let match = titles.find(t => t.toLowerCase() === query.toLowerCase());
 
-            // Then try: title contains cleanName AND description mentions company/corporation
+            // Strategy 2: title matches AND description signals it's a company
+            const companySignals = ['company', 'corporation', 'conglomerate', 'manufacturer',
+                'aerospace', 'defense', 'defence', 'american', 'founded', 'headquartered',
+                'multinational', 'contractor', 'technologies', 'systems', 'industry', 'industries'];
             if (!match) match = titles.find((t, i) => {
                 const tl = t.toLowerCase();
                 const dl = (descs[i] || '').toLowerCase();
                 return tl.includes(cleanName.toLowerCase()) &&
                     !blocklist.some(b => tl.includes(b)) &&
-                    (dl.includes('company') || dl.includes('corporation') || dl.includes('conglomerate') ||
-                     dl.includes('manufacturer') || dl.includes('aerospace') || dl.includes('defense') ||
-                     dl.includes('american') || dl.includes('founded') || tl === cleanName.toLowerCase());
+                    companySignals.some(s => dl.includes(s));
             });
 
-            // Fallback: any title containing cleanName not in blocklist
+            // Strategy 3: title starts with cleanName (e.g. "Parker Hannifin Corporation")
+            if (!match) match = titles.find(t =>
+                t.toLowerCase().startsWith(cleanName.toLowerCase()) &&
+                !blocklist.some(b => t.toLowerCase().includes(b))
+            );
+
+            // Strategy 4: title contains cleanName and isn't in blocklist
             if (!match) match = titles.find(t =>
                 t.toLowerCase().includes(cleanName.toLowerCase()) &&
                 !blocklist.some(b => t.toLowerCase().includes(b))
@@ -794,11 +826,13 @@ module.exports = async function handler(req, res) {
     // Try Wikipedia first (fast, reliable for large public companies)
     if (merged.emps == null || merged.emps === 0) {
         try {
-            const searchName = (WIKI_TITLE_MAP[symbol] || merged.name)
-                .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
-                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
+            // Pass both the known title (if any) AND the raw Finnhub name so
+            // fetchEmployeeCountFromWikipedia can try multiple strategies
+            const wikiTitle = WIKI_TITLE_MAP[symbol] || null;
+            const finnhubName = (merged.name || '')
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ etc
                 .trim();
-            const wikiEmps = await fetchEmployeeCountFromWikipedia(searchName);
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle);
             if (wikiEmps) merged.emps = wikiEmps;
         } catch(e) {
             errors.push('Wikipedia: ' + e.message);
