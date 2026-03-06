@@ -2,6 +2,25 @@ const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
 const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
 const AV_KEY = '17JNK5S9J44QAXTV';
 
+// Fetch USD exchange rate for a given currency code
+// Uses frankfurter.app - free, no key required
+const FX_CACHE = {};
+async function toUSD(amount, currency) {
+    if (!amount || !currency || currency === 'USD') return amount;
+    const cur = currency.toUpperCase();
+    if (!FX_CACHE[cur]) {
+        try {
+            const r = await fetch(`https://api.frankfurter.app/latest?from=${cur}&to=USD`);
+            if (r.ok) {
+                const j = await r.json();
+                FX_CACHE[cur] = j.rates?.USD || null;
+            }
+        } catch(e) { FX_CACHE[cur] = null; }
+    }
+    const rate = FX_CACHE[cur];
+    return rate ? Math.round(amount * rate) : amount;
+}
+
 async function fetchFromEDGAR(symbol) {
     const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
@@ -232,10 +251,16 @@ async function fetchFromFinnhub(symbol) {
     const f = await finRes.json();
     if (!p?.name) throw new Error('Finnhub: no profile');
     const m = f.metric || {};
-    const profit = (m.netIncomePerShareAnnual && m.sharesOutstanding)
+    const currency = p.currency || 'USD';
+    let profit = (m.netIncomePerShareAnnual && m.sharesOutstanding)
         ? Math.round(m.netIncomePerShareAnnual * m.sharesOutstanding) : null;
-    const ebitda = (m.ebitdaPerShareAnnual && m.sharesOutstanding)
+    let ebitda = (m.ebitdaPerShareAnnual && m.sharesOutstanding)
         ? Math.round(m.ebitdaPerShareAnnual * m.sharesOutstanding) : null;
+    // Convert to USD if needed
+    if (currency !== 'USD') {
+        profit = await toUSD(profit, currency);
+        ebitda = await toUSD(ebitda, currency);
+    }
     let logo = p.logo || null;
     if (!logo && p.weburl) try { logo = `https://logo.clearbit.com/${new URL(p.weburl).hostname}`; } catch(e) {}
     return {
@@ -260,6 +285,7 @@ async function fetchFromAlphaVantage(symbol) {
     const parseAV = (v) => (v && v !== 'None' && v !== '-' && v !== 'N/A') ? parseInt(v) : null;
 
     const emps = parseAV(overview.FullTimeEmployees);
+    const avCurrency = overview.Currency || 'USD';
     let profit = null, ebitda = parseAV(overview.EBITDA);
 
     if (incomeRes.ok) {
@@ -267,6 +293,12 @@ async function fetchFromAlphaVantage(symbol) {
         const latest = (income.annualReports || [])[0] || {};
         profit = parseAV(latest.netIncome);
         if (!ebitda) ebitda = parseAV(latest.ebitda);
+    }
+
+    // Convert to USD if reported in foreign currency
+    if (avCurrency !== 'USD') {
+        profit = await toUSD(profit, avCurrency);
+        ebitda = await toUSD(ebitda, avCurrency);
     }
 
     return { name: overview.Name || null, emps, profit, ebitda, logo: null, source: 'alphavantage' };
@@ -296,6 +328,10 @@ const WIKI_TITLE_MAP = {
     'MSFT': 'Microsoft',
     'NVDA': 'Nvidia',
     'BAESY': 'BAE Systems',
+    'FINMY': 'Leonardo S.p.A.',
+    'THLEF': 'Thales Group',
+    'SAABF': 'Saab AB',
+    'RNMBY': 'Rheinmetall',
     'SHEL': 'Shell plc',
     'TM': 'Toyota',
     'EADSY': 'Airbus',
@@ -513,6 +549,14 @@ const TICKER_ALIASES = {
     'comcast': 'CMCSA',
     // International companies (OTC ADRs)
     'bae systems': 'BAESY',
+    'leonardo': 'FINMY',
+    'leonardo spa': 'FINMY',
+    'leonardo s.p.a.': 'FINMY',
+    'finmeccanica': 'FINMY',
+    'thales': 'THLEF',
+    'dassault': 'DUAVF',
+    'saab': 'SAABF',
+    'rheinmetall': 'RNMBY',
     'huntington ingalls industries': 'HII',
     'huntington ingalls': 'HII',
     'booz allen': 'BAH',
