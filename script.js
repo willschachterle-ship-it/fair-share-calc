@@ -10,6 +10,10 @@ const PRIVATE_COMPANIES = {
 
 const FALLBACK_DB = {
     // International companies (ADRs) - financials in USD equivalent
+    "FINMY": { name: "Leonardo S.p.A.", emps: 60500, profit: 1188000000, ebitda: 2268000000, logo: "https://logo.clearbit.com/leonardocompany.com" },
+    "THLEF": { name: "Thales Group", emps: 81000, profit: 1800000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/thalesgroup.com" },
+    "SAABF": { name: "Saab", emps: 24000, profit: 420000000, ebitda: 780000000, logo: "https://logo.clearbit.com/saabgroup.com" },
+    "RNMBY": { name: "Rheinmetall", emps: 33000, profit: 1100000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/rheinmetall.com" },
     "BAESY": { name: "BAE Systems", emps: 110000, profit: 2060000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/baesystems.com" },
     "SHEL":  { name: "Shell", emps: 103000, profit: 19359000000, ebitda: 42000000000, logo: "https://logo.clearbit.com/shell.com" },
     "BP":    { name: "BP", emps: 90000, profit: 8900000000, ebitda: 26000000000, logo: "https://logo.clearbit.com/bp.com" },
@@ -61,6 +65,7 @@ const FALLBACK_DB = {
 };
 
 const TICKER_ALIASES = {
+    // US companies
     "TESLA": "TSLA", "APPLE": "AAPL", "MICROSOFT": "MSFT",
     "GOOGLE": "GOOGL", "ALPHABET": "GOOGL", "AMAZON": "AMZN",
     "FACEBOOK": "META", "NVIDIA": "NVDA", "WALMART": "WMT",
@@ -70,7 +75,28 @@ const TICKER_ALIASES = {
     "AIRBNB": "ABNB", "SPOTIFY": "SPOT", "SNAPCHAT": "SNAP",
     "BOEING": "BA", "NIKE": "NKE", "VISA": "V",
     "MASTERCARD": "MA", "COCACOLA": "KO", "COCA COLA": "KO",
-    "PEPSI": "PEP", "PEPSICO": "PEP", "CHEVRON": "CVX",
+    "PEPSI": "PEP", "PEPSICO": "PEP",
+    "LOCKHEED": "LMT", "LOCKHEED MARTIN": "LMT",
+    "NORTHROP": "NOC", "NORTHROP GRUMMAN": "NOC",
+    "RAYTHEON": "RTX", "RTX CORPORATION": "RTX",
+    "GENERAL DYNAMICS": "GD", "L3HARRIS": "LHX", "L3HARRIS TECHNOLOGIES": "LHX",
+    "HUNTINGTON INGALLS": "HII", "HUNTINGTON INGALLS INDUSTRIES": "HII",
+    "PALANTIR": "PLTR", "GENERAL MOTORS": "GM", "GENERAL ELECTRIC": "GE",
+    "JPMORGAN": "JPM", "JP MORGAN": "JPM", "GOLDMAN SACHS": "GS",
+    "BANK OF AMERICA": "BAC", "WELLS FARGO": "WFC", "MORGAN STANLEY": "MS",
+    "JOHNSON AND JOHNSON": "JNJ", "JOHNSON & JOHNSON": "JNJ",
+    "UNITEDHEALTH": "UNH", "CVS HEALTH": "CVS", "HOME DEPOT": "HD",
+    "EXXON": "XOM", "EXXONMOBIL": "XOM", "CHEVRON": "CVX",
+    "AT&T": "T", "VERIZON": "VZ", "COMCAST": "CMCSA",
+    "CATERPILLAR": "CAT", "3M": "MMM", "IBM": "IBM",
+    "INTEL": "INTC", "AMD": "AMD", "SALESFORCE": "CRM", "ORACLE": "ORCL",
+    // International (ADRs)
+    "BAE SYSTEMS": "BAESY", "BAE": "BAESY",
+    "LEONARDO": "FINMY", "LEONARDO SPA": "FINMY", "LEONARDO S.P.A.": "FINMY",
+    "THALES": "THLEF", "SAAB": "SAABF", "RHEINMETALL": "RNMBY",
+    "AIRBUS": "EADSY", "ROLLS ROYCE": "RYCEY", "ROLLS-ROYCE": "RYCEY",
+    "SHELL": "SHEL", "BP": "BP", "TOYOTA": "TM",
+    "TSMC": "TSM", "ALIBABA": "BABA", "SONY": "SONY", "CHEVRON": "CVX",
     "GOLDMAN SACHS": "GS", "JPMORGAN": "JPM", "CITIGROUP": "C",
     "EXXON": "XOM", "HOME DEPOT": "HD", "HOMEDEPOT": "HD",
     "COSTCO": "COST", "TARGET": "TGT", "GENERAL MOTORS": "GM",
