@@ -1,0 +1,65 @@
+// ============================================================
+// FALLBACK_DB — manually maintained company data
+// Update once a year with latest annual report figures.
+// All financial values in USD (convert foreign currencies).
+// ============================================================
+
+const FALLBACK_DB = {
+    // International companies (ADRs) - financials in USD equivalent
+    "CAE": { name: "CAE Inc.", emps: 13000, profit: 288600000, ebitda: 980800000, logo: "https://logo.clearbit.com/cae.com" },
+    "FINMY": { name: "Leonardo S.p.A.", emps: 60500, profit: 1188000000, ebitda: 2268000000, logo: "https://logo.clearbit.com/leonardocompany.com" },
+    "THLEF": { name: "Thales Group", emps: 81000, profit: 1800000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/thalesgroup.com" },
+    "SAABF": { name: "Saab", emps: 24000, profit: 420000000, ebitda: 780000000, logo: "https://logo.clearbit.com/saabgroup.com" },
+    "RNMBY": { name: "Rheinmetall", emps: 33000, profit: 1100000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/rheinmetall.com" },
+    "BAESY": { name: "BAE Systems", emps: 110000, profit: 2060000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/baesystems.com" },
+    "SHEL":  { name: "Shell", emps: 103000, profit: 19359000000, ebitda: 42000000000, logo: "https://logo.clearbit.com/shell.com" },
+    "BP":    { name: "BP", emps: 90000, profit: 8900000000, ebitda: 26000000000, logo: "https://logo.clearbit.com/bp.com" },
+    "TM":    { name: "Toyota", emps: 375235, profit: 27000000000, ebitda: 44000000000, logo: "https://logo.clearbit.com/toyota.com" },
+    "EADSY": { name: "Airbus", emps: 150000, profit: 4800000000, ebitda: 8200000000, logo: "https://logo.clearbit.com/airbus.com" },
+    "RYCEY": { name: "Rolls-Royce", emps: 42000, profit: 2700000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/rolls-royce.com" },
+    "TSM":   { name: "TSMC", emps: 77552, profit: 34600000000, ebitda: 46000000000, logo: "https://logo.clearbit.com/tsmc.com" },
+    "BABA":  { name: "Alibaba", emps: 204891, profit: 11600000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/alibaba.com" },
+    "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
+    "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ebitda: 130000000000, logo: "https://logo.clearbit.com/apple.com" },
+    "MSFT": { name: "Microsoft Corporation", emps: 221000, profit: 72361000000, ebitda: 102000000000, logo: "https://logo.clearbit.com/microsoft.com" },
+    "GOOGL": { name: "Alphabet Inc.", emps: 182502, profit: 73795000000, ebitda: 100000000000, logo: "https://logo.clearbit.com/google.com" },
+    "AMZN": { name: "Amazon.com, Inc.", emps: 1525000, profit: 30425000000, ebitda: 85000000000, logo: "https://logo.clearbit.com/amazon.com" },
+    "META": { name: "Meta Platforms, Inc.", emps: 67317, profit: 39098000000, ebitda: 54000000000, logo: "https://logo.clearbit.com/meta.com" },
+    "NVDA": { name: "NVIDIA Corporation", emps: 29600, profit: 29760000000, ebitda: 33000000000, logo: "https://logo.clearbit.com/nvidia.com" },
+    "WMT": { name: "Walmart Inc.", emps: 2100000, profit: 11680000000, ebitda: 28000000000, logo: "https://logo.clearbit.com/walmart.com" },
+    "JPM": { name: "JPMorgan Chase & Co.", emps: 308669, profit: 49552000000, ebitda: 55000000000, logo: "https://logo.clearbit.com/jpmorganchase.com" },
+    "XOM": { name: "Exxon Mobil Corporation", emps: 62000, profit: 36010000000, ebitda: 58000000000, logo: "https://logo.clearbit.com/exxonmobil.com" },
+    "BAC": { name: "Bank of America Corp.", emps: 213000, profit: 26515000000, ebitda: 30000000000, logo: "https://logo.clearbit.com/bankofamerica.com" },
+    "UNH": { name: "UnitedHealth Group", emps: 400000, profit: 22381000000, ebitda: 29000000000, logo: "https://logo.clearbit.com/unitedhealthgroup.com" },
+    "COST": { name: "Costco Wholesale Corp.", emps: 316000, profit: 6292000000, ebitda: 9000000000, logo: "https://logo.clearbit.com/costco.com" },
+    "HD": { name: "The Home Depot, Inc.", emps: 465000, profit: 15143000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/homedepot.com" },
+    "NFLX": { name: "Netflix, Inc.", emps: 13000, profit: 5408000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/netflix.com" },
+    "DIS": { name: "The Walt Disney Company", emps: 220000, profit: 3000000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/thewaltdisneycompany.com" },
+    "SBUX": { name: "Starbucks Corporation", emps: 402000, profit: 3582000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/starbucks.com" },
+    "MCD": { name: "McDonald's Corporation", emps: 150000, profit: 8468000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mcdonalds.com" },
+    "F": { name: "Ford Motor Company", emps: 177000, profit: 4300000000, ebitda: 12000000000, logo: "https://logo.clearbit.com/ford.com" },
+    "GM": { name: "General Motors Company", emps: 163000, profit: 9936000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/gm.com" },
+    "INTC": { name: "Intel Corporation", emps: 124800, profit: -16639000000, ebitda: -5000000000, logo: "https://logo.clearbit.com/intel.com" },
+    "CSCO": { name: "Cisco Systems, Inc.", emps: 84900, profit: 12613000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/cisco.com" },
+    "IBM": { name: "IBM Corporation", emps: 288000, profit: 7502000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/ibm.com" },
+    "GS": { name: "Goldman Sachs Group", emps: 45300, profit: 9457000000, ebitda: 11000000000, logo: "https://logo.clearbit.com/goldmansachs.com" },
+    "PFE": { name: "Pfizer Inc.", emps: 88000, profit: -2800000000, ebitda: 5000000000, logo: "https://logo.clearbit.com/pfizer.com" },
+    "FDX": { name: "FedEx Corporation", emps: 547000, profit: 3965000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/fedex.com" },
+    "UBER": { name: "Uber Technologies, Inc.", emps: 32200, profit: 1887000000, ebitda: 4000000000, logo: "https://logo.clearbit.com/uber.com" },
+    "LYFT": { name: "Lyft, Inc.", emps: 3913, profit: 22784000, ebitda: 528800000, logo: "https://logo.clearbit.com/lyft.com" },
+    "NKE": { name: "Nike, Inc.", emps: 83700, profit: 5070000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/nike.com" },
+    "BA": { name: "The Boeing Company", emps: 172000, profit: -2200000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/boeing.com" },
+    "CVX": { name: "Chevron Corporation", emps: 45600, profit: 21369000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/chevron.com" },
+    "TGT": { name: "Target Corporation", emps: 440000, profit: 4138000000, ebitda: 8000000000, logo: "https://logo.clearbit.com/target.com" },
+    "V": { name: "Visa Inc.", emps: 26500, profit: 17273000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/visa.com" },
+    "MA": { name: "Mastercard Incorporated", emps: 33000, profit: 11195000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mastercard.com" },
+    "KO": { name: "The Coca-Cola Company", emps: 82500, profit: 10714000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/coca-cola.com" },
+    "PEP": { name: "PepsiCo, Inc.", emps: 318000, profit: 9166000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/pepsico.com" },
+    "BIIB": { name: "Biogen Inc.", emps: 7400, profit: 1640000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/biogen.com" },
+    "WEN": { name: "The Wendy's Company", emps: 14500, profit: 103000000, ebitda: 490000000, logo: "https://logo.clearbit.com/wendys.com" },
+    "TAK": { name: "Takeda Pharmaceutical", emps: 49000, profit: 1200000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/takeda.com" },
+    "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
+};
+
+// Make available as a module (for future Node.js use)
+if (typeof module !== 'undefined') module.exports = FALLBACK_DB;
