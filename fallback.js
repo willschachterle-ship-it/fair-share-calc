@@ -69,6 +69,7 @@ const FALLBACK_DB = {
     "MANT":  { name: "ManTech", emps: 10000, profit: 120000000, ebitda: 250000000, logo: "https://logo.clearbit.com/mantech.com" },
     "SAX":   { name: "StandardAero", emps: 7000, profit: 95000000, ebitda: 480000000, logo: "https://logo.clearbit.com/standardaero.com" },
     "TTMI":  { name: "TTM Technologies", emps: 23000, profit: 95000000, ebitda: 320000000, logo: "https://logo.clearbit.com/ttmtechnologies.com" },
+    "MOG.A": { name: "Moog Inc.", emps: 13500, profit: 180000000, ebitda: 380000000, logo: "https://logo.clearbit.com/moog.com" },
     "CW":    { name: "Curtiss-Wright", emps: 10000, profit: 320000000, ebitda: 520000000, logo: "https://logo.clearbit.com/curtisswright.com" },
     "MRCY":  { name: "Mercury Systems", emps: 2800, profit: -180000000, ebitda: 20000000, logo: "https://logo.clearbit.com/mrcy.com" },
     "SPR":   { name: "Spirit AeroSystems", emps: 16000, profit: -1100000000, ebitda: -200000000, logo: "https://logo.clearbit.com/spiritaero.com" },
