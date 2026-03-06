@@ -329,6 +329,7 @@ const WIKI_TITLE_MAP = {
     'NVDA': 'Nvidia',
     'BAESY': 'BAE Systems',
     'CAE': 'CAE Inc.',
+    'CW': 'Curtiss-Wright Corporation',
     'FINMY': 'Leonardo S.p.A.',
     'THLEF': 'Thales Group',
     'SAABF': 'Saab AB',
