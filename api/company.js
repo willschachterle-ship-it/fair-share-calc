@@ -359,7 +359,7 @@ const WIKI_TITLE_MAP = {
     'KTOS': 'Kratos Defense & Security Solutions',
     'OSK':  'Oshkosh Corporation',
     'BWXT': 'BWX Technologies',
-    'VSAT': 'Viasat',
+    'VSAT': 'Viasat (American company)',
     'MOG.A':'Moog Inc.',
     'PH':   'Parker Hannifin',
     'HXL':  'Hexcel',
@@ -527,6 +527,7 @@ async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null) {
             .replace(/<ref[^>]*\/>/g, ' ')
             .replace(/<ref[^>]*>.*?<\/ref>/g, ' ')
             .replace(/~/g, '')
+            .replace(/\bc\.\s*/g, '')
             .replace(/\[\d+\]/g, ' ');
         const allNums = stripped.match(/[\d,]+/g) || [];
         const parsed = allNums.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n) && n > 100);
