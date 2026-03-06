@@ -58,7 +58,21 @@ const FALLBACK_DB = {
     "BIIB": { name: "Biogen Inc.", emps: 7400, profit: 1640000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/biogen.com" },
     "WEN": { name: "The Wendy's Company", emps: 14500, profit: 103000000, ebitda: 490000000, logo: "https://logo.clearbit.com/wendys.com" },
     "TAK": { name: "Takeda Pharmaceutical", emps: 49000, profit: 1200000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/takeda.com" },
-    "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
+    "ESLT":  { name: "Elbit Systems", emps: 20000, profit: 680000000, ebitda: 850000000, logo: "https://logo.clearbit.com/elbitsystems.com" },
+    "SAFRY": { name: "Safran", emps: 100000, profit: 2300000000, ebitda: 4800000000, logo: "https://logo.clearbit.com/safran.com" },
+    "DUAVF": { name: "Dassault Aviation", emps: 14000, profit: 850000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/dassaultaviation.com" },
+    "BCIGY": { name: "Babcock International", emps: 34000, profit: 180000000, ebitda: 520000000, logo: "https://logo.clearbit.com/babcockinternational.com" },
+    "QNTQF": { name: "QinetiQ", emps: 8000, profit: 170000000, ebitda: 310000000, logo: "https://logo.clearbit.com/qinetiq.com" },
+    "AMTM":  { name: "Amentum", emps: 55000, profit: 180000000, ebitda: 680000000, logo: "https://logo.clearbit.com/amentum.com" },
+    "VVX":   { name: "V2X Inc", emps: 16000, profit: 55000000, ebitda: 210000000, logo: "https://logo.clearbit.com/vxinc.com" },
+    "PSN":   { name: "Parsons Corporation", emps: 18000, profit: 290000000, ebitda: 520000000, logo: "https://logo.clearbit.com/parsons.com" },
+    "MANT":  { name: "ManTech", emps: 10000, profit: 120000000, ebitda: 250000000, logo: "https://logo.clearbit.com/mantech.com" },
+    "SAX":   { name: "StandardAero", emps: 7000, profit: 95000000, ebitda: 480000000, logo: "https://logo.clearbit.com/standardaero.com" },
+    "TTMI":  { name: "TTM Technologies", emps: 23000, profit: 95000000, ebitda: 320000000, logo: "https://logo.clearbit.com/ttmtechnologies.com" },
+    "MRCY":  { name: "Mercury Systems", emps: 2800, profit: -180000000, ebitda: 20000000, logo: "https://logo.clearbit.com/mrcy.com" },
+    "SPR":   { name: "Spirit AeroSystems", emps: 16000, profit: -1100000000, ebitda: -200000000, logo: "https://logo.clearbit.com/spiritaero.com" },
+        "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
+    "CACI": { name: "CACI International", emps: 23000, profit: 310000000, ebitda: 620000000, logo: "https://logo.clearbit.com/caci.com" },
 };
 
 // Make available as a module (for future Node.js use)
