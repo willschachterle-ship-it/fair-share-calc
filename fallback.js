@@ -122,5 +122,7 @@ const FALLBACK_DB = {
     "LZAGY": { name: "Lonza Group", emps: 17500, profit: 1200000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/lonza.com" },
     "GALDY": { name: "Galderma", emps: 6000, profit: 400000000, ebitda: 900000000, logo: "https://logo.clearbit.com/galderma.com" },
     "ALPMY": { name: "Astellas Pharma", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
+    "RPRX":  { name: "Royalty Pharma", emps: 75, profit: 770000000, ebitda: 1560000000, logo: "https://logo.clearbit.com/royaltypharma.com" },
+    "INSM":  { name: "Insmed", emps: 1400, profit: -1280000000, ebitda: -1240000000, logo: "https://logo.clearbit.com/insmed.com" },
     "SDZNY": { name: "Sandoz", emps: 23000, profit: 700000000, ebitda: 1400000000, logo: "https://logo.clearbit.com/sandoz.com" },
 };
