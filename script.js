@@ -89,6 +89,7 @@ const TICKER_ALIASES = {
     "EXXON": "XOM", "EXXONMOBIL": "XOM", "CHEVRON": "CVX",
     "AT&T": "T", "VERIZON": "VZ", "COMCAST": "CMCSA",
     "CATERPILLAR": "CAT", "3M": "MMM", "IBM": "IBM",
+    "LEIDOS": "LDOS", "BOOZ ALLEN": "BAH", "BOOZ ALLEN HAMILTON": "BAH", "SAIC": "SAIC", "TEXTRON": "TXT", "TRANSDIGM": "TDG",
     "INTEL": "INTC", "AMD": "AMD", "SALESFORCE": "CRM", "ORACLE": "ORCL",
     // International (ADRs)
     "BAE SYSTEMS": "BAESY", "BAE": "BAESY",
@@ -166,14 +167,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (looksLikeTicker) {
-                console.log('Fetching ticker: ' + symbol);
                 return await fetchFromAPI(symbol, false);
             } else {
-                console.log('Resolving name: ' + input);
                 return await fetchFromAPI(input, true);
             }
         } catch(err) {
-            console.warn('API failed: ' + err.message);
+            console.warn('Direct fetch failed: ' + err.message);
+            // If direct ticker lookup failed, try resolving as a company name
+            if (looksLikeTicker && symbol === upper) {
+                try {
+                    return await fetchFromAPI(input, true);
+                } catch(err2) {
+                    console.warn('Name resolution also failed: ' + err2.message);
+                }
+            }
         }
 
         if (FALLBACK_DB[symbol]) {
