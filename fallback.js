@@ -75,7 +75,26 @@ const FALLBACK_DB = {
     "SPR":   { name: "Spirit AeroSystems", emps: 16000, profit: -1100000000, ebitda: -200000000, logo: "https://logo.clearbit.com/spiritaero.com" },
         "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
     "CACI": { name: "CACI International", emps: 23000, profit: 310000000, ebitda: 620000000, logo: "https://logo.clearbit.com/caci.com" },
+    // International tech companies (ADRs - financials USD converted)
+    "TSM":   { name: "TSMC", emps: 77000, profit: 34600000000, ebitda: 46000000000, logo: "https://logo.clearbit.com/tsmc.com" },
+    "ASML":  { name: "ASML", emps: 42000, profit: 7800000000, ebitda: 9800000000, logo: "https://logo.clearbit.com/asml.com" },
+    "SSNLF": { name: "Samsung", emps: 270372, profit: 14900000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/samsung.com" },
+    "SAP":   { name: "SAP", emps: 107000, profit: 5000000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/sap.com" },
+    "SHOP":  { name: "Shopify", emps: 8300, profit: 1400000000, ebitda: 1700000000, logo: "https://logo.clearbit.com/shopify.com" },
+    "ACN":   { name: "Accenture", emps: 774000, profit: 7100000000, ebitda: 9200000000, logo: "https://logo.clearbit.com/accenture.com" },
+    "SONY":  { name: "Sony", emps: 113000, profit: 8700000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/sony.com" },
+    "ARM":   { name: "Arm Holdings", emps: 6400, profit: 1600000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/arm.com" },
+    "TOELY": { name: "Tokyo Electron", emps: 16000, profit: 3200000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/tel.com" },
+    "ATEYY": { name: "Advantest", emps: 6200, profit: 820000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/advantest.com" },
+    "XIACY": { name: "Xiaomi", emps: 35000, profit: 2400000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/xiaomi.com" },
+    "TEL":   { name: "TE Connectivity", emps: 89000, profit: 2000000000, ebitda: 3100000000, logo: "https://logo.clearbit.com/te.com" },
+    "IFNNY": { name: "Infineon Technologies", emps: 58600, profit: 1400000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/infineon.com" },
+    "INFY":  { name: "Infosys", emps: 317240, profit: 3200000000, ebitda: 4100000000, logo: "https://logo.clearbit.com/infosys.com" },
+    "NXPI":  { name: "NXP Semiconductors", emps: 34500, profit: 2100000000, ebitda: 3400000000, logo: "https://logo.clearbit.com/nxp.com" },
+    "GRMN":  { name: "Garmin", emps: 21000, profit: 1600000000, ebitda: 2100000000, logo: "https://logo.clearbit.com/garmin.com" },
+    "NOK":   { name: "Nokia", emps: 72000, profit: 1200000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/nokia.com" },
+    "HNHPF": { name: "Hon Hai (Foxconn)", emps: 726772, profit: 6200000000, ebitda: 10800000000, logo: "https://logo.clearbit.com/foxconn.com" },
+    "CRWV":  { name: "CoreWeave", emps: 1800, profit: -863000000, ebitda: 300000000, logo: "https://logo.clearbit.com/coreweave.com" },
+    "LITE":  { name: "Lumentum", emps: 5500, profit: -120000000, ebitda: 180000000, logo: "https://logo.clearbit.com/lumentum.com" },
+    "ERIC":  { name: "Ericsson", emps: 97000, profit: 800000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/ericsson.com" },
 };
-
-// Make available as a module (for future Node.js use)
-if (typeof module !== 'undefined') module.exports = FALLBACK_DB;
