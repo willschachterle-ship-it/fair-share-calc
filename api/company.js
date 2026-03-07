@@ -178,10 +178,22 @@ async function fetchEmployeeCountFrom10K(cik) {
         /(?:approximately|about|around|had|have|employs?|employed|employ)\s+([\d,]+)\s+(?:full[- ]time\s+)?(?:and\s+part[- ]time\s+)?employees/gi,
         // "workforce of approximately 95,000"
         /workforce\s+of\s+(?:approximately|about)?\s*([\d,]+)/gi,
-        // "95,000 employees worldwide" or "95,000 full-time employees"
-        /([\d,]+)\s+(?:full[- ]time\s+)?employees\s+(?:worldwide|globally|as of)/gi,
+        // "95,000 employees worldwide/globally/as of/at"
+        /([\d,]+)\s+(?:full[- ]time\s+)?employees\s+(?:worldwide|globally|as\s+of|at\s+)/gi,
         // "headcount of 95,000"
         /headcount\s+of\s+(?:approximately)?\s*([\d,]+)/gi,
+        // "we had 95,000 total employees"
+        /(?:had|have|with)\s+([\d,]+)\s+total\s+(?:full[- ]time\s+)?employees/gi,
+        // "95,000 full-time employees"
+        /([\d,]+)\s+full[- ]time\s+employees/gi,
+        // "as of December 31, 2023, we had X employees" — very common REIT/bank phrasing
+        /as\s+of\s+(?:december|january|february|march|april|may|june|july|august|september|october|november)\s+\d+[^,]*,\s*(?:we\s+)?(?:had|have|employed)\s+([\d,]+)\s+(?:full[- ]time\s+)?(?:and\s+part[- ]time\s+)?employees/gi,
+        // "X employees and" or "X employees,"
+        /([\d,]+)\s+employees(?:\s+and|\s*,)/gi,
+        // "employed X individuals/persons/people"
+        /employed\s+([\d,]+)\s+(?:individuals?|persons?|people)/gi,
+        // "staff of X" or "team of X employees"
+        /(?:staff|team)\s+of\s+([\d,]+)\s*(?:employees|individuals|people|members)?/gi,
     ];
 
     const candidates = [];
