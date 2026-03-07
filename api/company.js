@@ -114,44 +114,44 @@ async function fetchEmployeeCountFrom10K(cik) {
     if (!subRes.ok) throw new Error('EDGAR submissions HTTP ' + subRes.status);
     const sub = await subRes.json();
 
-    // Find most recent 10-K accession number
+    // Find most recent 10-K — submissions API includes primaryDocument directly
     const filings = sub.filings?.recent || {};
     const forms = filings.form || [];
     const accessions = filings.accessionNumber || [];
-    const dates = filings.filingDate || [];
+    const primaryDocs = filings.primaryDocument || [];
 
     let accession = null;
+    let primaryDoc = null;
     for (let i = 0; i < forms.length; i++) {
         if (forms[i] === '10-K' || forms[i] === '10-K/A') {
             accession = accessions[i];
+            primaryDoc = primaryDocs[i];
             break;
         }
     }
     if (!accession) throw new Error('No 10-K found in submissions');
 
-    // Step 2: Fetch the filing index to find the main document
-    const accDashes = accession; // already has dashes e.g. "0001321655-25-000022"
+    // Step 2: Build the document URL directly — no index fetch needed
+    // The submissions API gives us primaryDocument (e.g. "esab-20231231.htm")
     const accNoDashes = accession.replace(/-/g, '');
     const numericCik = cik.replace(/^0+/, '');
-    const indexUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${accDashes}-index.json`;
 
-    const indexRes = await fetch(indexUrl, {
-        headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
-    });
-    if (!indexRes.ok) throw new Error('Filing index HTTP ' + indexRes.status);
-    const index = await indexRes.json();
-
-    // Find the main 10-K document (largest .htm file, or type "10-K")
-    const files = index.documents || [];
     let docUrl = null;
-    // Prefer the document explicitly typed as 10-K, try both 'document' and 'name' fields
-    const getDoc = (f) => f.document || f.name || '';
-    const mainDoc = files.find(f => f.type === '10-K' && (getDoc(f).endsWith('.htm') || getDoc(f).endsWith('.html')))
-        || files.find(f => getDoc(f).endsWith('.htm') && !getDoc(f).includes('ex') && !getDoc(f).includes('Ex'))
-        || files.find(f => getDoc(f).endsWith('.htm'));
-
-    if (!mainDoc) throw new Error('No .htm document found in 10-K filing');
-    docUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${getDoc(mainDoc)}`;
+    if (primaryDoc && (primaryDoc.endsWith('.htm') || primaryDoc.endsWith('.html'))) {
+        docUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${primaryDoc}`;
+    } else {
+        // Fallback: fetch the index page to find the main document
+        const indexUrl = `https://www.sec.gov/Archives/edgar/data/${numericCik}/${accNoDashes}/${accession}-index.htm`;
+        const indexRes = await fetch(indexUrl, {
+            headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
+        });
+        if (!indexRes.ok) throw new Error('Filing index HTTP ' + indexRes.status);
+        const indexHtml = await indexRes.text();
+        // Parse the first .htm link that looks like the main doc (not an exhibit)
+        const docMatch = indexHtml.match(/href="([^"]+\.htm)"/i);
+        if (!docMatch) throw new Error('No .htm document found in filing index');
+        docUrl = 'https://www.sec.gov' + (docMatch[1].startsWith('/') ? docMatch[1] : '/' + docMatch[1]);
+    }
 
     // Step 3: Fetch the document - but only first ~200KB to find employee count
     // Employee count is almost always in Item 1 (first ~50 pages)
