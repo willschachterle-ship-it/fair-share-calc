@@ -201,7 +201,6 @@ async function fetchEmployeeCountFrom10K(cik) {
         return 0; // legitimately zero — externally managed
     }
 
-    const YEAR_RE = /^20[0-9]{2}$|^19[0-9]{2}$/; // filter out years parsed as counts
     const candidates = [];
     for (const pattern of patterns) {
         let match;
@@ -210,10 +209,18 @@ async function fetchEmployeeCountFrom10K(cik) {
             // Find the captured group that looks like a number
             for (let g = 1; g < match.length; g++) {
                 if (match[g]) {
-                    const n = parseInt(match[g].replace(/,/g, ''), 10);
-                    // Exclude years (2019-2029) being misread as employee counts
-                    if (!isNaN(n) && n >= 100 && n <= 5000000 && !YEAR_RE.test(match[g].trim())) {
-                        candidates.push(n);
+                    const raw = match[g].trim();
+                    const n = parseInt(raw.replace(/,/g, ''), 10);
+                    if (!isNaN(n) && n >= 100 && n <= 5000000) {
+                        // Reject if it looks like a year in a date context:
+                        // only filter 4-digit numbers 2015-2029 when they appear
+                        // right after month/day patterns in the matched text
+                        const fullMatch = match[0];
+                        const isYearInDate = n >= 2015 && n <= 2029 &&
+                            /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2},?\s*$/i.test(fullMatch.substring(0, fullMatch.lastIndexOf(raw)));
+                        if (!isYearInDate) {
+                            candidates.push(n);
+                        }
                     }
                 }
             }
