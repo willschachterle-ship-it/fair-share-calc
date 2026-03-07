@@ -201,5 +201,6 @@ const FALLBACK_DB = {
     "AFYA":  { name: "Afya Limited", emps: 5000, profit: 130000000, ebitda: 240000000, logo: "https://logo.clearbit.com/afya.com.br" },
     "ITCI":  { name: "Intra-Cellular Therapies", emps: 1200, profit: 185000000, ebitda: 220000000, logo: "https://logo.clearbit.com/intracellulartherapies.com" },
 
-
 };
+
+module.exports = FALLBACK_DB;
