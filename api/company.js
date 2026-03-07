@@ -196,6 +196,12 @@ async function fetchEmployeeCountFrom10K(cik) {
         /(?:staff|team)\s+of\s+([\d,]+)\s*(?:employees|individuals|people|members)?/gi,
     ];
 
+    // Check for externally-managed entity (many REITs have no employees)
+    if (/we have no employees|have no direct employees|no employees.*externally managed|externally managed.*no employees|our manager.*employees|managed by.*advisor.*no employees/i.test(text)) {
+        return 0; // legitimately zero — externally managed
+    }
+
+    const YEAR_RE = /^20[0-9]{2}$|^19[0-9]{2}$/; // filter out years parsed as counts
     const candidates = [];
     for (const pattern of patterns) {
         let match;
@@ -205,7 +211,8 @@ async function fetchEmployeeCountFrom10K(cik) {
             for (let g = 1; g < match.length; g++) {
                 if (match[g]) {
                     const n = parseInt(match[g].replace(/,/g, ''), 10);
-                    if (!isNaN(n) && n >= 100 && n <= 5000000) {
+                    // Exclude years (2019-2029) being misread as employee counts
+                    if (!isNaN(n) && n >= 100 && n <= 5000000 && !YEAR_RE.test(match[g].trim())) {
                         candidates.push(n);
                     }
                 }
