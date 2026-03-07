@@ -231,10 +231,17 @@ async function fetchEmployeeCountFrom10K(cik) {
 
     if (!candidates.length) throw new Error('Employee count not found in 10-K text');
 
+    // Post-filter: remove values that exactly match a recent year (2015-2026)
+    // These are almost certainly filing year dates parsed as headcounts
+    // Only keep them if they're the only candidates we have
+    const RECENT_YEARS = new Set([2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026]);
+    const nonYearCandidates = candidates.filter(n => !RECENT_YEARS.has(n));
+    const finalCandidates = nonYearCandidates.length > 0 ? nonYearCandidates : candidates;
+
     // The first mention is usually the official count in Item 1
     // But take the most common value as a sanity check
     const freq = {};
-    for (const n of candidates) {
+    for (const n of finalCandidates) {
         // Round to nearest 100 for grouping
         const key = Math.round(n / 100) * 100;
         freq[key] = (freq[key] || 0) + 1;
