@@ -201,6 +201,64 @@ const FALLBACK_DB = {
     "AFYA":  { name: "Afya Limited", emps: 5000, profit: 130000000, ebitda: 240000000, logo: "https://logo.clearbit.com/afya.com.br" },
     "ITCI":  { name: "Intra-Cellular Therapies", emps: 1200, profit: 185000000, ebitda: 220000000, logo: "https://logo.clearbit.com/intracellulartherapies.com" },
 
+    // --- Year-contaminated (10-K parser returns filing year instead of headcount) ---
+    "UDR":  { name: "UDR Inc", emps: 1533 },
+    "KIM":  { name: "Kimco Realty", emps: 2000 },
+    "SITM": { name: "SiTime Corporation", emps: 220 },
+    "MTSI": { name: "MACOM Technology Solutions", emps: 1800 },
+    "SLAB": { name: "Silicon Laboratories", emps: 2200 },
+    "NN":   { name: "NN Inc", emps: 1700 },
+
+    // --- Persistent regex failures: tiny/external REITs ---
+    "VICI": { name: "VICI Properties", emps: 0 },
+    "ADC":  { name: "Agree Realty", emps: 65 },
+    "NTST": { name: "NetSTREIT", emps: 35 },
+    "EPRT": { name: "Essential Properties Realty Trust", emps: 40 },
+    "LXP":  { name: "LXP Industrial Trust", emps: 80 },
+    "TRNO": { name: "Terreno Realty", emps: 100 },
+    "STAG": { name: "STAG Industrial", emps: 250 },
+    "APLE": { name: "Apple Hospitality REIT", emps: 250 },
+    "OHI":  { name: "Omega Healthcare Investors", emps: 175 },
+    "SBRA": { name: "Sabra Health Care REIT", emps: 60 },
+    "NHI":  { name: "National Health Investors", emps: 60 },
+    "LTC":  { name: "LTC Properties", emps: 30 },
+    "CHCT": { name: "Community Healthcare Trust", emps: 40 },
+    "IIPR": { name: "Innovative Industrial Properties", emps: 50 },
+    "VTR":  { name: "Ventas", emps: 500 },
+
+    // --- Persistent regex failures: community banks ---
+    "TFSL": { name: "Third Federal Savings & Loan", emps: 1200 },
+    "TRMK": { name: "Trustmark Corporation", emps: 3000 },
+    "IBOC": { name: "International Bancshares", emps: 3500 },
+    "TFIN": { name: "Triumph Financial", emps: 700 },
+    "CVBF": { name: "CVB Financial", emps: 1200 },
+    "WSFS": { name: "WSFS Financial", emps: 1900 },
+    "SBCF": { name: "Seacoast Banking", emps: 1300 },
+    "GABC": { name: "German American Bancorp", emps: 1700 },
+    "AROW": { name: "Arrow Financial", emps: 750 },
+    "CHMG": { name: "Chemung Financial", emps: 550 },
+    "HTLF": { name: "Heartland Financial USA", emps: 4200 },
+    "FBMS": { name: "First Bancshares", emps: 1400 },
+    "TBNK": { name: "Territorial Bancorp", emps: 250 },
+
+    // --- Persistent regex failures: industrials/tech/services ---
+    "ESAB": { name: "ESAB Corporation", emps: 9500 },
+    "MPAA": { name: "Motorcar Parts of America", emps: 4000 },
+    "LCII": { name: "LCI Industries", emps: 9000 },
+    "MOD":  { name: "Modine Manufacturing", emps: 12000 },
+    "WSC":  { name: "WillScot Mobile Mini", emps: 5000 },
+    "DY":   { name: "Dycom Industries", emps: 15500 },
+    "NVST": { name: "Envista Holdings", emps: 14000 },
+    "COHU": { name: "Cohu Inc", emps: 3000 },
+    "POWI": { name: "Power Integrations", emps: 1900 },
+    "CVCO": { name: "Cavco Industries", emps: 7000 },
+    "PATK": { name: "Patrick Industries", emps: 12000 },
+    "PLAY": { name: "Dave & Buster's Entertainment", emps: 18000 },
+    "CARS": { name: "Cars.com", emps: 1600 },
+    "MTG":  { name: "MGIC Investment", emps: 1400 },
+    "SMAR": { name: "Smartsheet", emps: 3400 },
+    "PRPH": { name: "ProPhase Labs", emps: 300 },
+
 };
 
 module.exports = FALLBACK_DB;
