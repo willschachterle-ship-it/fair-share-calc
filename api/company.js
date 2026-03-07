@@ -217,6 +217,88 @@ async function fetchEmployeeCountFrom10K(cik) {
     return parseInt(mostCommon[0]);
 }
 
+// ── companiesmarketcap.com employee count fetcher ────────────────────────────
+// Uses CMC's JSON search API to find the slug, then scrapes the /employees/ page.
+// Only called as a last resort when all other sources fail.
+async function fetchEmployeeCountFromCMC(symbol, companyName) {
+    // Strategy 1: try the CMC search JSON API
+    let slug = null;
+
+    try {
+        // CMC exposes a search endpoint that returns JSON
+        const searchUrl = `https://companiesmarketcap.com/api/companies/search/?query=${encodeURIComponent(symbol)}&limit=5`;
+        const searchRes = await fetch(searchUrl, {
+            headers: { 'User-Agent': 'YourFairShare/1.0 (research)', 'Accept': 'application/json' }
+        });
+        if (searchRes.ok) {
+            const results = await searchRes.json();
+            // Results are an array of {name, ticker, slug, ...}
+            const arr = Array.isArray(results) ? results : (results.data || results.results || []);
+            // Prefer exact ticker match, then name match
+            const byTicker = arr.find(r => r.ticker && r.ticker.toUpperCase() === symbol.toUpperCase());
+            const byName = companyName && arr.find(r =>
+                r.name && r.name.toLowerCase().includes(companyName.split(' ')[0].toLowerCase())
+            );
+            const match = byTicker || byName || arr[0];
+            if (match && match.slug) slug = match.slug;
+        }
+    } catch(e) { /* fall through to strategy 2 */ }
+
+    // Strategy 2: derive slug from company name heuristically
+    // CMC slugs are typically lowercase, spaces→hyphens, stripped of Inc/Corp/etc.
+    if (!slug && companyName) {
+        slug = companyName
+            .toLowerCase()
+            .replace(/[,.'&]/g, '')
+            .replace(/\s+(inc\.?|corp\.?|ltd\.?|llc|co\.?|holdings?|group|corporation|limited|plc|technologies|company)$/i, '')
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    if (!slug) throw new Error('CMC: could not determine slug');
+
+    // Fetch the employees page
+    const empUrl = `https://companiesmarketcap.com/${slug}/employees/`;
+    const empRes = await fetch(empUrl, {
+        headers: { 'User-Agent': 'YourFairShare/1.0 (research)', 'Accept': 'text/html' }
+    });
+    if (!empRes.ok) {
+        // If slug didn't work, try a search-page approach
+        throw new Error(`CMC employees page HTTP ${empRes.status} for slug: ${slug}`);
+    }
+
+    const html = await empRes.text();
+
+    // Extract employee count — CMC renders it as a large number in a specific element
+    // Try multiple patterns to be robust to layout changes
+    const patterns = [
+        // JSON-LD structured data (most reliable)
+        /"numberOfEmployees"\s*:\s*["{]?\s*"?([\d,]+)"?/i,
+        // The big stat displayed on the page
+        /class="[^"]*company-stat-value[^"]*"[^>]*>\s*([\d,.]+\s*[KkMm]?)\s*</i,
+        // Table cell with "Employees" label nearby
+        /Employees[^<]*<\/[^>]+>\s*<[^>]+>\s*([\d,]+)/i,
+        // Any large standalone number followed by context
+        />\s*([\d,]{3,})\s*<\/[^>]+>\s*(?:<[^>]+>)*\s*(?:employees?|workers?|staff)/i,
+    ];
+
+    for (const pattern of patterns) {
+        const m = html.match(pattern);
+        if (m) {
+            let raw = m[1].trim().replace(/,/g, '');
+            // Handle K/M suffixes
+            if (/k$/i.test(raw)) return Math.round(parseFloat(raw) * 1000);
+            if (/m$/i.test(raw)) return Math.round(parseFloat(raw) * 1000000);
+            const n = parseInt(raw, 10);
+            if (!isNaN(n) && n >= 10 && n <= 5000000) return n;
+        }
+    }
+
+    throw new Error('CMC: employee count not found in page');
+}
+
 async function fetchFromFMP(symbol) {
     const profileRes = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
@@ -1792,7 +1874,7 @@ function bestEmps(values) {
     const clean = rejectOutliers(nums);
     if (!clean.length) return Math.round(median(nums));
     // Prefer Wikipedia (most up to date) > Finnhub > EDGAR > AV
-    const priority = ['wikipedia', 'finnhub', 'edgar', 'alphavantage', 'fmp'];
+    const priority = ['wikipedia', 'cmc', 'finnhub', 'edgar', 'alphavantage', 'fmp'];
     for (const src of priority) {
         const match = values.find(v => v.source === src && clean.includes(v.val));
         if (match) return match.val;
@@ -1928,6 +2010,17 @@ module.exports = async function handler(req, res) {
             }
         } catch(e) {
             errors.push('10-K text: ' + e.message);
+        }
+    }
+
+    // Final fallback: companiesmarketcap.com — only called when everything else failed
+    // Live web scrape, only fires when emps is still null.
+    if (!merged.emps && merged.name) {
+        try {
+            const cmcEmps = await fetchEmployeeCountFromCMC(symbol, merged.name);
+            if (cmcEmps) merged.emps = cmcEmps;
+        } catch(e) {
+            errors.push('CMC: ' + e.message);
         }
     }
 
