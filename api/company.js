@@ -1407,9 +1407,21 @@ async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null) {
     if (!knownTitle) knownTitle = WIKI_TITLE_MAP[upperName] || null;
 
     // Try multiple name variations to find the Wikipedia page
-    const cleanName = companyName
-        .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
-        .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // remove state suffixes like /DE/
+
+    // Try multiple name variations to find the Wikipedia page
+
+    // Strip /STATE/ suffixes FIRST (before title-casing so regex still matches)
+    const preStripped = companyName.replace(/\s*\/[A-Z]{2,}\/\s*$/, '').trim();
+
+    // If name is ALL CAPS (from EDGAR e.g. "HUMANA INC"), convert to title case
+    const isAllCaps = preStripped === preStripped.toUpperCase() && /[A-Z]{3}/.test(preStripped);
+    const normalizedName = isAllCaps
+        ? preStripped.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+        : preStripped;
+
+    // Strip trailing legal suffixes — but only at end of string, not mid-name
+    const cleanName = normalizedName
+        .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|L\.L\.C\.?|Co\.?|Holdings?|Holding|Corporation|Limited|plc|Incorporated|Companies)\s*$/i, '')
         .replace(/\s+/g, ' ')
         .trim();
     const firstWord = cleanName.split(' ')[0];
@@ -2001,11 +2013,16 @@ module.exports = async function handler(req, res) {
     // Try Wikipedia first (fast, reliable for large public companies)
     if (merged.emps == null || merged.emps === 0) {
         try {
-            // Pass both the known title (if any) AND the raw Finnhub name so
+            // Pass both the known title (if any) AND the raw name so
             // fetchEmployeeCountFromWikipedia can try multiple strategies
             const wikiTitle = WIKI_TITLE_MAP[symbol] || null;
-            const finnhubName = (merged.name || '')
-                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ etc
+            const rawMergedName = merged.name || '';
+            // If name is ALL CAPS (EDGAR style e.g. "HUMANA INC"), convert to title case
+            const isAllCapsName = rawMergedName === rawMergedName.toUpperCase() && /[A-Z]{3}/.test(rawMergedName);
+            const finnhubName = (isAllCapsName
+                ? rawMergedName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+                : rawMergedName)
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ /MD/ etc
                 .trim();
             const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle);
             if (wikiEmps) merged.emps = wikiEmps;
