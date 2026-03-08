@@ -479,6 +479,37 @@ const FALLBACK_DB = {
     "CRT":   { name: "Cross Timbers Royalty Trust", emps: 5, profit: 20000000, ebitda: 20000000 },
     "PHX":   { name: "PHX Minerals", emps: 15, profit: 10000000, ebitda: 15000000 },
 
+    // --- Batch 5: NO_EMPS fixes + previously-API_ERROR companies with known data ---
+
+    // Still-public companies that lose their name from all APIs (GPS, ODP, BRK.B)
+    // These now get name-seeded from WIKI_TITLE_MAP, but fallback covers financials
+    "GPS":   { name: "Gap Inc.", emps: 85000, profit: 514000000, ebitda: 1400000000 },
+    "ODP":   { name: "The ODP Corporation", emps: 13500, profit: 80000000, ebitda: 220000000 },
+    "BRK.B": { name: "Berkshire Hathaway", emps: 396500, profit: 96223000000, ebitda: 120000000000 },
+
+    // NO_EMPS fixes from test run
+    "WTW":   { name: "Willis Towers Watson", emps: 36000 },
+    "XPO":   { name: "XPO Logistics", emps: 42000 },
+    "MAS":   { name: "Masco", emps: 19000 },
+    "HUBB":  { name: "Hubbell", emps: 19500 },
+    "NEM":   { name: "Newmont", emps: 17500 },
+    "INVH":  { name: "Invitation Homes", emps: 2400 },
+    "CSGP":  { name: "CoStar Group", emps: 5800 },
+    "VTRS":  { name: "Viatris", emps: 37000, profit: -300000000 },
+    "WST":   { name: "West Pharmaceutical Services", emps: 8200 },
+    "TECH":  { name: "Bio-Techne", emps: 3100 },
+    "WYNN":  { name: "Wynn Resorts", emps: 28000 },
+    "SMAR":  { name: "Smartsheet", emps: 3400, profit: -200000000, ebitda: -150000000 },
+    "ABBNY": { name: "ABB Ltd", emps: 105000 },
+    "LDOS":  { name: "Leidos Holdings", emps: 47000 },
+    "SWN":   { name: "Southwestern Energy", emps: 1400, profit: 400000000, ebitda: 900000000 },
+
+    // Small banks missing emps only (have financials from fallback already)
+    "HTLF":  { name: "Heartland Financial USA", emps: 4200, profit: 180000000, ebitda: 235000000 },
+    "TBNK":  { name: "Territorial Bancorp", emps: 250, profit: 5000000, ebitda: 7000000 },
+    "FBMS":  { name: "First Bancshares", emps: 1400, profit: 60000000, ebitda: 78000000 },
+    "BRKL":  { name: "Brookline Bancorp", emps: 1200, profit: 85000000, ebitda: 110000000 },
+
 };
 
 module.exports = FALLBACK_DB;
