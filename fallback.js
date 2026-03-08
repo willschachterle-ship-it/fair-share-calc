@@ -510,6 +510,35 @@ const FALLBACK_DB = {
     "FBMS":  { name: "First Bancshares", emps: 1400, profit: 60000000, ebitda: 78000000 },
     "BRKL":  { name: "Brookline Bancorp", emps: 1200, profit: 85000000, ebitda: 110000000 },
 
+    // --- Batch 6: NO_PROFIT/NO_EBITDA fixes + remaining NO_EMPS ---
+    // Companies that have name from API but missing financials
+    "HBI":   { name: "Hanesbrands", emps: 41000, profit: 200000000, ebitda: 500000000 },
+    "PEAK":  { name: "Healthpeak Properties", emps: 200, profit: 280000000, ebitda: 600000000 },
+    "ABBNY": { name: "ABB Ltd", emps: 105000, profit: 3300000000, ebitda: 5500000000 },
+    "SBNY":  { name: "Signature Bank", emps: 2243, profit: 1100000000, ebitda: 1430000000 },
+    "DNB":   { name: "Dun & Bradstreet", emps: 6000, profit: 150000000, ebitda: 700000000 },
+    "MMC":   { name: "Marsh McLennan", emps: 83000, profit: 3700000000, ebitda: 4800000000 },
+    "NOVA":  { name: "Sunnova Energy", emps: 3000, profit: -600000000, ebitda: -200000000 },
+    "HHC":   { name: "Howard Hughes Holdings", emps: 1500, profit: 200000000, ebitda: 400000000 },
+    "SIX":   { name: "Six Flags Entertainment", emps: 40000, profit: -100000000, ebitda: 400000000 },
+    // NO_EMPS — API returns financials but no employee count
+    "GPN":   { name: "Global Payments", emps: 27000 },
+    "RJF":   { name: "Raymond James Financial", emps: 8600 },
+    "CNC":   { name: "Centene", emps: 74000 },
+    "DVN":   { name: "Devon Energy", emps: 1900 },
+    "WEC":   { name: "WEC Energy Group", emps: 7400 },
+    "CMS":   { name: "CMS Energy", emps: 2900 },
+    "SAM":   { name: "Boston Beer Company", emps: 2000 },
+    "SMP":   { name: "Standard Motor Products", emps: 5500 },
+    "ITW":   { name: "Illinois Tool Works", emps: 44000 },
+    "PPG":   { name: "PPG Industries", emps: 51000 },
+    "HST":   { name: "Host Hotels & Resorts", emps: 250 },
+    "ADP":   { name: "ADP", emps: 58000 },
+    "PAYC":  { name: "Paycom Software", emps: 7000 },
+    "PFSI":  { name: "PennyMac Financial Services", emps: 4000 },
+    "ARCC":  { name: "Ares Capital Corporation", emps: 0 },
+    "CQP":   { name: "Cheniere Energy Partners", emps: 0 },
+
 };
 
 module.exports = FALLBACK_DB;
