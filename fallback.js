@@ -386,7 +386,7 @@ const FALLBACK_DB = {
     "SUM":   { name: "Summit Materials", emps: 8000, profit: 200000000, ebitda: 700000000 },
 
     // --- NO_PROFIT/EBITDA only ---
-    "CMA":   { name: "Comerica", profit: 800000000, ebitda: 1100000000 },
+    "CMA":   { name: "Comerica", emps: 7565, profit: 800000000, ebitda: 1100000000 },
     "SNV":   { name: "Synovus Financial", emps: 5000, profit: 450000000, ebitda: 590000000 },
 
     // --- Batch 3: remaining NO_EMPS failures ---
@@ -538,6 +538,113 @@ const FALLBACK_DB = {
     "PFSI":  { name: "PennyMac Financial Services", emps: 4000 },
     "ARCC":  { name: "Ares Capital Corporation", emps: 0 },
     "CQP":   { name: "Cheniere Energy Partners", emps: 0 },
+
+    // NO_EMPS fixes
+    "ALK":   { name: "Alaska Air Group", emps: 22000, profit: 100000000, ebitda: 1100000000 },
+    "TT":    { name: "Trane Technologies", emps: 40000, profit: 2920000000, ebitda: 4360000000 },
+    "HI":    { name: "Hillenbrand", emps: 10900, profit: 180000000, ebitda: 450000000 },
+    "HESM":  { name: "Hess Midstream", emps: 0, profit: 352900000, ebitda: 1220000000 },
+    "DKL":   { name: "Delek Logistics Partners", emps: 0, profit: 176460000, ebitda: 307440000 },
+    "NEP":   { name: "NextEra Energy Partners", emps: 0, profit: 400000000, ebitda: 900000000 },
+
+    // NO_PROFIT / NO_EBITDA fixes
+    "ZEUS":  { name: "Olympic Steel", emps: 1700, profit: 85000000, ebitda: 180000000 },
+    "VTRS":  { name: "Viatris", emps: 32000, profit: 480000000, ebitda: 2800000000 },
+
+    // Still-active companies returning API_ERROR
+    "DENN":  { name: "Denny's", emps: 6900, profit: 28000000, ebitda: 95000000 },
+    "SEAS":  { name: "SeaWorld Entertainment", emps: 5000, profit: 180000000, ebitda: 480000000 },
+    "LGF.A": { name: "Lions Gate Entertainment", emps: 3600, profit: 90000000, ebitda: 280000000 },
+    "CORE":  { name: "Core & Main", emps: 5500, profit: 340000000, ebitda: 560000000 },
+    "DINE":  { name: "Dine Brands Global", emps: 1100, profit: 110000000, ebitda: 230000000 },
+    "SJW":   { name: "SJW Group", emps: 800, profit: 55000000, ebitda: 140000000 },
+    "BIGC":  { name: "BigCommerce", emps: 800, profit: -60000000, ebitda: -40000000 },
+    "AMEH":  { name: "Apollo Medical Holdings", emps: 350, profit: 35000000, ebitda: 65000000 },
+    "ROLSY": { name: "Rolls-Royce Holdings", emps: 42000, profit: 2400000000, ebitda: 3200000000 },
+    "CDAY":  { name: "Dayforce (Ceridian)", emps: 8700, profit: 120000000, ebitda: 380000000 },
+    "LANC":  { name: "Lancaster Colony", emps: 4000, profit: 130000000, ebitda: 200000000 },
+    "ROLL":  { name: "RBC Bearings", emps: 6800, profit: 260000000, ebitda: 470000000 },
+    "OMI":   { name: "Owens & Minor", emps: 21000, profit: -80000000, ebitda: 320000000 },
+
+    // =========================================================================
+    // --- Batch 7: Anomaly corrections — wrong API values & one-time items ---
+    // =========================================================================
+    // Identified by scanning all 1,000 companies for profit/EBITDA mismatches,
+    // wrong employee counts, and structurally impossible values.
+    // Each entry documents WHY the correction is needed.
+    // =========================================================================
+
+    // ── CATEGORY A: Completely wrong API data ────────────────────────────────
+
+    // GOLD — Barrick Gold: API returned stub/wrong entity data.
+    //   API gave: emps=1,000 / profit=$17M / ebitda=$23M
+    //   Reality (FY2024): emps=26,800 / profit=$2.14B / ebitda=$5.19B
+    //   Source: Barrick 2024 Annual Report
+    "GOLD":  { name: "Barrick Gold", emps: 26800, profit: 2140000000, ebitda: 5190000000, logo: "https://logo.clearbit.com/barrick.com" },
+
+    // IBKR — Interactive Brokers: API returns net income attributable to
+    //   Class A public shareholders only (~15% of economic ownership).
+    //   Full consolidated 2024 net income = $755M; ebitda ~$1B.
+    //   The $44.5M figure is mathematically correct for the public float slice
+    //   but wildly misleading for a "how much did this company earn" question.
+    "IBKR":  { name: "Interactive Brokers", emps: 3200, profit: 755000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/interactivebrokers.com" },
+
+    // MCHP — Microchip Technology: profit = -$500,000 (half a million dollars).
+    //   This is a data truncation artifact — ebitda of $1.05B is correct.
+    //   Microchip was near breakeven in FY2024 due to inventory correction cycle.
+    //   Real FY2024 GAAP net loss was approximately -$163M (cyclical, not a crisis).
+    "MCHP":  { name: "Microchip Technology", emps: 19400, profit: -163000000, ebitda: 1050000000, logo: "https://logo.clearbit.com/microchip.com" },
+
+    // ASH — Ashland Global Holdings: API returns wrong period / mixed GAAP vs adjusted.
+    //   API gave: profit=$505M / ebitda=-$538M  (neither figure is accurate)
+    //   Reality (FY2024, ending Sep 2024): net income=$169M / adjusted EBITDA=$459M
+    //   Negative EBITDA alongside positive profit is impossible without one-time distortion.
+    "ASH":   { name: "Ashland Global Holdings", emps: 2900, profit: 169000000, ebitda: 459000000, logo: "https://logo.clearbit.com/ashland.com" },
+
+    // BKNG — Booking Holdings: profit figure is ~20x too low.
+    //   API gave: profit=$288.66M (looks like a single quarter, not full year)
+    //   Reality (FY2024): net income=$6.0B / ebitda=$9.45B (ebitda looks correct)
+    "BKNG":  { name: "Booking Holdings", emps: 24300, profit: 6000000000, ebitda: 9450000000, logo: "https://logo.clearbit.com/booking.com" },
+
+    // AJG — Arthur J. Gallagher: API returned 706,000 employees.
+    //   Reality: ~53,000 employees (FY2024). Off by 13x. Likely a data field mixup.
+    //   Profit and EBITDA from API look plausible; correcting emps only.
+    "AJG":   { name: "Arthur J. Gallagher", emps: 53000, profit: 1490000000, ebitda: 1940000000, logo: "https://logo.clearbit.com/ajg.com" },
+
+    // SNEX — StoneX Group: ebitda = $2.8M vs profit = $306M (109x mismatch).
+    //   API gave: ebitda=$2.8M — clearly a data error (units confusion or field mixup).
+    //   Reality (FY2024): ebitda ~$400M; profit $306M is plausible for a financial firm.
+    "SNEX":  { name: "StoneX Group", emps: 5400, profit: 305900000, ebitda: 400000000, logo: "https://logo.clearbit.com/stonex.com" },
+
+    // ── CATEGORY B: One-time accounting items (hasOneTimeItem flagged in script.js) ──
+
+    // EL — Estée Lauder: ebitda=$44M vs profit=$684M (15x mismatch).
+    //   Root cause: FY2024 included ~$471M in goodwill/intangible impairment charges
+    //   on Dr.Jart+ and other acquired brands. These charges devastate EBITDA but
+    //   partially recover at net income via deferred tax benefits.
+    //   The profit figure itself may also be from a blended TTM period.
+    //   Correcting to FY2024 (ending June 2024) actuals; hasOneTimeItem set in script.js.
+    "EL":    { name: "Estée Lauder", emps: 62000, profit: 390000000, ebitda: 600000000, logo: "https://logo.clearbit.com/elcompanies.com" },
+
+    // DUOL — Duolingo: two problems.
+    //   1) emps=700 (should be ~5,600 — API pulling wrong/old data)
+    //   2) profit=$414M vs ebitda=$150M — profit inflated by deferred tax asset
+    //      recognition or stock comp tax benefit; real FY2024 net income ~$183M.
+    //   hasOneTimeItem set in script.js.
+    "DUOL":  { name: "Duolingo", emps: 5600, profit: 183000000, ebitda: 155000000, logo: "https://logo.clearbit.com/duolingo.com" },
+
+    // ── CATEGORY C: Structural sector quirks (profit > EBITDA is normal) ────
+    // No financial corrections needed; these are documented here for reference.
+    // The following are INTENTIONALLY NOT corrected:
+    //   AXP  (American Express)    — interest income inflates profit vs EBITDA
+    //   TRV  (Travelers)           — investment portfolio income
+    //   HIG  (Hartford Financial)  — investment portfolio income
+    //   BRK.B (Berkshire)          — massive unrealized investment gains flow through income
+    //   RF   (Regions Financial)   — banking: EBITDA is near-meaningless metric
+    //   RDN  (Radian Group)        — mortgage insurance: EBITDA inapplicable
+    //   IVZ  (Invesco)             — asset manager: comp-heavy, no D&A to add back
+    //   RUN  (Sunrun)              — solar lease: massive D&A on rooftop systems is structural
+    //   VICI (VICI Properties)     — REIT: gains on sale flow through net income, not EBITDA
 
 };
 
