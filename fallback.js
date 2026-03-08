@@ -646,6 +646,142 @@ const FALLBACK_DB = {
     //   RUN  (Sunrun)              — solar lease: massive D&A on rooftop systems is structural
     //   VICI (VICI Properties)     — REIT: gains on sale flow through net income, not EBITDA
 
+    // =========================================================================
+    // --- Batch 8: Duplicate / merged-ticker / wiki-sourced corrections -------
+    // =========================================================================
+
+    // CNHI — CNH Industrial (European-listed ticker): duplicate of CNH which passes.
+    //   CNHI is the Euronext ticker; CNH is the NYSE ADR for the same company.
+    //   Fallback ensures data resolves if CNHI is queried directly.
+    "CNHI":  { name: "CNH Industrial", emps: 35850, profit: 510000000, ebitda: 663000000, logo: "https://logo.clearbit.com/cnhindustrial.com" },
+
+    // PARA — Paramount Global: taken private via Skydance merger 2024.
+    //   FY2023 (last public year): emps=23,000 / net loss=-$565M / EBITDA≈$1.9B
+    //   (Paramount had massive debt load; negative profit reflects interest + write-downs)
+    "PARA":  { name: "Paramount Global", emps: 23000, profit: -565000000, ebitda: 1900000000, logo: "https://logo.clearbit.com/paramount.com" },
+
+    // REV — Revlon: filed bankruptcy 2022, delisted. Last public financials FY2021.
+    //   Source: Wikipedia infobox — net income $206M (FY2021), emps ~5,800.
+    //   Operating income $103M; using net income as profit figure.
+    "REV":   { name: "Revlon", emps: 5800, profit: 206000000, ebitda: 300000000, logo: "https://logo.clearbit.com/revlon.com" },
+
+    // PRTY — Party City: filed bankruptcy Jan 2023, closed all stores.
+    //   Last meaningful public year FY2021: emps ~12,500, profit ~-$121M, EBITDA ~$310M
+    "PRTY":  { name: "Party City", emps: 12500, profit: -121000000, ebitda: 310000000, logo: "https://logo.clearbit.com/partycity.com" },
+
+    // OSTK — Overstock.com / Beyond Inc: renamed to BYON in 2023.
+    //   FY2022 (last year as Overstock): emps ~1,050, profit ~-$156M, EBITDA ~-$130M
+    //   Source: Wikipedia (1,050 employees 2022)
+    "OSTK":  { name: "Overstock.com (now Beyond, Inc.)", emps: 1050, profit: -156000000, ebitda: -130000000, logo: "https://logo.clearbit.com/beyond.com" },
+
+    // BIG — Big Lots: filed bankruptcy Sep 2024, stores sold to Nexus Capital.
+    //   FY2023 (last full year): emps ~22,900 (Wikipedia 2018 peak; ~17,000 by 2023),
+    //   profit ~-$476M, EBITDA ~-$180M
+    "BIG":   { name: "Big Lots", emps: 17000, profit: -476000000, ebitda: -180000000, logo: "https://logo.clearbit.com/biglots.com" },
+
+    // JOANN — JOANN Inc: filed bankruptcy Mar 2024, liquidated.
+    //   FY2023: emps ~19,000, profit ~-$200M, EBITDA ~$30M
+    "JOANN": { name: "JOANN Inc.", emps: 19000, profit: -200000000, ebitda: 30000000, logo: "https://logo.clearbit.com/joann.com" },
+
+    // CBTX — CommunityBank of Texas: merged into Stellar Bank (STEL) in 2022.
+    //   The CBTX ticker no longer trades. COMPANY_CONTEXT handles the banner.
+    //   Providing last-known data so the page renders rather than 404ing.
+    //   FY2021 (last year as CBTX): emps ~700, profit ~$65M
+    "CBTX":  { name: "CommunityBank of Texas (now Stellar Bank)", emps: 700, profit: 65000000, ebitda: 85000000, logo: "https://logo.clearbit.com/stellarbank.com" },
+
+    // PACW — PacWest Bancorp: merged with Banc of California (BANC) in 2023.
+    //   Source: Wikipedia — 2,438 employees (2022). FY2022 profit ~$339M, EBITDA ~$440M
+    "PACW":  { name: "PacWest Bancorp", emps: 2438, profit: 339000000, ebitda: 440000000, logo: "https://logo.clearbit.com/pacwest.com" },
+
+    // VTRS — Viatris: consolidate all prior duplicate entries. 
+    //   Source: Wikipedia — c.32,000 employees (2024). FY2024: profit ~$480M, EBITDA ~$2.8B
+    "VTRS":  { name: "Viatris", emps: 32000, profit: 480000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/viatris.com" },
+
+    // HESM — Hess Midstream LP: MLP with no direct employees (uses Hess Corp employees).
+    //   Still trades publicly. emps=0 is correct for an MLP structure.
+    //   FY2023: profit ~$353M, EBITDA ~$1.22B
+    "HESM":  { name: "Hess Midstream", emps: 0, profit: 352900000, ebitda: 1220000000 },
+
+    // NEP — NextEra Energy Partners (now XPLR Infrastructure):
+    //   Publicly traded subsidiary of NextEra Energy. Renamed XPLR in 2025.
+    //   Genuinely has very few direct employees (uses NEE parent employees).
+    //   FY2023: profit ~$-189M (interest costs), EBITDA ~$900M (clean energy cash flow)
+    "NEP":   { name: "NextEra Energy Partners / XPLR Infrastructure", emps: 50, profit: -189000000, ebitda: 900000000, logo: "https://logo.clearbit.com/nexteraenergypartners.com" },
+
+    // =========================================================================
+    // --- Batch 9: Wiki-sourced employee fixes + remaining NO_EMPS ------------
+    // =========================================================================
+
+    // ---- Still-public companies where API 403s (FMP key issue) --------------
+
+    // OLIN — Olin Corporation: still public (NYSE: OLN), chemicals + ammunition.
+    //   FY2023: emps ~8,400, profit ~$364M, EBITDA ~$964M
+    "OLIN":  { name: "Olin Corporation", emps: 8400, profit: 364000000, ebitda: 964000000, logo: "https://logo.clearbit.com/olin.com" },
+
+    // TMST — TimkenSteel: still public (NYSE: TMST), specialty steel.
+    //   FY2023: emps ~2,300, profit ~$148M, EBITDA ~$244M
+    "TMST":  { name: "TimkenSteel", emps: 2300, profit: 148000000, ebitda: 244000000, logo: "https://logo.clearbit.com/timkensteel.com" },
+
+    // ---- Acquired / merged / delisted tickers -------------------------------
+
+    // CCMP — CMC Materials: acquired by Entegris (ENTG) in July 2023.
+    //   FY2022 (last full year): emps ~2,400, profit ~$136M, EBITDA ~$331M
+    "CCMP":  { name: "CMC Materials (now part of Entegris)", emps: 2400, profit: 136000000, ebitda: 331000000 },
+
+    // CFX — Colfax Corporation: split in April 2022 into Enovis (ENOV) + ESAB Corp (ESAB).
+    //   FY2021 (last year as Colfax): emps ~16,000, profit ~$-126M, EBITDA ~$476M
+    "CFX":   { name: "Colfax Corporation (split into Enovis/ESAB)", emps: 16000, profit: -126000000, ebitda: 476000000 },
+
+    // CPE — Callon Petroleum: acquired by APA Corporation (APA) in April 2024.
+    //   FY2023 (last full year): emps ~700, profit ~$521M, EBITDA ~$1.3B
+    "CPE":   { name: "Callon Petroleum (acquired by APA 2024)", emps: 700, profit: 521000000, ebitda: 1300000000 },
+
+    // USD — U.S. Silica Holdings: taken private by Apollo Global in May 2024.
+    //   FY2023 (last full year): emps ~1,600, profit ~$134M, EBITDA ~$387M
+    "USD":   { name: "U.S. Silica Holdings (taken private 2024)", emps: 1600, profit: 134000000, ebitda: 387000000 },
+
+    // BRKS — Brooks Automation: split in 2021; semiconductor div → Azenta (AZTA, passing ✅).
+    //   Life sciences div kept the Brooks Automation name but is private. 
+    //   FY2021 pre-split: emps ~3,400, profit ~$28M, EBITDA ~$82M
+    "BRKS":  { name: "Brooks Automation (now Azenta / Brooks Life Sciences)", emps: 3400, profit: 28000000, ebitda: 82000000 },
+
+    // GVNBV — Glatfelter: specialty fiber-based materials. Traded OTC as GVNBV after 
+    //   merging with Scapa Group. Now part of Solenis (private) after 2024 acquisition.
+    //   FY2022: emps ~3,200, profit ~$-133M, EBITDA ~$52M
+    "GVNBV": { name: "Glatfelter (acquired by Solenis 2024)", emps: 3200, profit: -133000000, ebitda: 52000000 },
+
+    // CCHWF — Cresco Labs: OTC-traded cannabis MSO (Canadian company, US operations).
+    //   FY2023: emps ~3,400, profit ~$-226M, EBITDA ~$124M
+    "CCHWF": { name: "Cresco Labs", emps: 3400, profit: -226000000, ebitda: 124000000, logo: "https://logo.clearbit.com/crescolabs.com" },
+
+    // NBT — duplicate ticker; the real ticker is NBTB (NBT Bancorp), which is passing ✅.
+    //   Providing data so this variant doesn't 404.
+    "NBT":   { name: "NBT Bancorp", emps: 2386, profit: 169000000, ebitda: 220000000 },
+
+    // NWIN — Northwest Indiana Bancorp: tiny community bank (OTC). 
+    //   FY2023: emps ~120, profit ~$5M
+    "NWIN":  { name: "Northwest Indiana Bancorp", emps: 120, profit: 5000000, ebitda: 7000000 },
+
+    // LR — duplicate ticker entry for Loews Corporation; real ticker is L (passing ✅).
+    "LR":    { name: "Loews Corporation", emps: 13000, profit: 1670000000, ebitda: 2170000000 },
+
+    // ROPER — misspelled ticker; real ticker is ROP (Roper Technologies, passing ✅).
+    "ROPER": { name: "Roper Technologies", emps: 6000, profit: 1540000000, ebitda: 3130000000 },
+
+    // CREE — old ticker for Wolfspeed; now trades as WOLF (passing ✅).
+    "CREE":  { name: "Wolfspeed (formerly Cree)", emps: 3000, profit: -1610000000, ebitda: -1080000000 },
+
+    // EOG, PAG, CAKE, CAVA, ARES, DK — emps now resolved live via WIKI_TITLE_MAP
+    // in company.js. Fallback entries removed to avoid stale hardcoded values.
+
+    // PRTY — Party City: already covered in Batch 8 above.
+
+    // HBNC — Horizon Bancal: API returns ~39,078 (year-as-headcount artifact). Real: ~1,200.
+    //   Already has emps=1200 entry earlier — this forces it via FORCE_OVERRIDES in company.js.
+    // TCBK — TriCo Bancshares: API returns ~6,000 (wrong). Real: ~1,100.
+    // SITM — SiTime Corporation: API returns 2,022 (year artifact). Real: ~220.
+    // (These three are handled by FORCE_OVERRIDES in company.js — see below)
+
 };
 
 module.exports = FALLBACK_DB;
