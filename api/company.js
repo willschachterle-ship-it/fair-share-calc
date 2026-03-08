@@ -28,9 +28,12 @@ async function fetchFromEDGAR(symbol) {
     if (!tickerRes.ok) throw new Error('EDGAR tickers HTTP ' + tickerRes.status);
     const tickers = await tickerRes.json();
 
+    // EDGAR uses hyphens for multi-class tickers (BRK-B, LGF-A) — try both formats
+    const symbolVariants = [symbol.toUpperCase(), symbol.toUpperCase().replace(/\./, '-')];
+
     let cik = null, companyName = null;
     for (const entry of Object.values(tickers)) {
-        if (entry.ticker && entry.ticker.toUpperCase() === symbol.toUpperCase()) {
+        if (entry.ticker && symbolVariants.includes(entry.ticker.toUpperCase())) {
             cik = String(entry.cik_str).padStart(10, '0');
             companyName = entry.title;
             break;
@@ -2064,6 +2067,18 @@ module.exports = async function handler(req, res) {
             if (cmcEmps) merged.emps = cmcEmps;
         } catch(e) {
             errors.push('CMC: ' + e.message);
+        }
+    }
+
+    // If all APIs failed to return a name but we have a known Wikipedia title,
+    // seed the name and try Wikipedia directly — handles GPS, ODP, BRK.B etc.
+    if (!merged.name && WIKI_TITLE_MAP[symbol]) {
+        merged.name = WIKI_TITLE_MAP[symbol];
+        try {
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name, WIKI_TITLE_MAP[symbol]);
+            if (wikiEmps) merged.emps = wikiEmps;
+        } catch(e) {
+            errors.push('Wikipedia (fallback name): ' + e.message);
         }
     }
 
