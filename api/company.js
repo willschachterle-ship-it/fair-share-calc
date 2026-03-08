@@ -1582,6 +1582,9 @@ const WIKI_TITLE_MAP = {
     'DY':    'Dycom Industries',
     'AGCO':  'AGCO',
     'CNH':   'CNH Industrial',
+    'CNHI':  'CNH Industrial',       // Euronext ticker for same company as CNH (NYSE ADR)
+    'DK':    'Delek US',             // Delek US Holdings (parent; DKL is the MLP subsidiary)
+    'CBTX':  'Stellar Bank',         // CommunityBank of Texas merged into Stellar Bank 2022
     'GNRC':  'Generac Holdings',
     'HUBB':  'Hubbell Incorporated',
     'JBL':   'Jabil',
@@ -1922,6 +1925,20 @@ const WIKI_TITLE_MAP = {
     'ACHR':  'Archer Aviation',
     'AL':    'Air Lease Corporation',
     'AER':   'AerCap',
+
+    // ── Tickers that need explicit title to resolve on Wikipedia ─────────────
+    'EOG':   'EOG Resources',
+    'PAG':   'Penske Automotive Group',
+    'CAKE':  'The Cheesecake Factory',
+    'CAVA':  'Cava Group',
+    'VTRS':  'Viatris',          // overrides earlier entry; ensures symbol lookup wins
+    'CNHI':  'CNH Industrial',   // Euronext ticker, same company as CNH
+    'PARA':  'Paramount Global',
+    'PACW':  'PacWest Bancorp',
+    'BIG':   'Big Lots',
+    'OSTK':  'Overstock.com',    // now Beyond Inc / BYON
+    'DK':    'Delek US',
+    'ARES':  'Ares Management',
 };
 
 async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null) {
@@ -2421,13 +2438,20 @@ function rejectOutliers(values) {
 
 function bestFinancial(values) {
     // values is array of {val, source} objects
-    const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v));
+    // Filter out exact zeros — a profit/ebitda of $0 is almost always a failed
+    // XBRL lookup, not real data. A company truly reporting $0 is astronomically
+    // rare and would appear in other sources too.
+    const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v) && v !== 0);
     if (!nums.length) return null;
     const clean = rejectOutliers(nums);
-    if (!clean.length) return median(nums); // all outliers - use median of raw
-    // Prefer EDGAR if it survived outlier rejection, else median of clean values
-    const edgarVal = values.find(v => v.source === 'edgar' && clean.includes(v.val));
-    if (edgarVal) return edgarVal.val;
+    if (!clean.length) return Math.round(median(nums));
+    // Priority: FMP > Finnhub > EDGAR > AV
+    // EDGAR wins on emps but can have wrong-period or malformed financial data.
+    const priority = ['fmp', 'finnhub', 'edgar', 'alphavantage'];
+    for (const src of priority) {
+        const match = values.find(v => v.source === src && clean.includes(v.val));
+        if (match) return match.val;
+    }
     return Math.round(median(clean));
 }
 
@@ -2549,6 +2573,7 @@ module.exports = async function handler(req, res) {
                 ? rawMergedName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
                 : rawMergedName)
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ /MD/ etc
+                .replace(/\s*\(US\)\s*$/i, '')              // strip Finnhub's (US) suffix
                 .trim();
             const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle);
             if (wikiEmps) merged.emps = wikiEmps;
@@ -2664,6 +2689,16 @@ module.exports = async function handler(req, res) {
         // Duolingo: emps=700 is wrong (real: ~5,600). Profit=$414M inflated by tax benefit.
         // Real FY2024 net income = $183M.
         "DUOL":  { emps: 5600, profit: 183000000 },
+
+        // HBNC — Horizon Bancal: API returns ~39,078 employees (filing year as headcount artifact).
+        // Real employee count: ~1,200.
+        "HBNC":  { emps: 1200 },
+
+        // TCBK — TriCo Bancshares: API returns ~6,000 (wrong). Real: ~1,100.
+        "TCBK":  { emps: 1100 },
+
+        // SITM — SiTime Corporation: API returns 2,022 (year artifact). Real: ~220.
+        "SITM":  { emps: 220 },
     };
 
     if (FORCE_OVERRIDES[symbol]) {
