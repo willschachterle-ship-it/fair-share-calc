@@ -497,7 +497,101 @@ const SERVER_FALLBACK_DB = {
   "CDAY": {"name":"Dayforce (Ceridian)","emps":8700,"profit":120000000,"ebitda":380000000},
   "LANC": {"name":"Lancaster Colony","emps":4000,"profit":130000000,"ebitda":200000000},
   "ROLL": {"name":"RBC Bearings","emps":6800,"profit":260000000,"ebitda":470000000},
-  "OMI":  {"name":"Owens & Minor","emps":21000,"profit":-80000000,"ebitda":320000000}
+  "OMI":  {"name":"Owens & Minor","emps":21000,"profit":-80000000,"ebitda":320000000},
+
+  // ── NO_EMPS fixes: wiki scraper failing to find employee count ────────────
+  // CAVA: Wikipedia says c.11,000 (2024). Scraper fails on "Cava Group, Inc." name.
+  "CAVA":  {"name":"Cava Group","emps":11000},
+  // EMN: Eastman Chemical. Wikipedia says 14,000. Scraper fails on "Eastman Chemical Co".
+  "EMN":   {"name":"Eastman Chemical","emps":14000},
+
+  // ── API_ERROR: acquired/merged — need name to avoid 404, financials for calc ──
+  // REV: Revlon filed bankruptcy 2022, emerged 2023. FY2021 data.
+  "REV":   {"name":"Revlon","emps":5800,"profit":206000000,"ebitda":300000000},
+  // ROPER: misspelled ticker, real ticker is ROP (passing). Redirect.
+  "ROPER": {"name":"Roper Technologies","emps":6000,"profit":1540000000,"ebitda":3130000000},
+  // LHCG: acquired by UnitedHealth/Optum in 2023.
+  "LHCG":  {"name":"LHC Group","emps":30000,"profit":220000000,"ebitda":420000000},
+  // NBT: duplicate of NBTB (passing). Same company, alternate ticker format.
+  "NBT":   {"name":"NBT Bancorp","emps":2386,"profit":169000000,"ebitda":220000000},
+  // NWIN: Northwest Indiana Bancorp — tiny OTC community bank.
+  "NWIN":  {"name":"Northwest Indiana Bancorp","emps":120,"profit":5000000,"ebitda":7000000},
+  // OLIN: Olin Corporation — still public (NYSE). FY2024 data.
+  "OLIN":  {"name":"Olin Corporation","emps":8400,"profit":364000000,"ebitda":964000000},
+  // MMP: Magellan Midstream acquired by ONEOK 2023. FY2022 data.
+  "MMP":   {"name":"Magellan Midstream Partners","emps":1700,"profit":850000000,"ebitda":1500000000},
+  // SAVE: Spirit Airlines filed bankruptcy Nov 2024.
+  "SAVE":  {"name":"Spirit Airlines","emps":12000,"profit":-340000000,"ebitda":-180000000},
+  // SAFM: Sanderson Farms taken private by Cargill/Continental Grain 2022.
+  "SAFM":  {"name":"Sanderson Farms","emps":17500,"profit":490000000,"ebitda":700000000},
+  // SWM: Renamed Mativ Holdings (MATV) after merging with Neenah 2022.
+  "SWM":   {"name":"Schweitzer-Mauduit International (now Mativ)","emps":4500,"profit":60000000,"ebitda":280000000},
+  // FBHS: Split into FBIN + MBC 2023.
+  "FBHS":  {"name":"Fortune Brands Home & Security","emps":13000,"profit":600000000,"ebitda":1000000000},
+  // FOE: Ferro Corporation acquired by Prince International 2022.
+  "FOE":   {"name":"Ferro Corporation","emps":5000,"profit":100000000,"ebitda":250000000},
+  // AUY: Yamana Gold acquired by Pan American Silver 2023.
+  "AUY":   {"name":"Yamana Gold","emps":7600,"profit":330000000,"ebitda":900000000},
+  // NCR: Split into NCR Atleos (NATL) + NCR Voyix (VYX) 2023.
+  "NCR":   {"name":"NCR Corporation","emps":35000,"profit":240000000,"ebitda":1200000000},
+  // KMPH: KemPharm acquired by Aquestive Therapeutics 2022.
+  "KMPH":  {"name":"KemPharm","emps":50,"profit":-40000000,"ebitda":-35000000},
+  // AIMC: Altra Industrial Motion merged into Regal Rexnord (RRX) 2022.
+  "AIMC":  {"name":"Altra Industrial Motion","emps":11400,"profit":150000000,"ebitda":520000000},
+  // TMST: TimkenSteel renamed Metallus (MTUS) 2024. FY2023 data.
+  "TMST":  {"name":"TimkenSteel (now Metallus)","emps":2300,"profit":148000000,"ebitda":244000000},
+  // MDC: MDC Holdings acquired by Sumitomo Forestry 2024.
+  "MDC":   {"name":"MDC Holdings","emps":2100,"profit":370000000,"ebitda":500000000},
+  // LUPE: Lundin Petroleum became Lundin Energy, acquired by APA 2022.
+  "LUPE":  {"name":"Lundin Petroleum","emps":1100,"profit":1200000000,"ebitda":2100000000},
+  // CPE: Callon Petroleum acquired by APA Corporation 2024.
+  "CPE":   {"name":"Callon Petroleum","emps":700,"profit":521000000,"ebitda":1300000000},
+  // USD: US Silica taken private by Apollo 2024.
+  "USD":   {"name":"US Silica Holdings","emps":1600,"profit":134000000,"ebitda":387000000},
+  // NGAS: Gastar Exploration filed bankruptcy 2018, delisted.
+  "NGAS":  {"name":"Gastar Exploration","emps":60,"profit":-80000000,"ebitda":40000000},
+  // CDK: CDK Global taken private by Brookfield 2022.
+  "CDK":   {"name":"CDK Global","emps":9000,"profit":200000000,"ebitda":700000000},
+  // SEND: SendGrid acquired by Twilio 2019.
+  "SEND":  {"name":"SendGrid","emps":900,"profit":10000000,"ebitda":40000000},
+  // PRSP: Perspecta acquired by Peraton 2021.
+  "PRSP":  {"name":"Perspecta","emps":14000,"profit":200000000,"ebitda":500000000},
+  // BRKS: Brooks Automation split 2021 → Azenta (AZTA, passing) + Brooks Life Sciences (private).
+  "BRKS":  {"name":"Brooks Automation","emps":3400,"profit":28000000,"ebitda":82000000},
+  // CCMP: CMC Materials acquired by Entegris 2022.
+  "CCMP":  {"name":"CMC Materials","emps":2400,"profit":136000000,"ebitda":331000000},
+  // CREE: Old ticker for Wolfspeed, now WOLF (passing).
+  "CREE":  {"name":"Wolfspeed (formerly Cree)","emps":3000,"profit":-1610000000,"ebitda":-1080000000},
+  // LSI: Life Storage merged with Extra Space Storage (EXR, passing) 2023.
+  "LSI":   {"name":"Life Storage","emps":1600,"profit":350000000,"ebitda":600000000},
+  // WRI: Weingarten Realty acquired by Kimco Realty (KIM, passing) 2021.
+  "WRI":   {"name":"Weingarten Realty","emps":500,"profit":200000000,"ebitda":350000000},
+  // PREIT: Pennsylvania REIT filed bankruptcy 2020, restructured.
+  "PREIT": {"name":"Pennsylvania REIT","emps":200,"profit":-120000000,"ebitda":80000000},
+  // LR: Duplicate ticker for Loews Corporation; real ticker is L (passing).
+  "LR":    {"name":"Loews Corporation","emps":13000,"profit":1670000000,"ebitda":2170000000},
+  // CFX: Colfax split into ESAB (passing) + Enovis (ENOV) 2022.
+  "CFX":   {"name":"Colfax Corporation","emps":16000,"profit":-126000000,"ebitda":476000000},
+  // HZN: Horizon Global filed bankruptcy 2023.
+  "HZN":   {"name":"Horizon Global","emps":4500,"profit":-60000000,"ebitda":80000000},
+  // YRCW: Yellow Corporation (YRC Worldwide) filed bankruptcy Jul 2023.
+  "YRCW":  {"name":"Yellow Corporation","emps":30000,"profit":-505000000,"ebitda":100000000},
+  // USAK: USA Truck acquired by Knight-Swift (KNX, passing) 2022.
+  "USAK":  {"name":"USA Truck","emps":2200,"profit":80000000,"ebitda":160000000},
+  // PTSI: P.A.M. Transport acquired by Heartland Express 2022.
+  "PTSI":  {"name":"P.A.M. Transport Services","emps":2500,"profit":90000000,"ebitda":180000000},
+  // ECHO: Echo Global Logistics taken private by The Jordan Company 2021.
+  "ECHO":  {"name":"Echo Global Logistics","emps":2700,"profit":50000000,"ebitda":100000000},
+  // TRTN: Triton International acquired by Brookfield Infrastructure 2023.
+  "TRTN":  {"name":"Triton International","emps":600,"profit":620000000,"ebitda":1100000000},
+  // GVNBV: Glatfelter acquired by Solenis 2024.
+  "GVNBV": {"name":"Glatfelter","emps":3200,"profit":-133000000,"ebitda":52000000},
+  // CCHWF: Cresco Labs — OTC cannabis company.
+  "CCHWF": {"name":"Cresco Labs","emps":3400,"profit":-226000000,"ebitda":124000000},
+  // JOANN: JOANN Inc filed bankruptcy 2024.
+  "JOANN": {"name":"JOANN Inc","emps":20000,"profit":-170000000,"ebitda":60000000},
+  // PRTY: Party City filed bankruptcy Jan 2023.
+  "PRTY":  {"name":"Party City","emps":12500,"profit":-121000000,"ebitda":310000000}
 };
 
 
@@ -1665,7 +1759,7 @@ const WIKI_TITLE_MAP = {
     'FMC':   'FMC Corporation',
     'CF':    'CF Industries',
     'MOS':   'Mosaic Company',
-    'EMN':   'Eastman Chemical',
+    'EMN':   'Eastman Chemical Company',
     'ASH':   'Ashland Inc.',
     'TROX':  'Tronox',
     'KWR':   'Quaker Houghton',
