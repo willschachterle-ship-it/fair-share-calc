@@ -31,16 +31,27 @@ const COMPANY_CONTEXT = {
     "PACW":  "⚠️ PacWest Bancorp merged with Banc of California (BANC) in 2023. Try searching BANC for current data.",
     "USD":   "⚠️ US Silica Holdings was taken private by Apollo Global Management in 2018. These figures are from its last reported year as a public company.",
     "CDAY":  "⚠️ Ceridian HCM rebranded to Dayforce and trades as DAY since 2024. Try searching DAY for current data.",
+    // Merged tickers
+    "CBTX":  "⚠️ CommunityBank of Texas merged into Stellar Bank (STEL) in 2022 and no longer trades as CBTX. These figures are from its last reported year as a public company.",
+    "STEL":  "ℹ️ Stellar Bank (STEL) was formed in 2022 by the merger of Allegiance Bank and CommunityBank of Texas. The data shown reflects the combined entity.",
     // Bankrupt / delisted
+    "REV":   "⚠️ Revlon filed for Chapter 11 bankruptcy in 2022 and was subsequently delisted. These figures are from its last reported year as a public company (FY2021).",
+    "BIG":   "⚠️ Big Lots filed for bankruptcy in September 2024. Its store leases were acquired by Nexus Capital. These figures are from its last reported year as a public company.",
+    "JOANN": "⚠️ JOANN Inc. filed for bankruptcy in March 2024 and was liquidated. These figures are from its last reported year as a public company.",
     "SAVE":  "⚠️ Spirit Airlines filed for bankruptcy in November 2024 and its shares were delisted. These figures are from its last reported year as a public company.",
-    "REV":   "⚠️ Revlon filed for bankruptcy in 2022 and was subsequently delisted. These figures are from its last reported year as a public company.",
-    "BIG":   "⚠️ Big Lots filed for bankruptcy in 2024 and its stores were acquired by Nexus Capital. These figures are from its last reported year as a public company.",
-    "JOANN": "⚠️ JOANN Inc. filed for bankruptcy in 2024 and was delisted. These figures are from its last reported year as a public company.",
+
     "PRTY":  "⚠️ Party City filed for bankruptcy and closed all stores in 2023. These figures are from its last reported year as a public company.",
     "YRCW":  "⚠️ Yellow Corporation (formerly YRC Worldwide) filed for bankruptcy and shut down in 2023. These figures are from its last reported year as a public company.",
     "HZN":   "⚠️ Horizon Global filed for bankruptcy and was delisted in 2023. These figures are from its last reported year as a public company.",
     "NGAS":  "⚠️ Gastar Exploration filed for bankruptcy in 2018 and was delisted. These figures are historical.",
     "PREIT": "⚠️ Pennsylvania REIT (PREIT) filed for bankruptcy in 2023 and was delisted. These figures are from its last reported year as a public company.",
+    "GVNBV": "⚠️ Glatfelter (traded as GVNBV on OTC) was acquired by Solenis in 2024. These figures are from its last reported year as a public company.",
+    "CCHWF": "ℹ️ Cresco Labs is a U.S. cannabis company traded OTC on Canadian markets as CCHWF. Financial data may be limited due to OTC trading status.",
+    "BRKS":  "⚠️ Brooks Automation split in 2021: its semiconductor automation division became Azenta (AZTA), while its life sciences division continues as Brooks Life Sciences (private). Search AZTA for current data.",
+    "LR":    "ℹ️ LR is not an active ticker. Loews Corporation trades as L.",
+    "ROPER": "ℹ️ ROPER is not the correct ticker. Roper Technologies trades as ROP.",
+    "CREE":  "⚠️ CREE was Wolfspeed's former ticker. Wolfspeed now trades as WOLF.",
+    "NBT":   "ℹ️ NBT is not the standard ticker. NBT Bancorp trades as NBTB.",
     "NWIN":  "⚠️ Northwest Indiana Bancorp was delisted and is no longer actively traded. These figures are from its last reported period.",
 };
 
@@ -270,8 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[symbol.toUpperCase()];
         if (db) {
             if (!json.emps)   json.emps   = db.emps;
-            if (json.profit === null || json.profit === undefined) json.profit = db.profit;
-            if (json.ebitda === null || json.ebitda === undefined) json.ebitda = db.ebitda;
+            if (!json.profit)  json.profit = db.profit;   // treat 0 same as missing
+            if (!json.ebitda)  json.ebitda = db.ebitda;   // treat 0 same as missing
             json.name = json.name || db.name;
             json.logo = json.logo || db.logo;
         }
@@ -281,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')   // strip /DE/ first
                 .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '')
                 .replace(/,?\s+(Corp\.?|Inc\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc)\.?\s*$/i, '') // run twice for "TECHNOLOGIES, INC."
+                .replace(/\s*\(US\)\s*$/i, '')  // strip Finnhub's (US) disambiguation suffix
                 .trim()
                 .replace(/(?<![a-z])([A-Z]{2,})(?![a-z])/g, function(m) {
                     // Keep short all-caps tokens as-is: RTX, IBM, CVS
@@ -382,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 income = annualInput ? parseFloat(annualInput.value) || 0 : 0;
             }
 
-            // Null guards - default to 0 if missing
-            if (data.profit === null || data.profit === undefined) data.profit = 0;
-            if (data.ebitda === null || data.ebitda === undefined) data.ebitda = data.profit > 0 ? Math.round(data.profit * 1.3) : 0;
+            // Null/zero guards — treat 0 same as missing (API returning 0 is a failed lookup)
+            if (!data.profit)  data.profit = 0;
+            if (!data.ebitda)  data.ebitda = data.profit > 0 ? Math.round(data.profit * 1.3) : 0;
             // If emps missing, we can't calculate - but give a helpful message
             if (!data.emps) {
                 var ticker = data.resolvedSymbol || symbol;
