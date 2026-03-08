@@ -1,264 +1,1293 @@
-// ============================================================
-// FALLBACK_DB — manually maintained company data
-// Update once a year with latest annual report figures.
-// All financial values in USD (convert foreign currencies).
-// ============================================================
+// ═══════════════════════════════════════════════════════════════════════════════
+// Fair Share Calculator — Full Top 1000 Test  (v3 — all 1000, deduplicated)
+// 
+// For each company checks: employees, profit, ebitda
+// Per-field failure breakdown + Wikipedia pre-check + FALLBACK_DB suggestions
+// Runtime: ~1000 companies × 250ms = ~4.5 min
+//
+// HOW TO RUN:
+//   CodeSandbox → New Sandbox → Node HTTP Server → paste into index.js → run
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const FALLBACK_DB = {
-    // International companies (ADRs) - financials in USD equivalent
-    "CAE": { name: "CAE Inc.", emps: 13000, profit: 288600000, ebitda: 980800000, logo: "https://logo.clearbit.com/cae.com" },
-    "FINMY": { name: "Leonardo S.p.A.", emps: 60500, profit: 1188000000, ebitda: 2268000000, logo: "https://logo.clearbit.com/leonardocompany.com" },
-    "THLEF": { name: "Thales Group", emps: 81000, profit: 1800000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/thalesgroup.com" },
-    "SAABF": { name: "Saab", emps: 24000, profit: 420000000, ebitda: 780000000, logo: "https://logo.clearbit.com/saabgroup.com" },
-    "RNMBY": { name: "Rheinmetall", emps: 33000, profit: 1100000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/rheinmetall.com" },
-    "BAESY": { name: "BAE Systems", emps: 110000, profit: 2060000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/baesystems.com" },
-    "SHEL":  { name: "Shell", emps: 103000, profit: 19359000000, ebitda: 42000000000, logo: "https://logo.clearbit.com/shell.com" },
-    "BP":    { name: "BP", emps: 90000, profit: 8900000000, ebitda: 26000000000, logo: "https://logo.clearbit.com/bp.com" },
-    "TM":    { name: "Toyota", emps: 375235, profit: 27000000000, ebitda: 44000000000, logo: "https://logo.clearbit.com/toyota.com" },
-    "EADSY": { name: "Airbus", emps: 150000, profit: 4800000000, ebitda: 8200000000, logo: "https://logo.clearbit.com/airbus.com" },
-    "RYCEY": { name: "Rolls-Royce", emps: 42000, profit: 2700000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/rolls-royce.com" },
-    "TSM":   { name: "TSMC", emps: 77552, profit: 34600000000, ebitda: 46000000000, logo: "https://logo.clearbit.com/tsmc.com" },
-    "BABA":  { name: "Alibaba", emps: 204891, profit: 11600000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/alibaba.com" },
-    "TSLA": { name: "Tesla, Inc.", emps: 140473, profit: 14974000000, ebitda: 19700000000, logo: "https://logo.clearbit.com/tesla.com" },
-    "AAPL": { name: "Apple Inc.", emps: 164000, profit: 96995000000, ebitda: 130000000000, logo: "https://logo.clearbit.com/apple.com" },
-    "MSFT": { name: "Microsoft Corporation", emps: 221000, profit: 72361000000, ebitda: 102000000000, logo: "https://logo.clearbit.com/microsoft.com" },
-    "GOOGL": { name: "Alphabet Inc.", emps: 182502, profit: 73795000000, ebitda: 100000000000, logo: "https://logo.clearbit.com/google.com" },
-    "AMZN": { name: "Amazon.com, Inc.", emps: 1525000, profit: 30425000000, ebitda: 85000000000, logo: "https://logo.clearbit.com/amazon.com" },
-    "META": { name: "Meta Platforms, Inc.", emps: 67317, profit: 39098000000, ebitda: 54000000000, logo: "https://logo.clearbit.com/meta.com" },
-    "NVDA": { name: "NVIDIA Corporation", emps: 29600, profit: 29760000000, ebitda: 33000000000, logo: "https://logo.clearbit.com/nvidia.com" },
-    "WMT": { name: "Walmart Inc.", emps: 2100000, profit: 11680000000, ebitda: 28000000000, logo: "https://logo.clearbit.com/walmart.com" },
-    "JPM": { name: "JPMorgan Chase & Co.", emps: 308669, profit: 49552000000, ebitda: 55000000000, logo: "https://logo.clearbit.com/jpmorganchase.com" },
-    "XOM": { name: "Exxon Mobil Corporation", emps: 62000, profit: 36010000000, ebitda: 58000000000, logo: "https://logo.clearbit.com/exxonmobil.com" },
-    "BAC": { name: "Bank of America Corp.", emps: 213000, profit: 26515000000, ebitda: 30000000000, logo: "https://logo.clearbit.com/bankofamerica.com" },
-    "UNH": { name: "UnitedHealth Group", emps: 400000, profit: 22381000000, ebitda: 29000000000, logo: "https://logo.clearbit.com/unitedhealthgroup.com" },
-    "COST": { name: "Costco Wholesale Corp.", emps: 316000, profit: 6292000000, ebitda: 9000000000, logo: "https://logo.clearbit.com/costco.com" },
-    "HD": { name: "The Home Depot, Inc.", emps: 465000, profit: 15143000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/homedepot.com" },
-    "NFLX": { name: "Netflix, Inc.", emps: 13000, profit: 5408000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/netflix.com" },
-    "DIS": { name: "The Walt Disney Company", emps: 220000, profit: 3000000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/thewaltdisneycompany.com" },
-    "SBUX": { name: "Starbucks Corporation", emps: 402000, profit: 3582000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/starbucks.com" },
-    "MCD": { name: "McDonald's Corporation", emps: 150000, profit: 8468000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mcdonalds.com" },
-    "F": { name: "Ford Motor Company", emps: 177000, profit: 4300000000, ebitda: 12000000000, logo: "https://logo.clearbit.com/ford.com" },
-    "GM": { name: "General Motors Company", emps: 163000, profit: 9936000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/gm.com" },
-    "INTC": { name: "Intel Corporation", emps: 124800, profit: -16639000000, ebitda: -5000000000, logo: "https://logo.clearbit.com/intel.com" },
-    "CSCO": { name: "Cisco Systems, Inc.", emps: 84900, profit: 12613000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/cisco.com" },
-    "IBM": { name: "IBM Corporation", emps: 288000, profit: 7502000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/ibm.com" },
-    "GS": { name: "Goldman Sachs Group", emps: 45300, profit: 9457000000, ebitda: 11000000000, logo: "https://logo.clearbit.com/goldmansachs.com" },
-    "PFE": { name: "Pfizer Inc.", emps: 88000, profit: -2800000000, ebitda: 5000000000, logo: "https://logo.clearbit.com/pfizer.com" },
-    "FDX": { name: "FedEx Corporation", emps: 547000, profit: 3965000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/fedex.com" },
-    "UBER": { name: "Uber Technologies, Inc.", emps: 32200, profit: 1887000000, ebitda: 4000000000, logo: "https://logo.clearbit.com/uber.com" },
-    "LYFT": { name: "Lyft, Inc.", emps: 3913, profit: 22784000, ebitda: 528800000, logo: "https://logo.clearbit.com/lyft.com" },
-    "NKE": { name: "Nike, Inc.", emps: 83700, profit: 5070000000, ebitda: 7000000000, logo: "https://logo.clearbit.com/nike.com" },
-    "BA": { name: "The Boeing Company", emps: 172000, profit: -2200000000, ebitda: 1000000000, logo: "https://logo.clearbit.com/boeing.com" },
-    "CVX": { name: "Chevron Corporation", emps: 45600, profit: 21369000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/chevron.com" },
-    "TGT": { name: "Target Corporation", emps: 440000, profit: 4138000000, ebitda: 8000000000, logo: "https://logo.clearbit.com/target.com" },
-    "V": { name: "Visa Inc.", emps: 26500, profit: 17273000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/visa.com" },
-    "MA": { name: "Mastercard Incorporated", emps: 33000, profit: 11195000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/mastercard.com" },
-    "KO": { name: "The Coca-Cola Company", emps: 82500, profit: 10714000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/coca-cola.com" },
-    "PEP": { name: "PepsiCo, Inc.", emps: 318000, profit: 9166000000, ebitda: 15000000000, logo: "https://logo.clearbit.com/pepsico.com" },
-    "BIIB": { name: "Biogen Inc.", emps: 7400, profit: 1640000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/biogen.com" },
-    "WEN": { name: "The Wendy's Company", emps: 14500, profit: 103000000, ebitda: 490000000, logo: "https://logo.clearbit.com/wendys.com" },
-    "TAK": { name: "Takeda Pharmaceutical", emps: 49000, profit: 1200000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/takeda.com" },
-    "ESLT":  { name: "Elbit Systems", emps: 20000, profit: 680000000, ebitda: 850000000, logo: "https://logo.clearbit.com/elbitsystems.com" },
-    "SAFRY": { name: "Safran", emps: 100000, profit: 2300000000, ebitda: 4800000000, logo: "https://logo.clearbit.com/safran.com" },
-    "DUAVF": { name: "Dassault Aviation", emps: 14000, profit: 850000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/dassaultaviation.com" },
-    "BCIGY": { name: "Babcock International", emps: 34000, profit: 180000000, ebitda: 520000000, logo: "https://logo.clearbit.com/babcockinternational.com" },
-    "QNTQF": { name: "QinetiQ", emps: 8000, profit: 170000000, ebitda: 310000000, logo: "https://logo.clearbit.com/qinetiq.com" },
-    "AMTM":  { name: "Amentum", emps: 55000, profit: 180000000, ebitda: 680000000, logo: "https://logo.clearbit.com/amentum.com" },
-    "VVX":   { name: "V2X Inc", emps: 16000, profit: 55000000, ebitda: 210000000, logo: "https://logo.clearbit.com/vxinc.com" },
-    "PSN":   { name: "Parsons Corporation", emps: 18000, profit: 290000000, ebitda: 520000000, logo: "https://logo.clearbit.com/parsons.com" },
-    "MANT":  { name: "ManTech", emps: 10000, profit: 120000000, ebitda: 250000000, logo: "https://logo.clearbit.com/mantech.com" },
-    "SAX":   { name: "StandardAero", emps: 7000, profit: 95000000, ebitda: 480000000, logo: "https://logo.clearbit.com/standardaero.com" },
-    "TTMI":  { name: "TTM Technologies", emps: 23000, profit: 95000000, ebitda: 320000000, logo: "https://logo.clearbit.com/ttmtechnologies.com" },
-    "MOG.A": { name: "Moog Inc.", emps: 13500, profit: 180000000, ebitda: 380000000, logo: "https://logo.clearbit.com/moog.com" },
-    "CW":    { name: "Curtiss-Wright", emps: 10000, profit: 320000000, ebitda: 520000000, logo: "https://logo.clearbit.com/curtisswright.com" },
-    "MRCY":  { name: "Mercury Systems", emps: 2800, profit: -180000000, ebitda: 20000000, logo: "https://logo.clearbit.com/mrcy.com" },
-    "SPR":   { name: "Spirit AeroSystems", emps: 16000, profit: -1100000000, ebitda: -200000000, logo: "https://logo.clearbit.com/spiritaero.com" },
-        "4503.T": { name: "Astellas Pharma Inc.", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
-    "CACI": { name: "CACI International", emps: 23000, profit: 310000000, ebitda: 620000000, logo: "https://logo.clearbit.com/caci.com" },
-    // International tech companies (ADRs - financials USD converted)
-    "TSM":   { name: "TSMC", emps: 77000, profit: 34600000000, ebitda: 46000000000, logo: "https://logo.clearbit.com/tsmc.com" },
-    "ASML":  { name: "ASML", emps: 42000, profit: 7800000000, ebitda: 9800000000, logo: "https://logo.clearbit.com/asml.com" },
-    "SSNLF": { name: "Samsung", emps: 262647, profit: 14900000000, ebitda: 38000000000, logo: "https://logo.clearbit.com/samsung.com" },
-    "SAP":   { name: "SAP", emps: 107000, profit: 5000000000, ebitda: 8500000000, logo: "https://logo.clearbit.com/sap.com" },
-    "ARM":   { name: "Arm Holdings", emps: 8330, profit: 1600000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/arm.com" },
-    "SHOP":  { name: "Shopify", emps: 8300, profit: 1400000000, ebitda: 1700000000, logo: "https://logo.clearbit.com/shopify.com" },
-    "ACN":   { name: "Accenture", emps: 774000, profit: 7100000000, ebitda: 9200000000, logo: "https://logo.clearbit.com/accenture.com" },
-    "SONY":  { name: "Sony", emps: 113000, profit: 8700000000, ebitda: 14000000000, logo: "https://logo.clearbit.com/sony.com" },
-    "TOELY": { name: "Tokyo Electron", emps: 16000, profit: 3200000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/tel.com" },
-    "ATEYY": { name: "Advantest", emps: 6464, profit: 820000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/advantest.com" },
-    "XIACY": { name: "Xiaomi", emps: 35000, profit: 2400000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/xiaomi.com" },
-    "TEL":   { name: "TE Connectivity", emps: 89000, profit: 2000000000, ebitda: 3100000000, logo: "https://logo.clearbit.com/te.com" },
-    "IFNNY": { name: "Infineon Technologies", emps: 58600, profit: 1400000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/infineon.com" },
-    "INFY":  { name: "Infosys", emps: 323578, profit: 3200000000, ebitda: 4100000000, logo: "https://logo.clearbit.com/infosys.com" },
-    "NXPI":  { name: "NXP Semiconductors", emps: 34500, profit: 2100000000, ebitda: 3400000000, logo: "https://logo.clearbit.com/nxp.com" },
-    "GRMN":  { name: "Garmin", emps: 21000, profit: 1600000000, ebitda: 2100000000, logo: "https://logo.clearbit.com/garmin.com" },
-    "NOK":   { name: "Nokia", emps: 78434, profit: 1200000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/nokia.com" },
-    "HNHPF": { name: "Hon Hai (Foxconn)", emps: 726772, profit: 6200000000, ebitda: 10800000000, logo: "https://logo.clearbit.com/foxconn.com" },
-    "CRWV":  { name: "CoreWeave", emps: 1800, profit: -863000000, ebitda: 300000000, logo: "https://logo.clearbit.com/coreweave.com" },
-    "LITE":  { name: "Lumentum", emps: 5500, profit: -120000000, ebitda: 180000000, logo: "https://logo.clearbit.com/lumentum.com" },
-    "ERIC":  { name: "Ericsson", emps: 94000, profit: 800000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/ericsson.com" },
-    // International healthcare companies (ADRs)
-    "RHHBY": { name: "Roche", emps: 101000, profit: 11700000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/roche.com" },
-    "NVS":   { name: "Novartis", emps: 78000, profit: 11500000000, ebitda: 16200000000, logo: "https://logo.clearbit.com/novartis.com" },
-    "AZN":   { name: "AstraZeneca", emps: 89900, profit: 5900000000, ebitda: 12800000000, logo: "https://logo.clearbit.com/astrazeneca.com" },
-    "NVO":   { name: "Novo Nordisk", emps: 72000, profit: 13400000000, ebitda: 17800000000, logo: "https://logo.clearbit.com/novonordisk.com" },
-    "MDT":   { name: "Medtronic", emps: 86000, profit: 3600000000, ebitda: 6800000000, logo: "https://logo.clearbit.com/medtronic.com" },
-    "ESLOY": { name: "EssilorLuxottica", emps: 190000, profit: 2800000000, ebitda: 5200000000, logo: "https://logo.clearbit.com/essilorluxottica.com" },
-    "GSK":   { name: "GSK", emps: 71000, profit: 4900000000, ebitda: 8400000000, logo: "https://logo.clearbit.com/gsk.com" },
-    "SNY":   { name: "Sanofi", emps: 91000, profit: 5100000000, ebitda: 9800000000, logo: "https://logo.clearbit.com/sanofi.com" },
-    "TAK":   { name: "Takeda Pharmaceutical", emps: 49000, profit: 1900000000, ebitda: 7200000000, logo: "https://logo.clearbit.com/takeda.com" },
-    "ARGX":  { name: "argenx", emps: 2200, profit: 800000000, ebitda: 900000000, logo: "https://logo.clearbit.com/argenx.com" },
-    "CSLLY": { name: "CSL Limited", emps: 32000, profit: 2200000000, ebitda: 3500000000, logo: "https://logo.clearbit.com/csl.com" },
-    "HLN":   { name: "Haleon", emps: 24000, profit: 1500000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/haleon.com" },
-    "TEVA":  { name: "Teva Pharmaceutical", emps: 37000, profit: 1100000000, ebitda: 3400000000, logo: "https://logo.clearbit.com/tevapharm.com" },
-    "PHG":   { name: "Philips", emps: 69000, profit: 800000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/philips.com" },
-    "BNTX":  { name: "BioNTech", emps: 5500, profit: 900000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/biontech.com" },
-    "BAYRY": { name: "Bayer", emps: 96000, profit: -2900000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/bayer.com" },
-    "MKKGY": { name: "Merck KGaA", emps: 63000, profit: 3100000000, ebitda: 5400000000, logo: "https://logo.clearbit.com/merckgroup.com" },
-    "SMMNY": { name: "Siemens Healthineers", emps: 69000, profit: 2200000000, ebitda: 4100000000, logo: "https://logo.clearbit.com/siemens-healthineers.com" },
-    "FSNUY": { name: "Fresenius", emps: 180000, profit: 1200000000, ebitda: 4800000000, logo: "https://logo.clearbit.com/fresenius.com" },
-    "DSNKY": { name: "Daiichi Sankyo", emps: 17000, profit: 1900000000, ebitda: 3100000000, logo: "https://logo.clearbit.com/daiichisankyo.com" },
-    "OTSKY": { name: "Otsuka Holdings", emps: 33000, profit: 2300000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/otsuka.com" },
-    "LZAGY": { name: "Lonza Group", emps: 17500, profit: 1200000000, ebitda: 2800000000, logo: "https://logo.clearbit.com/lonza.com" },
-    "GALDY": { name: "Galderma", emps: 6000, profit: 400000000, ebitda: 900000000, logo: "https://logo.clearbit.com/galderma.com" },
-    "ALPMY": { name: "Astellas Pharma", emps: 14000, profit: 1100000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/astellas.com" },
-    "RPRX":  { name: "Royalty Pharma", emps: 75, profit: 770000000, ebitda: 1560000000, logo: "https://logo.clearbit.com/royaltypharma.com" },
-    "INSM":  { name: "Insmed", emps: 1400, profit: -1280000000, ebitda: -1240000000, logo: "https://logo.clearbit.com/insmed.com" },
-    "SDZNY": { name: "Sandoz", emps: 23000, profit: 700000000, ebitda: 1400000000, logo: "https://logo.clearbit.com/sandoz.com" },
+const https = require('https');
+const http  = require('http');
+const BASE_URL = 'https://fair-share-calc.vercel.app/api/company';
 
-    // ── Top-1000 complete blackouts: US companies ──────────────────────────────
-    "WBA":   { name: "Walgreens Boots Alliance", emps: 312000, profit: -8636000000, ebitda: 1200000000, logo: "https://logo.clearbit.com/walgreens.com" },
-    "HES":   { name: "Hess Corporation", emps: 1775, profit: 2765000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/hess.com" },
-    "SPOT":  { name: "Spotify Technology S.A.", emps: 9808, profit: 1141000000, ebitda: 1600000000, logo: "https://logo.clearbit.com/spotify.com" },
-    "CP":    { name: "Canadian Pacific Kansas City", emps: 20000, profit: 2940000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/cpkcr.com" },
-    "CNI":   { name: "Canadian National Railway", emps: 25000, profit: 4900000000, ebitda: 8100000000, logo: "https://logo.clearbit.com/cn.ca" },
-    "BF.B":  { name: "Brown-Forman", emps: 5600, profit: 900000000, ebitda: 1200000000, logo: "https://logo.clearbit.com/brown-forman.com" },
-    "X":     { name: "United States Steel Corporation", emps: 22053, profit: 1060000000, ebitda: 2200000000, logo: "https://logo.clearbit.com/ussteel.com" },
-    "BERY":  { name: "Berry Global", emps: 40000, profit: 730000000, ebitda: 2000000000, logo: "https://logo.clearbit.com/berryglobal.com" },
-    "WRK":   { name: "WestRock Company", emps: 42000, profit: 148000000, ebitda: 2600000000, logo: "https://logo.clearbit.com/westrock.com" },
-    "PCH":   { name: "PotlatchDeltic Corporation", emps: 2200, profit: 130000000, ebitda: 280000000, logo: "https://logo.clearbit.com/potlatchdeltic.com" },
-    "TEN":   { name: "Tenneco Inc.", emps: 71000, profit: -1800000000, ebitda: 1100000000, logo: "https://logo.clearbit.com/tenneco.com" },
-    "AZEK":  { name: "AZEK Company", emps: 3500, profit: 101000000, ebitda: 300000000, logo: "https://logo.clearbit.com/azekco.com" },
-    "ROIC":  { name: "Retail Opportunity Investments Corp.", emps: 170, profit: 78000000, ebitda: 220000000, logo: "https://logo.clearbit.com/roireit.net" },
-    "SKT":   { name: "Tanger Factory Outlet Centers", emps: 600, profit: 180000000, ebitda: 380000000, logo: "https://logo.clearbit.com/tangeroutlet.com" },
-    "SRCL":  { name: "Stericycle", emps: 17000, profit: -290000000, ebitda: 500000000, logo: "https://logo.clearbit.com/stericycle.com" },
-    "CURLF": { name: "Curaleaf Holdings", emps: 5500, profit: -250000000, ebitda: 180000000, logo: "https://logo.clearbit.com/curaleaf.com" },
-    "VGR":   { name: "Vector Group", emps: 2200, profit: 190000000, ebitda: 320000000, logo: "https://logo.clearbit.com/vectorgroupltd.com" },
-    "WOW":   { name: "WideOpenWest", emps: 2200, profit: -260000000, ebitda: 380000000, logo: "https://logo.clearbit.com/wowway.com" },
-    "JNPR":  { name: "Juniper Networks", emps: 11000, profit: 193000000, ebitda: 600000000, logo: "https://logo.clearbit.com/juniper.net" },
-    "ZI":    { name: "ZoomInfo Technologies", emps: 3500, profit: -83000000, ebitda: 620000000, logo: "https://logo.clearbit.com/zoominfo.com" },
-    "ANSS":  { name: "Ansys", emps: 6100, profit: 530000000, ebitda: 780000000, logo: "https://logo.clearbit.com/ansys.com" },
-    "ALTR":  { name: "Altair Engineering", emps: 3700, profit: 68000000, ebitda: 185000000, logo: "https://logo.clearbit.com/altair.com" },
-    "NMI":   { name: "NMI Holdings", emps: 580, profit: 270000000, ebitda: 370000000, logo: "https://logo.clearbit.com/nationalmi.com" },
-    "NVEE":  { name: "NV5 Global", emps: 9000, profit: 60000000, ebitda: 200000000, logo: "https://logo.clearbit.com/nv5.com" },
-    "AER":   { name: "AerCap Holdings", emps: 1950, profit: 3100000000, ebitda: 9200000000, logo: "https://logo.clearbit.com/aercap.com" },
-    "ATRI":  { name: "Atrion Corporation", emps: 1300, profit: 85000000, ebitda: 130000000, logo: "https://logo.clearbit.com/atrionmedical.com" },
+// ─── FALLBACK DB (mirrors client-side fallback.js) ───────────────────────────
+const FALLBACK_DB = (() => {
+  try { return require('./fallback.js'); } catch(e) {}
+  try { return require('/mnt/user-data/outputs/fallback.js'); } catch(e) {}
+  console.warn('WARNING: fallback.js not found, fallback will not be applied');
+  return {};
+})();
 
-    // ── Top-1000 complete blackouts: International ADRs ───────────────────────
-    "STLA":  { name: "Stellantis N.V.", emps: 242000, profit: 5640000000, ebitda: 16000000000, logo: "https://logo.clearbit.com/stellantis.com" },
-    "HMC":   { name: "Honda Motor Co.", emps: 197574, profit: 10700000000, ebitda: 19000000000, logo: "https://logo.clearbit.com/honda.com" },
-    "VWAGY": { name: "Volkswagen AG", emps: 684025, profit: 10700000000, ebitda: 34000000000, logo: "https://logo.clearbit.com/volkswagen.com" },
-    "BMWYY": { name: "BMW Group", emps: 154950, profit: 8100000000, ebitda: 18000000000, logo: "https://logo.clearbit.com/bmwgroup.com" },
-    "MBGYY": { name: "Mercedes-Benz Group AG", emps: 166000, profit: 10400000000, ebitda: 22000000000, logo: "https://logo.clearbit.com/mercedes-benz.com" },
-    "DEO":   { name: "Diageo plc", emps: 28000, profit: 3700000000, ebitda: 5800000000, logo: "https://logo.clearbit.com/diageo.com" },
-    "BUD":   { name: "Anheuser-Busch InBev", emps: 86000, profit: 5340000000, ebitda: 14600000000, logo: "https://logo.clearbit.com/ab-inbev.com" },
-    "BTI":   { name: "British American Tobacco", emps: 46000, profit: 7400000000, ebitda: 12800000000, logo: "https://logo.clearbit.com/bat.com" },
-    "NTR":   { name: "Nutrien Ltd.", emps: 21000, profit: 1640000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/nutrien.com" },
-    "AEM":   { name: "Agnico Eagle Mines", emps: 21400, profit: 1680000000, ebitda: 3800000000, logo: "https://logo.clearbit.com/agnicoeagle.com" },
-    "WPM":   { name: "Wheaton Precious Metals", emps: 48, profit: 790000000, ebitda: 920000000, logo: "https://logo.clearbit.com/wheatonpreciousmetals.com" },
-    "KGC":   { name: "Kinross Gold Corporation", emps: 9400, profit: 550000000, ebitda: 1600000000, logo: "https://logo.clearbit.com/kinross.com" },
-    "AG":    { name: "First Majestic Silver Corp.", emps: 3500, profit: -120000000, ebitda: 160000000, logo: "https://logo.clearbit.com/firstmajestic.com" },
-    "SQM":   { name: "Sociedad Química y Minera de Chile", emps: 13000, profit: 1920000000, ebitda: 3100000000, logo: "https://logo.clearbit.com/sqm.com" },
-    "IHG":   { name: "InterContinental Hotels Group", emps: 32000, profit: 800000000, ebitda: 1400000000, logo: "https://logo.clearbit.com/ihg.com" },
-    "BEP":   { name: "Brookfield Renewable Partners", emps: 4000, profit: 420000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/brookfield.com" },
-    "CIGI":  { name: "Colliers International Group", emps: 22000, profit: 140000000, ebitda: 480000000, logo: "https://logo.clearbit.com/colliers.com" },
-    "MEOH":  { name: "Methanex Corporation", emps: 1300, profit: 250000000, ebitda: 620000000, logo: "https://logo.clearbit.com/methanex.com" },
-    "RIO":   { name: "Rio Tinto", emps: 57000, profit: 10050000000, ebitda: 21000000000, logo: "https://logo.clearbit.com/riotinto.com" },
-    "BHP":   { name: "BHP Group", emps: 80000, profit: 12900000000, ebitda: 26000000000, logo: "https://logo.clearbit.com/bhp.com" },
-    "VALE":  { name: "Vale S.A.", emps: 44000, profit: 8000000000, ebitda: 17000000000, logo: "https://logo.clearbit.com/vale.com" },
-    "MT":    { name: "ArcelorMittal", emps: 154000, profit: 2600000000, ebitda: 8000000000, logo: "https://logo.clearbit.com/arcelormittal.com" },
-    "PKX":   { name: "POSCO Holdings", emps: 37000, profit: 1100000000, ebitda: 4200000000, logo: "https://logo.clearbit.com/posco.co.kr" },
-    "HTHIY": { name: "Hitachi, Ltd.", emps: 322525, profit: 4100000000, ebitda: 7800000000, logo: "https://logo.clearbit.com/hitachi.com" },
+// ─── COMPANY LIST (1000 unique tickers, deduplicated) ────────────────────────
+const COMPANIES = [
+  { ticker: 'WMT', name: 'Walmart' },
+  { ticker: 'AMZN', name: 'Amazon' },
+  { ticker: 'COST', name: 'Costco' },
+  { ticker: 'HD', name: 'Home Depot' },
+  { ticker: 'TGT', name: 'Target' },
+  { ticker: 'TJX', name: 'TJX Companies' },
+  { ticker: 'LOW', name: 'Lowe' },
+  { ticker: 'KR', name: 'Kroger' },
+  { ticker: 'WBA', name: 'Walgreens Boots Alliance' },
+  { ticker: 'ACI', name: 'Albertsons' },
+  { ticker: 'ROST', name: 'Ross Stores' },
+  { ticker: 'DG', name: 'Dollar General' },
+  { ticker: 'DLTR', name: 'Dollar Tree' },
+  { ticker: 'BBY', name: 'Best Buy' },
+  { ticker: 'NKE', name: 'Nike' },
+  { ticker: 'EBAY', name: 'eBay' },
+  { ticker: 'ETSY', name: 'Etsy' },
+  { ticker: 'W', name: 'Wayfair' },
+  { ticker: 'TSCO', name: 'Tractor Supply' },
+  { ticker: 'AZO', name: 'AutoZone' },
+  { ticker: 'ORLY', name: 'O' },
+  { ticker: 'ULTA', name: 'Ulta Beauty' },
+  { ticker: 'TPR', name: 'Tapestry' },
+  { ticker: 'RL', name: 'Ralph Lauren' },
+  { ticker: 'ANF', name: 'Abercrombie & Fitch' },
+  { ticker: 'LULU', name: 'Lululemon' },
+  { ticker: 'WSM', name: 'Williams-Sonoma' },
+  { ticker: 'M', name: 'Macy' },
+  { ticker: 'KMX', name: 'CarMax' },
+  { ticker: 'CVNA', name: 'Carvana' },
+  { ticker: 'POOL', name: 'Pool Corporation' },
+  { ticker: 'DECK', name: 'Deckers Outdoor' },
+  { ticker: 'GPS', name: 'Gap' },
+  { ticker: 'PVH', name: 'PVH Corp' },
+  { ticker: 'HBI', name: 'Hanesbrands' },
+  { ticker: 'VFC', name: 'VF Corporation' },
+  { ticker: 'LEVI', name: 'Levi Strauss' },
+  { ticker: 'UAA', name: 'Under Armour' },
+  { ticker: 'COLM', name: 'Columbia Sportswear' },
+  { ticker: 'NVR', name: 'NVR Inc' },
+  { ticker: 'RH', name: 'RH (Restoration Hardware)' },
+  { ticker: 'FIVE', name: 'Five Below' },
+  { ticker: 'BJ', name: 'BJ' },
+  { ticker: 'DRVN', name: 'Driven Brands' },
+  { ticker: 'BURL', name: 'Burlington Stores' },
+  { ticker: 'ODP', name: 'ODP Corporation (Office Depot)' },
+  { ticker: 'GPC', name: 'Genuine Parts Company' },
+  { ticker: 'AAP', name: 'Advance Auto Parts' },
+  { ticker: 'BRK.B', name: 'Berkshire Hathaway' },
+  { ticker: 'JPM', name: 'JPMorgan Chase' },
+  { ticker: 'BAC', name: 'Bank of America' },
+  { ticker: 'WFC', name: 'Wells Fargo' },
+  { ticker: 'GS', name: 'Goldman Sachs' },
+  { ticker: 'MS', name: 'Morgan Stanley' },
+  { ticker: 'C', name: 'Citigroup' },
+  { ticker: 'AXP', name: 'American Express' },
+  { ticker: 'COF', name: 'Capital One' },
+  { ticker: 'USB', name: 'U.S. Bancorp' },
+  { ticker: 'PNC', name: 'PNC Financial Services' },
+  { ticker: 'TFC', name: 'Truist Financial' },
+  { ticker: 'SCHW', name: 'Charles Schwab' },
+  { ticker: 'BK', name: 'Bank of New York Mellon' },
+  { ticker: 'STT', name: 'State Street' },
+  { ticker: 'BLK', name: 'BlackRock' },
+  { ticker: 'BX', name: 'Blackstone' },
+  { ticker: 'KKR', name: 'KKR' },
+  { ticker: 'APO', name: 'Apollo Global Management' },
+  { ticker: 'ARES', name: 'Ares Management' },
+  { ticker: 'V', name: 'Visa' },
+  { ticker: 'MA', name: 'Mastercard' },
+  { ticker: 'PYPL', name: 'PayPal' },
+  { ticker: 'FISV', name: 'Fiserv' },
+  { ticker: 'FIS', name: 'Fidelity National Information Services' },
+  { ticker: 'GPN', name: 'Global Payments' },
+  { ticker: 'SPGI', name: 'S&P Global' },
+  { ticker: 'MCO', name: 'Moody' },
+  { ticker: 'ICE', name: 'Intercontinental Exchange' },
+  { ticker: 'CME', name: 'CME Group' },
+  { ticker: 'NDAQ', name: 'Nasdaq' },
+  { ticker: 'CBOE', name: 'Cboe Global Markets' },
+  { ticker: 'MSCI', name: 'MSCI Inc' },
+  { ticker: 'TROW', name: 'T. Rowe Price' },
+  { ticker: 'AMP', name: 'Ameriprise Financial' },
+  { ticker: 'IVZ', name: 'Invesco' },
+  { ticker: 'BEN', name: 'Franklin Resources' },
+  { ticker: 'RJF', name: 'Raymond James Financial' },
+  { ticker: 'IBKR', name: 'Interactive Brokers' },
+  { ticker: 'HOOD', name: 'Robinhood' },
+  { ticker: 'COIN', name: 'Coinbase' },
+  { ticker: 'SYF', name: 'Synchrony Financial' },
+  { ticker: 'DFS', name: 'Discover Financial Services' },
+  { ticker: 'HBAN', name: 'Huntington Bancshares' },
+  { ticker: 'FITB', name: 'Fifth Third Bancorp' },
+  { ticker: 'MTB', name: 'M&T Bank' },
+  { ticker: 'RF', name: 'Regions Financial' },
+  { ticker: 'KEY', name: 'KeyCorp' },
+  { ticker: 'CFG', name: 'Citizens Financial Group' },
+  { ticker: 'NTRS', name: 'Northern Trust' },
+  { ticker: 'CPAY', name: 'Corpay' },
+  { ticker: 'FICO', name: 'Fair Isaac (FICO)' },
+  { ticker: 'BR', name: 'Broadridge Financial' },
+  { ticker: 'VRSK', name: 'Verisk Analytics' },
+  { ticker: 'EFX', name: 'Equifax' },
+  { ticker: 'TRU', name: 'TransUnion' },
+  { ticker: 'DNB', name: 'Dun & Bradstreet' },
+  { ticker: 'AJG', name: 'Arthur J. Gallagher' },
+  { ticker: 'WTW', name: 'Willis Towers Watson' },
+  { ticker: 'AON', name: 'Aon' },
+  { ticker: 'MMC', name: 'Marsh McLennan' },
+  { ticker: 'SNEX', name: 'StoneX Group' },
+  { ticker: 'MET', name: 'MetLife' },
+  { ticker: 'PRU', name: 'Prudential Financial' },
+  { ticker: 'AFL', name: 'Aflac' },
+  { ticker: 'ALL', name: 'Allstate' },
+  { ticker: 'PGR', name: 'Progressive' },
+  { ticker: 'TRV', name: 'Travelers Companies' },
+  { ticker: 'HIG', name: 'Hartford Financial Services' },
+  { ticker: 'CB', name: 'Chubb' },
+  { ticker: 'AIG', name: 'AIG' },
+  { ticker: 'L', name: 'Loews Corporation' },
+  { ticker: 'ACGL', name: 'Arch Capital Group' },
+  { ticker: 'EG', name: 'Everest Group' },
+  { ticker: 'WRB', name: 'W. R. Berkley' },
+  { ticker: 'CINF', name: 'Cincinnati Financial' },
+  { ticker: 'AIZ', name: 'Assurant' },
+  { ticker: 'GL', name: 'Globe Life' },
+  { ticker: 'ERIE', name: 'Erie Indemnity' },
+  { ticker: 'PFG', name: 'Principal Financial Group' },
+  { ticker: 'BRO', name: 'Brown & Brown' },
+  { ticker: 'RLI', name: 'RLI Corp' },
+  { ticker: 'HUM', name: 'Humana' },
+  { ticker: 'CNC', name: 'Centene' },
+  { ticker: 'MOH', name: 'Molina Healthcare' },
+  { ticker: 'UHS', name: 'Universal Health Services' },
+  { ticker: 'XOM', name: 'ExxonMobil' },
+  { ticker: 'CVX', name: 'Chevron' },
+  { ticker: 'COP', name: 'ConocoPhillips' },
+  { ticker: 'PSX', name: 'Phillips 66' },
+  { ticker: 'MPC', name: 'Marathon Petroleum' },
+  { ticker: 'VLO', name: 'Valero Energy' },
+  { ticker: 'OXY', name: 'Occidental Petroleum' },
+  { ticker: 'EOG', name: 'EOG Resources' },
+  { ticker: 'SLB', name: 'SLB' },
+  { ticker: 'HAL', name: 'Halliburton' },
+  { ticker: 'BKR', name: 'Baker Hughes' },
+  { ticker: 'DVN', name: 'Devon Energy' },
+  { ticker: 'FANG', name: 'Diamondback Energy' },
+  { ticker: 'HES', name: 'Hess' },
+  { ticker: 'APA', name: 'APA Corporation' },
+  { ticker: 'ET', name: 'Energy Transfer' },
+  { ticker: 'EPD', name: 'Enterprise Products Partners' },
+  { ticker: 'KMI', name: 'Kinder Morgan' },
+  { ticker: 'WMB', name: 'Williams Companies' },
+  { ticker: 'OKE', name: 'ONEOK' },
+  { ticker: 'TRGP', name: 'Targa Resources' },
+  { ticker: 'LNG', name: 'Cheniere Energy' },
+  { ticker: 'EQT', name: 'EQT Corporation' },
+  { ticker: 'CTRA', name: 'Coterra Energy' },
+  { ticker: 'EXE', name: 'Expand Energy' },
+  { ticker: 'TPL', name: 'Texas Pacific Land' },
+  { ticker: 'MMP', name: 'Magellan Midstream Partners' },
+  { ticker: 'PAA', name: 'Plains All American Pipeline' },
+  { ticker: 'CRC', name: 'California Resources' },
+  { ticker: 'RRC', name: 'Range Resources' },
+  { ticker: 'SWN', name: 'Southwestern Energy' },
+  { ticker: 'CNX', name: 'CNX Resources' },
+  { ticker: 'OVV', name: 'Ovintiv' },
+  { ticker: 'PR', name: 'Permian Resources' },
+  { ticker: 'MTDR', name: 'Matador Resources' },
+  { ticker: 'NEE', name: 'NextEra Energy' },
+  { ticker: 'DUK', name: 'Duke Energy' },
+  { ticker: 'SO', name: 'Southern Company' },
+  { ticker: 'D', name: 'Dominion Energy' },
+  { ticker: 'EXC', name: 'Exelon' },
+  { ticker: 'AEP', name: 'American Electric Power' },
+  { ticker: 'SRE', name: 'Sempra' },
+  { ticker: 'PCG', name: 'PG&E' },
+  { ticker: 'ED', name: 'Consolidated Edison' },
+  { ticker: 'XEL', name: 'Xcel Energy' },
+  { ticker: 'ES', name: 'Eversource Energy' },
+  { ticker: 'WEC', name: 'WEC Energy Group' },
+  { ticker: 'AWK', name: 'American Water Works' },
+  { ticker: 'PPL', name: 'PPL Corporation' },
+  { ticker: 'EIX', name: 'Edison International' },
+  { ticker: 'CMS', name: 'CMS Energy' },
+  { ticker: 'NI', name: 'NiSource' },
+  { ticker: 'CNP', name: 'CenterPoint Energy' },
+  { ticker: 'AEE', name: 'Ameren' },
+  { ticker: 'ETR', name: 'Entergy' },
+  { ticker: 'DTE', name: 'DTE Energy' },
+  { ticker: 'FE', name: 'FirstEnergy' },
+  { ticker: 'PEG', name: 'PSEG' },
+  { ticker: 'NRG', name: 'NRG Energy' },
+  { ticker: 'VST', name: 'Vistra' },
+  { ticker: 'CEG', name: 'Constellation Energy' },
+  { ticker: 'FSLR', name: 'First Solar' },
+  { ticker: 'EVRG', name: 'Evergy' },
+  { ticker: 'LNT', name: 'Alliant Energy' },
+  { ticker: 'PNW', name: 'Pinnacle West Capital' },
+  { ticker: 'ATO', name: 'Atmos Energy' },
+  { ticker: 'AES', name: 'AES Corporation' },
+  { ticker: 'OGE', name: 'OGE Energy' },
+  { ticker: 'NWE', name: 'NorthWestern Energy' },
+  { ticker: 'OTTR', name: 'Otter Tail' },
+  { ticker: 'VZ', name: 'Verizon' },
+  { ticker: 'T', name: 'AT&T' },
+  { ticker: 'TMUS', name: 'T-Mobile' },
+  { ticker: 'CMCSA', name: 'Comcast' },
+  { ticker: 'CHTR', name: 'Charter Communications' },
+  { ticker: 'DIS', name: 'Walt Disney' },
+  { ticker: 'NFLX', name: 'Netflix' },
+  { ticker: 'WBD', name: 'Warner Bros. Discovery' },
+  { ticker: 'FOXA', name: 'Fox Corporation (Class A)' },
+  { ticker: 'FOX', name: 'Fox Corporation (Class B)' },
+  { ticker: 'PARA', name: 'Paramount Global' },
+  { ticker: 'NYT', name: 'New York Times' },
+  { ticker: 'LYV', name: 'Live Nation Entertainment' },
+  { ticker: 'EA', name: 'Electronic Arts' },
+  { ticker: 'TTWO', name: 'Take-Two Interactive' },
+  { ticker: 'RBLX', name: 'Roblox' },
+  { ticker: 'SPOT', name: 'Spotify' },
+  { ticker: 'SIRI', name: 'SiriusXM' },
+  { ticker: 'OMC', name: 'Omnicom Group' },
+  { ticker: 'IPG', name: 'Interpublic Group' },
+  { ticker: 'TTD', name: 'The Trade Desk' },
+  { ticker: 'TKO', name: 'TKO Group Holdings (WWE/UFC)' },
+  { ticker: 'NWS', name: 'News Corp' },
+  { ticker: 'NWSA', name: 'News Corp (Class A)' },
+  { ticker: 'GDDY', name: 'GoDaddy' },
+  { ticker: 'IAC', name: 'IAC' },
+  { ticker: 'MTCH', name: 'Match Group' },
+  { ticker: 'BMBL', name: 'Bumble' },
+  { ticker: 'ROKU', name: 'Roku' },
+  { ticker: 'FUBO', name: 'FuboTV' },
+  { ticker: 'UPS', name: 'UPS' },
+  { ticker: 'FDX', name: 'FedEx' },
+  { ticker: 'DAL', name: 'Delta Air Lines' },
+  { ticker: 'UAL', name: 'United Airlines' },
+  { ticker: 'AAL', name: 'American Airlines' },
+  { ticker: 'LUV', name: 'Southwest Airlines' },
+  { ticker: 'ALK', name: 'Alaska Air Group' },
+  { ticker: 'JBLU', name: 'JetBlue' },
+  { ticker: 'SAVE', name: 'Spirit Airlines' },
+  { ticker: 'SKYW', name: 'SkyWest' },
+  { ticker: 'UNP', name: 'Union Pacific' },
+  { ticker: 'CSX', name: 'CSX' },
+  { ticker: 'NSC', name: 'Norfolk Southern' },
+  { ticker: 'CP', name: 'Canadian Pacific Kansas City' },
+  { ticker: 'CNI', name: 'Canadian National Railway' },
+  { ticker: 'WAB', name: 'Wabtec' },
+  { ticker: 'CHRW', name: 'C.H. Robinson' },
+  { ticker: 'EXPD', name: 'Expeditors International' },
+  { ticker: 'XPO', name: 'XPO Logistics' },
+  { ticker: 'ODFL', name: 'Old Dominion Freight Line' },
+  { ticker: 'JBHT', name: 'J.B. Hunt Transport' },
+  { ticker: 'SAIA', name: 'Saia' },
+  { ticker: 'R', name: 'Ryder System' },
+  { ticker: 'LYFT', name: 'Lyft' },
+  { ticker: 'DASH', name: 'DoorDash' },
+  { ticker: 'GXO', name: 'GXO Logistics' },
+  { ticker: 'RXO', name: 'RXO' },
+  { ticker: 'MATX', name: 'Matson' },
+  { ticker: 'KEX', name: 'Kirby Corporation' },
+  { ticker: 'ARCB', name: 'ArcBest' },
+  { ticker: 'WERN', name: 'Werner Enterprises' },
+  { ticker: 'KNX', name: 'Knight-Swift Transportation' },
+  { ticker: 'HTLD', name: 'Heartland Express' },
+  { ticker: 'MRTN', name: 'Marten Transport' },
+  { ticker: 'GM', name: 'General Motors' },
+  { ticker: 'F', name: 'Ford Motor' },
+  { ticker: 'TSLA', name: 'Tesla' },
+  { ticker: 'STLA', name: 'Stellantis' },
+  { ticker: 'HMC', name: 'Honda Motor' },
+  { ticker: 'TM', name: 'Toyota Motor' },
+  { ticker: 'VWAGY', name: 'Volkswagen' },
+  { ticker: 'BMWYY', name: 'BMW' },
+  { ticker: 'MBGYY', name: 'Mercedes-Benz' },
+  { ticker: 'AN', name: 'AutoNation' },
+  { ticker: 'PAG', name: 'Penske Automotive' },
+  { ticker: 'LAD', name: 'Lithia Motors' },
+  { ticker: 'ABG', name: 'Asbury Automotive' },
+  { ticker: 'GPI', name: 'Group 1 Automotive' },
+  { ticker: 'SAH', name: 'Sonic Automotive' },
+  { ticker: 'APTV', name: 'Aptiv' },
+  { ticker: 'LEA', name: 'Lear Corporation' },
+  { ticker: 'BWA', name: 'BorgWarner' },
+  { ticker: 'DAN', name: 'Dana Incorporated' },
+  { ticker: 'LCID', name: 'Lucid Group' },
+  { ticker: 'RIVN', name: 'Rivian' },
+  { ticker: 'PCAR', name: 'PACCAR' },
+  { ticker: 'CMI', name: 'Cummins' },
+  { ticker: 'ALSN', name: 'Allison Transmission' },
+  { ticker: 'WGO', name: 'Winnebago Industries' },
+  { ticker: 'THO', name: 'Thor Industries' },
+  { ticker: 'FOXF', name: 'Fox Factory Holding' },
+  { ticker: 'KO', name: 'Coca-Cola' },
+  { ticker: 'PEP', name: 'PepsiCo' },
+  { ticker: 'MCD', name: 'McDonald' },
+  { ticker: 'SBUX', name: 'Starbucks' },
+  { ticker: 'YUM', name: 'Yum! Brands' },
+  { ticker: 'QSR', name: 'Restaurant Brands International' },
+  { ticker: 'DPZ', name: 'Domino' },
+  { ticker: 'CMG', name: 'Chipotle Mexican Grill' },
+  { ticker: 'WEN', name: 'Wendy' },
+  { ticker: 'DRI', name: 'Darden Restaurants' },
+  { ticker: 'EAT', name: 'Brinker International' },
+  { ticker: 'TXRH', name: 'Texas Roadhouse' },
+  { ticker: 'JACK', name: 'Jack in the Box' },
+  { ticker: 'RRGB', name: 'Red Robin Gourmet Burgers' },
+  { ticker: 'DENN', name: 'Denny' },
+  { ticker: 'CAKE', name: 'Cheesecake Factory' },
+  { ticker: 'SHAK', name: 'Shake Shack' },
+  { ticker: 'CAVA', name: 'CAVA Group' },
+  { ticker: 'TSN', name: 'Tyson Foods' },
+  { ticker: 'ADM', name: 'Archer Daniels Midland' },
+  { ticker: 'BG', name: 'Bunge Global' },
+  { ticker: 'SYY', name: 'Sysco' },
+  { ticker: 'PFGC', name: 'Performance Food Group' },
+  { ticker: 'USFD', name: 'US Foods' },
+  { ticker: 'CAG', name: 'Conagra Brands' },
+  { ticker: 'CPB', name: 'Campbell' },
+  { ticker: 'GIS', name: 'General Mills' },
+  { ticker: 'K', name: 'Kellanova' },
+  { ticker: 'HRL', name: 'Hormel Foods' },
+  { ticker: 'SJM', name: 'J.M. Smucker' },
+  { ticker: 'MKC', name: 'McCormick' },
+  { ticker: 'HSY', name: 'Hershey' },
+  { ticker: 'MDLZ', name: 'Mondelez International' },
+  { ticker: 'STZ', name: 'Constellation Brands' },
+  { ticker: 'TAP', name: 'Molson Coors' },
+  { ticker: 'SAM', name: 'Boston Beer Company' },
+  { ticker: 'MNST', name: 'Monster Beverage' },
+  { ticker: 'KDP', name: 'Keurig Dr Pepper' },
+  { ticker: 'CELH', name: 'Celsius Holdings' },
+  { ticker: 'VITL', name: 'Vital Farms' },
+  { ticker: 'KHC', name: 'Kraft Heinz' },
+  { ticker: 'LW', name: 'Lamb Weston' },
+  { ticker: 'INGR', name: 'Ingredion' },
+  { ticker: 'CALM', name: 'Cal-Maine Foods' },
+  { ticker: 'SAFM', name: 'Sanderson Farms' },
+  { ticker: 'LANC', name: 'Lancaster Colony' },
+  { ticker: 'JJSF', name: 'J&J Snack Foods' },
+  { ticker: 'NATH', name: 'Nathan' },
+  { ticker: 'BF.B', name: 'Brown-Forman' },
+  { ticker: 'DEO', name: 'Diageo' },
+  { ticker: 'BUD', name: 'AB InBev' },
+  { ticker: 'PG', name: 'Procter & Gamble' },
+  { ticker: 'CL', name: 'Colgate-Palmolive' },
+  { ticker: 'KMB', name: 'Kimberly-Clark' },
+  { ticker: 'CHD', name: 'Church & Dwight' },
+  { ticker: 'EL', name: 'Estée Lauder' },
+  { ticker: 'CLX', name: 'Clorox' },
+  { ticker: 'KVUE', name: 'Kenvue' },
+  { ticker: 'COTY', name: 'Coty' },
+  { ticker: 'REV', name: 'Revlon' },
+  { ticker: 'IFF', name: 'International Flavors & Fragrances' },
+  { ticker: 'HAS', name: 'Hasbro' },
+  { ticker: 'MAT', name: 'Mattel' },
+  { ticker: 'ACCO', name: 'Acco Brands' },
+  { ticker: 'ENR', name: 'Energizer Holdings' },
+  { ticker: 'SPB', name: 'Spectrum Brands' },
+  { ticker: 'SWM', name: 'Schweitzer-Mauduit International' },
+  { ticker: 'NWL', name: 'Newell Brands' },
+  { ticker: 'CENT', name: 'Central Garden & Pet' },
+  { ticker: 'HBB', name: 'Hamilton Beach Brands' },
+  { ticker: 'FBHS', name: 'Fortune Brands Home & Security' },
+  { ticker: 'MHK', name: 'Mohawk Industries' },
+  { ticker: 'WSO', name: 'Watsco' },
+  { ticker: 'SMP', name: 'Standard Motor Products' },
+  { ticker: 'DORM', name: 'Dorman Products' },
+  { ticker: 'GE', name: 'GE Aerospace' },
+  { ticker: 'GEV', name: 'GE Vernova' },
+  { ticker: 'HON', name: 'Honeywell' },
+  { ticker: 'MMM', name: '3M' },
+  { ticker: 'CAT', name: 'Caterpillar' },
+  { ticker: 'DE', name: 'John Deere' },
+  { ticker: 'EMR', name: 'Emerson Electric' },
+  { ticker: 'ETN', name: 'Eaton' },
+  { ticker: 'ROK', name: 'Rockwell Automation' },
+  { ticker: 'ITW', name: 'Illinois Tool Works' },
+  { ticker: 'DOV', name: 'Dover Corporation' },
+  { ticker: 'AME', name: 'AMETEK' },
+  { ticker: 'FTV', name: 'Fortive' },
+  { ticker: 'XYL', name: 'Xylem' },
+  { ticker: 'IR', name: 'Ingersoll Rand' },
+  { ticker: 'TT', name: 'Trane Technologies' },
+  { ticker: 'CARR', name: 'Carrier Global' },
+  { ticker: 'OTIS', name: 'Otis Worldwide' },
+  { ticker: 'JCI', name: 'Johnson Controls' },
+  { ticker: 'LII', name: 'Lennox International' },
+  { ticker: 'ALLE', name: 'Allegion' },
+  { ticker: 'MAS', name: 'Masco' },
+  { ticker: 'SWK', name: 'Stanley Black & Decker' },
+  { ticker: 'PNR', name: 'Pentair' },
+  { ticker: 'FAST', name: 'Fastenal' },
+  { ticker: 'GWW', name: 'W.W. Grainger' },
+  { ticker: 'MSM', name: 'MSC Industrial Direct' },
+  { ticker: 'AOS', name: 'A.O. Smith' },
+  { ticker: 'OC', name: 'Owens Corning' },
+  { ticker: 'MLM', name: 'Martin Marietta Materials' },
+  { ticker: 'VMC', name: 'Vulcan Materials' },
+  { ticker: 'CRH', name: 'CRH' },
+  { ticker: 'BLDR', name: 'Builders FirstSource' },
+  { ticker: 'MHO', name: 'M/I Homes' },
+  { ticker: 'DHI', name: 'D.R. Horton' },
+  { ticker: 'LEN', name: 'Lennar' },
+  { ticker: 'PHM', name: 'PulteGroup' },
+  { ticker: 'TOL', name: 'Toll Brothers' },
+  { ticker: 'NUE', name: 'Nucor' },
+  { ticker: 'STLD', name: 'Steel Dynamics' },
+  { ticker: 'X', name: 'U.S. Steel' },
+  { ticker: 'CLF', name: 'Cleveland-Cliffs' },
+  { ticker: 'AA', name: 'Alcoa' },
+  { ticker: 'CENX', name: 'Century Aluminum' },
+  { ticker: 'FCX', name: 'Freeport-McMoRan' },
+  { ticker: 'IP', name: 'International Paper' },
+  { ticker: 'PKG', name: 'Packaging Corporation of America' },
+  { ticker: 'SEE', name: 'Sealed Air' },
+  { ticker: 'BALL', name: 'Ball Corporation' },
+  { ticker: 'AMCR', name: 'Amcor' },
+  { ticker: 'OI', name: 'O-I Glass' },
+  { ticker: 'ATR', name: 'AptarGroup' },
+  { ticker: 'BERY', name: 'Berry Global' },
+  { ticker: 'SLGN', name: 'Silgan Holdings' },
+  { ticker: 'SON', name: 'Sonoco Products' },
+  { ticker: 'GPK', name: 'Graphic Packaging' },
+  { ticker: 'SW', name: 'Smurfit Westrock' },
+  { ticker: 'WRK', name: 'WestRock' },
+  { ticker: 'WY', name: 'Weyerhaeuser' },
+  { ticker: 'RYN', name: 'Rayonier' },
+  { ticker: 'PCH', name: 'PotlatchDeltic' },
+  { ticker: 'PH', name: 'Parker Hannifin' },
+  { ticker: 'HUBB', name: 'Hubbell' },
+  { ticker: 'JBL', name: 'Jabil' },
+  { ticker: 'GNRC', name: 'Generac Holdings' },
+  { ticker: 'ROPER', name: 'Roper Technologies' },
+  { ticker: 'ROP', name: 'Roper Technologies' },
+  { ticker: 'FIX', name: 'Comfort Systems USA' },
+  { ticker: 'EME', name: 'EMCOR Group' },
+  { ticker: 'J', name: 'Jacobs Solutions' },
+  { ticker: 'TRMB', name: 'Trimble' },
+  { ticker: 'NDSN', name: 'Nordson' },
+  { ticker: 'IEX', name: 'IDEX Corporation' },
+  { ticker: 'MIDD', name: 'Middleby Corporation' },
+  { ticker: 'LECO', name: 'Lincoln Electric' },
+  { ticker: 'IIPR', name: 'Innovative Industrial Properties' },
+  { ticker: 'WMS', name: 'Advanced Drainage Systems' },
+  { ticker: 'ROLL', name: 'RBC Bearings' },
+  { ticker: 'GT', name: 'Goodyear Tire & Rubber' },
+  { ticker: 'TEN', name: 'Tenneco' },
+  { ticker: 'MOD', name: 'Modine Manufacturing' },
+  { ticker: 'AXON', name: 'Axon Enterprise' },
+  { ticker: 'MSI', name: 'Motorola Solutions' },
+  { ticker: 'HWM', name: 'Howmet Aerospace' },
+  { ticker: 'CTAS', name: 'Cintas' },
+  { ticker: 'ROL', name: 'Rollins' },
+  { ticker: 'URI', name: 'United Rentals' },
+  { ticker: 'WSC', name: 'WillScot Mobile Mini' },
+  { ticker: 'HOLI', name: 'Hollysys Automation' },
+  { ticker: 'ZBRA', name: 'Zebra Technologies' },
+  { ticker: 'FLR', name: 'Fluor Corporation' },
+  { ticker: 'KBR', name: 'KBR Inc' },
+  { ticker: 'MTZ', name: 'MasTec' },
+  { ticker: 'PRIM', name: 'Primoris Services' },
+  { ticker: 'DY', name: 'Dycom Industries' },
+  { ticker: 'AGCO', name: 'AGCO Corporation' },
+  { ticker: 'CNH', name: 'CNH Industrial' },
+  { ticker: 'CNHI', name: 'CNH Industrial' },
+  { ticker: 'LIN', name: 'Linde' },
+  { ticker: 'APD', name: 'Air Products and Chemicals' },
+  { ticker: 'ECL', name: 'Ecolab' },
+  { ticker: 'PPG', name: 'PPG Industries' },
+  { ticker: 'SHW', name: 'Sherwin-Williams' },
+  { ticker: 'RPM', name: 'RPM International' },
+  { ticker: 'ALB', name: 'Albemarle' },
+  { ticker: 'CE', name: 'Celanese' },
+  { ticker: 'HUN', name: 'Huntsman' },
+  { ticker: 'DOW', name: 'Dow Inc.' },
+  { ticker: 'DD', name: 'DuPont' },
+  { ticker: 'LYB', name: 'LyondellBasell' },
+  { ticker: 'CC', name: 'Chemours' },
+  { ticker: 'CTVA', name: 'Corteva' },
+  { ticker: 'FMC', name: 'FMC Corporation' },
+  { ticker: 'CF', name: 'CF Industries' },
+  { ticker: 'MOS', name: 'Mosaic' },
+  { ticker: 'NTR', name: 'Nutrien' },
+  { ticker: 'EMN', name: 'Eastman Chemical' },
+  { ticker: 'ASH', name: 'Ashland Global Holdings' },
+  { ticker: 'TROX', name: 'Tronox Holdings' },
+  { ticker: 'OLIN', name: 'Olin Corporation' },
+  { ticker: 'FOE', name: 'Ferro Corporation' },
+  { ticker: 'KWR', name: 'Quaker Houghton' },
+  { ticker: 'GVNBV', name: 'Glatfelter' },
+  { ticker: 'MEOH', name: 'Methanex' },
+  { ticker: 'TREX', name: 'Trex Company' },
+  { ticker: 'AZEK', name: 'AZEK Company' },
+  { ticker: 'NEM', name: 'Newmont' },
+  { ticker: 'AEM', name: 'Agnico Eagle Mines' },
+  { ticker: 'WPM', name: 'Wheaton Precious Metals' },
+  { ticker: 'AUY', name: 'Yamana Gold' },
+  { ticker: 'GOLD', name: 'Barrick Gold' },
+  { ticker: 'KGC', name: 'Kinross Gold' },
+  { ticker: 'AG', name: 'First Majestic Silver' },
+  { ticker: 'MP', name: 'MP Materials' },
+  { ticker: 'LAC', name: 'Lithium Americas' },
+  { ticker: 'SQM', name: 'SQM (Sociedad Quimica y Minera)' },
+  { ticker: 'SCCO', name: 'Southern Copper' },
+  { ticker: 'RS', name: 'Reliance Steel & Aluminum' },
+  { ticker: 'CMC', name: 'Commercial Metals Company' },
+  { ticker: 'ZEUS', name: 'Olympic Steel' },
+  { ticker: 'HAYN', name: 'Haynes International' },
+  { ticker: 'PLD', name: 'Prologis' },
+  { ticker: 'AMT', name: 'American Tower' },
+  { ticker: 'CCI', name: 'Crown Castle' },
+  { ticker: 'EQIX', name: 'Equinix' },
+  { ticker: 'SPG', name: 'Simon Property Group' },
+  { ticker: 'DLR', name: 'Digital Realty' },
+  { ticker: 'PSA', name: 'Public Storage' },
+  { ticker: 'EXR', name: 'Extra Space Storage' },
+  { ticker: 'AVB', name: 'AvalonBay Communities' },
+  { ticker: 'EQR', name: 'Equity Residential' },
+  { ticker: 'MAA', name: 'Mid-America Apartment' },
+  { ticker: 'O', name: 'Realty Income' },
+  { ticker: 'VICI', name: 'VICI Properties' },
+  { ticker: 'WELL', name: 'Welltower' },
+  { ticker: 'VTR', name: 'Ventas' },
+  { ticker: 'SBAC', name: 'SBA Communications' },
+  { ticker: 'INVH', name: 'Invitation Homes' },
+  { ticker: 'AMH', name: 'American Homes 4 Rent' },
+  { ticker: 'IRM', name: 'Iron Mountain' },
+  { ticker: 'CBRE', name: 'CBRE Group' },
+  { ticker: 'JLL', name: 'Jones Lang LaSalle' },
+  { ticker: 'CIGI', name: 'Colliers International' },
+  { ticker: 'KIM', name: 'Kimco Realty' },
+  { ticker: 'REG', name: 'Regency Centers' },
+  { ticker: 'FRT', name: 'Federal Realty' },
+  { ticker: 'NNN', name: 'NNN REIT' },
+  { ticker: 'ADC', name: 'Agree Realty' },
+  { ticker: 'NTST', name: 'NetSTREIT' },
+  { ticker: 'EPRT', name: 'Essential Properties Realty Trust' },
+  { ticker: 'BXP', name: 'BXP (Boston Properties)' },
+  { ticker: 'ARE', name: 'Alexandria Real Estate Equities' },
+  { ticker: 'HST', name: 'Host Hotels & Resorts' },
+  { ticker: 'PEAK', name: 'Healthpeak Properties' },
+  { ticker: 'DOC', name: 'Doctors Realty Trust' },
+  { ticker: 'CPT', name: 'Camden Property Trust' },
+  { ticker: 'UDR', name: 'UDR Inc' },
+  { ticker: 'ESS', name: 'Essex Property Trust' },
+  { ticker: 'ADP', name: 'ADP' },
+  { ticker: 'PAYX', name: 'Paychex' },
+  { ticker: 'PAYC', name: 'Paycom Software' },
+  { ticker: 'MAN', name: 'ManpowerGroup' },
+  { ticker: 'RHI', name: 'Robert Half International' },
+  { ticker: 'KFRC', name: 'Kforce' },
+  { ticker: 'TBI', name: 'TrueBlue' },
+  { ticker: 'KELYA', name: 'Kelly Services' },
+  { ticker: 'WU', name: 'Western Union' },
+  { ticker: 'CPRT', name: 'Copart' },
+  { ticker: 'CSGP', name: 'CoStar Group' },
+  { ticker: 'IT', name: 'Gartner' },
+  { ticker: 'FDS', name: 'FactSet Research Systems' },
+  { ticker: 'TYL', name: 'Tyler Technologies' },
+  { ticker: 'JKHY', name: 'Jack Henry & Associates' },
+  { ticker: 'NCR', name: 'NCR Corporation' },
+  { ticker: 'VRSN', name: 'VeriSign' },
+  { ticker: 'DVA', name: 'DaVita' },
+  { ticker: 'LH', name: 'Labcorp' },
+  { ticker: 'DGX', name: 'Quest Diagnostics' },
+  { ticker: 'RVTY', name: 'Revvity' },
+  { ticker: 'HSIC', name: 'Henry Schein' },
+  { ticker: 'CRL', name: 'Charles River Laboratories' },
+  { ticker: 'SOLV', name: 'Solventum' },
+  { ticker: 'VTRS', name: 'Viatris' },
+  { ticker: 'BAX', name: 'Baxter International' },
+  { ticker: 'ZBH', name: 'Zimmer Biomet' },
+  { ticker: 'STE', name: 'STERIS' },
+  { ticker: 'HOLX', name: 'Hologic' },
+  { ticker: 'COO', name: 'Cooper Companies' },
+  { ticker: 'ALGN', name: 'Align Technology' },
+  { ticker: 'PODD', name: 'Insulet' },
+  { ticker: 'WST', name: 'West Pharmaceutical Services' },
+  { ticker: 'MRNA', name: 'Moderna' },
+  { ticker: 'TECH', name: 'Bio-Techne' },
+  { ticker: 'INCY', name: 'Incyte' },
+  { ticker: 'ENSG', name: 'Ensign Group' },
+  { ticker: 'ADUS', name: 'Addus HomeCare' },
+  { ticker: 'AMED', name: 'Amedisys' },
+  { ticker: 'LHCG', name: 'LHC Group' },
+  { ticker: 'MAR', name: 'Marriott International' },
+  { ticker: 'HLT', name: 'Hilton Worldwide' },
+  { ticker: 'H', name: 'Hyatt Hotels' },
+  { ticker: 'WH', name: 'Wyndham Hotels & Resorts' },
+  { ticker: 'CHH', name: 'Choice Hotels' },
+  { ticker: 'BKNG', name: 'Booking Holdings' },
+  { ticker: 'EXPE', name: 'Expedia' },
+  { ticker: 'ABNB', name: 'Airbnb' },
+  { ticker: 'CCL', name: 'Carnival Corporation' },
+  { ticker: 'RCL', name: 'Royal Caribbean' },
+  { ticker: 'NCLH', name: 'Norwegian Cruise Line' },
+  { ticker: 'MGM', name: 'MGM Resorts' },
+  { ticker: 'CZR', name: 'Caesars Entertainment' },
+  { ticker: 'LVS', name: 'Las Vegas Sands' },
+  { ticker: 'WYNN', name: 'Wynn Resorts' },
+  { ticker: 'BYD', name: 'Boyd Gaming' },
+  { ticker: 'PENN', name: 'PENN Entertainment' },
+  { ticker: 'DKNG', name: 'DraftKings' },
+  { ticker: 'FLUT', name: 'Flutter Entertainment' },
+  { ticker: 'RSI', name: 'Rush Street Interactive' },
+  { ticker: 'HHC', name: 'Howard Hughes Holdings' },
+  { ticker: 'VCNX', name: 'Vaccinex' },
+  { ticker: 'SIX', name: 'Six Flags' },
+  { ticker: 'FUN', name: 'Cedar Fair' },
+  { ticker: 'SEAS', name: 'SeaWorld Entertainment' },
+  { ticker: 'TNL', name: 'Travel + Leisure' },
+  { ticker: 'VAC', name: 'Marriott Vacations Worldwide' },
+  { ticker: 'PLYA', name: 'Playa Hotels & Resorts' },
+  { ticker: 'IHG', name: 'InterContinental Hotels Group' },
+  { ticker: 'SBNY', name: 'Signature Bank' },
+  { ticker: 'TDY', name: 'Teledyne Technologies' },
+  { ticker: 'GHC', name: 'Graham Holdings' },
+  { ticker: 'CHGG', name: 'Chegg' },
+  { ticker: 'STRA', name: 'Strategic Education' },
+  { ticker: 'PRDO', name: 'Perdoceo Education' },
+  { ticker: 'LOPE', name: 'Grand Canyon Education' },
+  { ticker: 'LAUR', name: 'Laureate Education' },
+  { ticker: 'ATGE', name: 'Adtalem Global Education' },
+  { ticker: 'COUR', name: 'Coursera' },
+  { ticker: 'DUOL', name: 'Duolingo' },
+  { ticker: 'WM', name: 'Waste Management' },
+  { ticker: 'RSG', name: 'Republic Services' },
+  { ticker: 'CLH', name: 'Clean Harbors' },
+  { ticker: 'CWST', name: 'Casella Waste Systems' },
+  { ticker: 'SRCL', name: 'Stericycle' },
+  { ticker: 'ECVT', name: 'Ecovyst' },
+  { ticker: 'CURLF', name: 'Curaleaf Holdings' },
+  { ticker: 'GTBIF', name: 'Green Thumb Industries' },
+  { ticker: 'TCNNF', name: 'Trulieve Cannabis' },
+  { ticker: 'CCHWF', name: 'Cresco Labs' },
+  { ticker: 'MO', name: 'Altria Group' },
+  { ticker: 'PM', name: 'Philip Morris International' },
+  { ticker: 'BTI', name: 'British American Tobacco' },
+  { ticker: 'VGR', name: 'Vector Group' },
+  { ticker: 'TPB', name: 'Turning Point Brands' },
+  { ticker: 'PLTR', name: 'Palantir Technologies' },
+  { ticker: 'GLW', name: 'Corning' },
+  { ticker: 'CDW', name: 'CDW Corporation' },
+  { ticker: 'HPE', name: 'Hewlett Packard Enterprise' },
+  { ticker: 'CTSH', name: 'Cognizant Technology Solutions' },
+  { ticker: 'KEYS', name: 'Keysight Technologies' },
+  { ticker: 'TER', name: 'Teradyne' },
+  { ticker: 'MCHP', name: 'Microchip Technology' },
+  { ticker: 'ON', name: 'ON Semiconductor' },
+  { ticker: 'SWKS', name: 'Skyworks Solutions' },
+  { ticker: 'QRVO', name: 'Qorvo' },
+  { ticker: 'MPWR', name: 'Monolithic Power Systems' },
+  { ticker: 'WDC', name: 'Western Digital' },
+  { ticker: 'STX', name: 'Seagate Technology' },
+  { ticker: 'NTAP', name: 'NetApp' },
+  { ticker: 'PTC', name: 'PTC Inc' },
+  { ticker: 'EPAM', name: 'EPAM Systems' },
+  { ticker: 'AKAM', name: 'Akamai Technologies' },
+  { ticker: 'FFIV', name: 'F5 Networks' },
+  { ticker: 'GEN', name: 'Gen Digital' },
+  { ticker: 'SMCI', name: 'Super Micro Computer' },
+  { ticker: 'APH', name: 'Amphenol' },
+  { ticker: 'MTD', name: 'Mettler-Toledo' },
+  { ticker: 'SNA', name: 'Snap-on' },
+  { ticker: 'SFM', name: 'Sprouts Farmers Market' },
+  { ticker: 'GO', name: 'Grocery Outlet' },
+  { ticker: 'CASY', name: 'Casey' },
+  { ticker: 'AL', name: 'Air Lease Corporation' },
+  { ticker: 'AER', name: 'AerCap Holdings' },
+  { ticker: 'AFG', name: 'American Financial Group' },
+  { ticker: 'MKL', name: 'Markel Group' },
+  { ticker: 'RNR', name: 'RenaissanceRe Holdings' },
+  { ticker: 'KNSL', name: 'Kinsale Capital Group' },
+  { ticker: 'PLMR', name: 'Palomar Holdings' },
+  { ticker: 'SIGI', name: 'Selective Insurance Group' },
+  { ticker: 'KMPR', name: 'Kemper Corporation' },
+  { ticker: 'ZION', name: 'Zions Bancorporation' },
+  { ticker: 'CMA', name: 'Comerica' },
+  { ticker: 'BOKF', name: 'BOK Financial' },
+  { ticker: 'SNV', name: 'Synovus Financial' },
+  { ticker: 'WAL', name: 'Western Alliance Bancorporation' },
+  { ticker: 'PNFP', name: 'Pinnacle Financial Partners' },
+  { ticker: 'WTFC', name: 'Wintrust Financial' },
+  { ticker: 'TCBI', name: 'Texas Capital Bancshares' },
+  { ticker: 'ALLY', name: 'Ally Financial' },
+  { ticker: 'SLM', name: 'Sallie Mae' },
+  { ticker: 'NAVI', name: 'Navient' },
+  { ticker: 'LPLA', name: 'LPL Financial' },
+  { ticker: 'RKT', name: 'Rocket Companies' },
+  { ticker: 'COOP', name: 'Mr. Cooper Group' },
+  { ticker: 'PFSI', name: 'PennyMac Financial Services' },
+  { ticker: 'UWMC', name: 'UWM Holdings' },
+  { ticker: 'MANH', name: 'Manhattan Associates' },
+  { ticker: 'PCTY', name: 'Paylocity' },
+  { ticker: 'CDAY', name: 'Ceridian HCM' },
+  { ticker: 'ANSS', name: 'ANSYS' },
+  { ticker: 'ALTR', name: 'Altair Engineering' },
+  { ticker: 'TWLO', name: 'Twilio' },
+  { ticker: 'ZI', name: 'ZoomInfo' },
+  { ticker: 'WK', name: 'Workiva' },
+  { ticker: 'HUBS', name: 'HubSpot' },
+  { ticker: 'MKTX', name: 'MarketAxess' },
+  { ticker: 'CVLT', name: 'Commvault Systems' },
+  { ticker: 'JNPR', name: 'Juniper Networks' },
+  { ticker: 'EXTR', name: 'Extreme Networks' },
+  { ticker: 'CIEN', name: 'Ciena Corporation' },
+  { ticker: 'VIAV', name: 'Viavi Solutions' },
+  { ticker: 'CALX', name: 'Calix' },
+  { ticker: 'UI', name: 'Ubiquiti' },
+  { ticker: 'IRDM', name: 'Iridium Communications' },
+  { ticker: 'CABO', name: 'Cable One' },
+  { ticker: 'LUMN', name: 'Lumen Technologies' },
+  { ticker: 'CCOI', name: 'Cogent Communications' },
+  { ticker: 'WOW', name: 'WideOpenWest' },
+  { ticker: 'NXST', name: 'Nexstar Media Group' },
+  { ticker: 'GTN', name: 'Gray Television' },
+  { ticker: 'SSP', name: 'E.W. Scripps' },
+  { ticker: 'SBGI', name: 'Sinclair Broadcast Group' },
+  { ticker: 'TGNA', name: 'TEGNA' },
+  { ticker: 'MSGS', name: 'Madison Square Garden Sports' },
+  { ticker: 'MSGE', name: 'Madison Square Garden Entertainment' },
+  { ticker: 'AMCX', name: 'AMC Networks' },
+  { ticker: 'LGF.A', name: 'Lions Gate Entertainment' },
+  { ticker: 'ENPH', name: 'Enphase Energy' },
+  { ticker: 'SEDG', name: 'SolarEdge Technologies' },
+  { ticker: 'RUN', name: 'Sunrun' },
+  { ticker: 'NOVA', name: 'Sunnova Energy' },
+  { ticker: 'BE', name: 'Bloom Energy' },
+  { ticker: 'PLUG', name: 'Plug Power' },
+  { ticker: 'AMRC', name: 'Ameresco' },
+  { ticker: 'CWEN', name: 'Clearway Energy' },
+  { ticker: 'NEP', name: 'NextEra Energy Partners' },
+  { ticker: 'BEP', name: 'Brookfield Renewable Partners' },
+  { ticker: 'ARCC', name: 'Ares Capital Corporation' },
+  { ticker: 'MAIN', name: 'Main Street Capital' },
+  { ticker: 'HTGC', name: 'Hercules Capital' },
+  { ticker: 'OWL', name: 'Blue Owl Capital' },
+  { ticker: 'STEP', name: 'StepStone Group' },
+  { ticker: 'HLNE', name: 'Hamilton Lane' },
+  { ticker: 'MPLX', name: 'MPLX LP' },
+  { ticker: 'WES', name: 'Western Midstream Partners' },
+  { ticker: 'CQP', name: 'Cheniere Energy Partners' },
+  { ticker: 'PBF', name: 'PBF Energy' },
+  { ticker: 'DINO', name: 'HF Sinclair' },
+  { ticker: 'NFG', name: 'National Fuel Gas' },
+  { ticker: 'SWX', name: 'Southwest Gas Holdings' },
+  { ticker: 'NWN', name: 'Northwest Natural Holdings' },
+  { ticker: 'SM', name: 'SM Energy' },
+  { ticker: 'UNFI', name: 'United Natural Foods' },
+  { ticker: 'SPTN', name: 'SpartanNash' },
+  { ticker: 'CHEF', name: 'The Chefs' },
+  { ticker: 'WCC', name: 'Wesco International' },
+  { ticker: 'CORE', name: 'Core & Main' },
+  { ticker: 'BECN', name: 'Beacon Roofing Supply' },
+  { ticker: 'IBP', name: 'Installed Building Products' },
+  { ticker: 'SUM', name: 'Summit Materials' },
+  { ticker: 'EXP', name: 'Eagle Materials' },
+  { ticker: 'AWI', name: 'Armstrong World Industries' },
+  { ticker: 'MDC', name: 'MDC Holdings' },
+  { ticker: 'CVCO', name: 'Cavco Industries' },
+  { ticker: 'SKY', name: 'Skyline Champion' },
+  { ticker: 'LEGH', name: 'Legacy Housing' },
+  { ticker: 'UFPI', name: 'UFP Industries' },
+  { ticker: 'PATK', name: 'Patrick Industries' },
+  { ticker: 'JOBY', name: 'Joby Aviation' },
+  { ticker: 'ACHR', name: 'Archer Aviation' },
+  { ticker: 'PTON', name: 'Peloton Interactive' },
+  { ticker: 'YETI', name: 'YETI Holdings' },
+  { ticker: 'WING', name: 'Wingstop' },
+  { ticker: 'CBRL', name: 'Cracker Barrel' },
+  { ticker: 'PLAY', name: 'Dave & Buster' },
+  { ticker: 'DINE', name: 'Dine Brands Global' },
+  { ticker: 'LUPE', name: 'Lundin Petroleum' },
+  { ticker: 'FUL', name: 'H.B. Fuller' },
+  { ticker: 'CBT', name: 'Cabot Corporation' },
+  { ticker: 'NEU', name: 'NewMarket Corporation' },
+  { ticker: 'NMI', name: 'NMI Holdings' },
+  { ticker: 'ESNT', name: 'Essent Group' },
+  { ticker: 'CWT', name: 'California Water Service' },
+  { ticker: 'MSEX', name: 'Middlesex Water Company' },
+  { ticker: 'SJW', name: 'SJW Group' },
+  { ticker: 'ENS', name: 'EnerSys' },
+  { ticker: 'NVEE', name: 'NV5 Global' },
+  { ticker: 'IONS', name: 'Ionis Pharmaceuticals' },
+  { ticker: 'SRPT', name: 'Sarepta Therapeutics' },
+  { ticker: 'RARE', name: 'Ultragenyx Pharmaceutical' },
+  { ticker: 'ACAD', name: 'ACADIA Pharmaceuticals' },
+  { ticker: 'APLS', name: 'Apellis Pharmaceuticals' },
+  { ticker: 'BIG', name: 'Big Lots' },
+  { ticker: 'JOANN', name: 'JOANN Inc' },
+  { ticker: 'PRTY', name: 'Party City' },
+  { ticker: 'OSTK', name: 'Overstock.com' },
+  { ticker: 'FRPT', name: 'Freshpet' },
+  { ticker: 'NABL', name: 'N-able Inc' },
+  { ticker: 'POWL', name: 'Powell Industries' },
+  { ticker: 'KMPH', name: 'KemPharm' },
+  { ticker: 'PRPH', name: 'ProPhase Labs' },
+  { ticker: 'HLIO', name: 'Helios Technologies' },
+  { ticker: 'AIMC', name: 'Altra Industrial Motion' },
+  { ticker: 'ASTE', name: 'Astec Industries' },
+  { ticker: 'FELE', name: 'Franklin Electric' },
+  { ticker: 'GTLS', name: 'Chart Industries' },
+  { ticker: 'MRC', name: 'MRC Global' },
+  { ticker: 'WIRE', name: 'Encore Wire' },
+  { ticker: 'HY', name: 'Hyster-Yale Group' },
+  { ticker: 'TKR', name: 'Timken Company' },
+  { ticker: 'ATI', name: 'ATI Inc' },
+  { ticker: 'CRS', name: 'Carpenter Technology' },
+  { ticker: 'KALU', name: 'Kaiser Aluminum' },
+  { ticker: 'TMST', name: 'TimkenSteel' },
+  { ticker: 'NN', name: 'NN Inc' },
+  { ticker: 'APOG', name: 'Apogee Enterprises' },
+  { ticker: 'NX', name: 'Quanex Building Products' },
+  { ticker: 'FFIN', name: 'First Financial Bankshares' },
+  { ticker: 'IBOC', name: 'International Bancshares' },
+  { ticker: 'BANR', name: 'Banner Financial' },
+  { ticker: 'CBSH', name: 'Commerce Bancshares' },
+  { ticker: 'TFIN', name: 'Triumph Financial' },
+  { ticker: 'CVBF', name: 'CVB Financial' },
+  { ticker: 'WABC', name: 'Westamerica Bancorporation' },
+  { ticker: 'WSFS', name: 'WSFS Financial' },
+  { ticker: 'UMBF', name: 'UMB Financial' },
+  { ticker: 'BUSE', name: 'First Busey Corporation' },
+  { ticker: 'NBT', name: 'NBT Bancorp' },
+  { ticker: 'FCF', name: 'First Commonwealth Financial' },
+  { ticker: 'NBTB', name: 'NBT Bancorp' },
+  { ticker: 'IBCP', name: 'Independent Bank Corp' },
+  { ticker: 'TCBK', name: 'TriCo Bancshares' },
+  { ticker: 'HTLF', name: 'Heartland Financial USA' },
+  { ticker: 'SBCF', name: 'Seacoast Banking' },
+  { ticker: 'SFNC', name: 'Simmons First National' },
+  { ticker: 'TBNK', name: 'Territorial Bancorp' },
+  { ticker: 'HBNC', name: 'Horizon Bancal' },
+  { ticker: 'CZWI', name: 'Citizens Community Bancorp' },
+  { ticker: 'NWIN', name: 'Northwest Indiana Bancorp' },
+  { ticker: 'RNST', name: 'Renasant Corporation' },
+  { ticker: 'FBMS', name: 'First Bancshares' },
+  { ticker: 'GABC', name: 'German American Bancorp' },
+  { ticker: 'CBTX', name: 'CommunityBank of Texas' },
+  { ticker: 'FFBC', name: 'First Financial Bancorp' },
+  { ticker: 'CCNE', name: 'CNB Financial' },
+  { ticker: 'AROW', name: 'Arrow Financial' },
+  { ticker: 'BRKL', name: 'Brookline Bancorp' },
+  { ticker: 'CHMG', name: 'Chemung Financial' },
+  { ticker: 'MMSI', name: 'Merit Medical Systems' },
+  { ticker: 'ATRI', name: 'Atrion Corporation' },
+  { ticker: 'LMAT', name: 'LeMaitre Vascular' },
+  { ticker: 'MDXG', name: 'MiMedx Group' },
+  { ticker: 'NVCR', name: 'NovaCure' },
+  { ticker: 'TNDM', name: 'Tandem Diabetes Care' },
+  { ticker: 'GKOS', name: 'Glaukos Corporation' },
+  { ticker: 'IART', name: 'Integra LifeSciences' },
+  { ticker: 'OMCL', name: 'Omnicell' },
+  { ticker: 'NTRA', name: 'Natera' },
+  { ticker: 'NVST', name: 'Envista Holdings' },
+  { ticker: 'ITGR', name: 'Integer Holdings' },
+  { ticker: 'TFX', name: 'Teleflex' },
+  { ticker: 'PDCO', name: 'Patterson Companies' },
+  { ticker: 'AFYA', name: 'Afya Limited' },
+  { ticker: 'OMI', name: 'Owens & Minor' },
+  { ticker: 'PNTG', name: 'Pennant Group' },
+  { ticker: 'ACHC', name: 'Acadia Healthcare' },
+  { ticker: 'SGRY', name: 'Surgery Partners' },
+  { ticker: 'AMEH', name: 'Apollo Medical Holdings' },
+  { ticker: 'HIMS', name: 'Hims & Hers Health' },
+  { ticker: 'AROC', name: 'Archrock' },
+  { ticker: 'NGL', name: 'NGL Energy Partners' },
+  { ticker: 'HESM', name: 'Hess Midstream' },
+  { ticker: 'DKL', name: 'Delek Logistics Partners' },
+  { ticker: 'CLMT', name: 'Calumet Specialty Products' },
+  { ticker: 'PARR', name: 'Par Pacific Holdings' },
+  { ticker: 'REX', name: 'REX Energy' },
+  { ticker: 'VTLE', name: 'Vital Energy' },
+  { ticker: 'MGY', name: 'Magnolia Oil & Gas' },
+  { ticker: 'CIVI', name: 'Civitas Resources' },
+  { ticker: 'CPE', name: 'Callon Petroleum' },
+  { ticker: 'BATL', name: 'Battalion Oil' },
+  { ticker: 'TALO', name: 'Talos Energy' },
+  { ticker: 'SBR', name: 'Sabine Royalty Trust' },
+  { ticker: 'CRT', name: 'Cross Timbers Royalty Trust' },
+  { ticker: 'PHX', name: 'PHX Minerals' },
+  { ticker: 'USD', name: 'US Silica Holdings' },
+  { ticker: 'WTTR', name: 'Select Water Solutions' },
+  { ticker: 'NGAS', name: 'Gastar Exploration' },
+  { ticker: 'YELP', name: 'Yelp' },
+  { ticker: 'ANGI', name: 'Angi Inc' },
+  { ticker: 'CARS', name: 'Cars.com' },
+  { ticker: 'CDK', name: 'CDK Global' },
+  { ticker: 'CARG', name: 'CarGurus' },
+  { ticker: 'OPEN', name: 'Opendoor Technologies' },
+  { ticker: 'COMP', name: 'Compass' },
+  { ticker: 'RMAX', name: 'RE/MAX Holdings' },
+  { ticker: 'RDN', name: 'Radian Group' },
+  { ticker: 'NMIH', name: 'NMI Holdings' },
+  { ticker: 'MTG', name: 'MGIC Investment' },
+  { ticker: 'SMAR', name: 'Smartsheet' },
+  { ticker: 'DOMO', name: 'Domo' },
+  { ticker: 'BIGC', name: 'BigCommerce' },
+  { ticker: 'FRSH', name: 'Freshworks' },
+  { ticker: 'SEND', name: 'SendGrid' },
+  { ticker: 'PRSP', name: 'Perspecta' },
+  { ticker: 'TTEC', name: 'TTEC Holdings' },
+  { ticker: 'CEVA', name: 'CEVA Inc' },
+  { ticker: 'FORM', name: 'FormFactor' },
+  { ticker: 'ACLS', name: 'Axcelis Technologies' },
+  { ticker: 'UCTT', name: 'Ultra Clean Holdings' },
+  { ticker: 'BRKS', name: 'Brooks Automation' },
+  { ticker: 'CCMP', name: 'CMC Materials' },
+  { ticker: 'ICHR', name: 'Ichor Holdings' },
+  { ticker: 'AZTA', name: 'Azenta' },
+  { ticker: 'ONTO', name: 'Onto Innovation' },
+  { ticker: 'MKSI', name: 'MKS Instruments' },
+  { ticker: 'CREE', name: 'Wolfspeed' },
+  { ticker: 'WOLF', name: 'Wolfspeed' },
+  { ticker: 'LSCC', name: 'Lattice Semiconductor' },
+  { ticker: 'SITM', name: 'SiTime Corporation' },
+  { ticker: 'AMBA', name: 'Ambarella' },
+  { ticker: 'COHU', name: 'Cohu Inc' },
+  { ticker: 'DIOD', name: 'Diodes Incorporated' },
+  { ticker: 'MTSI', name: 'MACOM Technology Solutions' },
+  { ticker: 'POWI', name: 'Power Integrations' },
+  { ticker: 'SLAB', name: 'Silicon Laboratories' },
+  { ticker: 'SMTC', name: 'Semtech Corporation' },
+  { ticker: 'LXP', name: 'LXP Industrial Trust' },
+  { ticker: 'COLD', name: 'Americold Realty Trust' },
+  { ticker: 'LSI', name: 'Life Storage' },
+  { ticker: 'NSA', name: 'National Storage Affiliates' },
+  { ticker: 'CUBE', name: 'CubeSmart' },
+  { ticker: 'TRNO', name: 'Terreno Realty' },
+  { ticker: 'REXR', name: 'Rexford Industrial Realty' },
+  { ticker: 'EGP', name: 'EastGroup Properties' },
+  { ticker: 'FR', name: 'First Industrial Realty Trust' },
+  { ticker: 'STAG', name: 'STAG Industrial' },
+  { ticker: 'ILPT', name: 'Industrial Logistics Properties Trust' },
+  { ticker: 'ROIC', name: 'Retail Opportunity Investments' },
+  { ticker: 'SKT', name: 'Tanger Factory Outlet Centers' },
+  { ticker: 'WRI', name: 'Weingarten Realty' },
+  { ticker: 'PREIT', name: 'Pennsylvania REIT' },
+  { ticker: 'SVC', name: 'Service Properties Trust' },
+  { ticker: 'APLE', name: 'Apple Hospitality REIT' },
+  { ticker: 'OHI', name: 'Omega Healthcare Investors' },
+  { ticker: 'SBRA', name: 'Sabra Health Care REIT' },
+  { ticker: 'NHI', name: 'National Health Investors' },
+  { ticker: 'LTC', name: 'LTC Properties' },
+  { ticker: 'CHCT', name: 'Community Healthcare Trust' },
+  { ticker: 'LNN', name: 'Lindsay Corporation' },
+  { ticker: 'TRMK', name: 'Trustmark Corporation' },
+  { ticker: 'RIO', name: 'Rio Tinto' },
+  { ticker: 'BHP', name: 'BHP Group' },
+  { ticker: 'VALE', name: 'Vale S.A.' },
+  { ticker: 'MT', name: 'ArcelorMittal' },
+  { ticker: 'PKX', name: 'POSCO Holdings' },
+  { ticker: 'HTHIY', name: 'Hitachi' },
+  { ticker: 'SIEGY', name: 'Siemens AG' },
+  { ticker: 'ABBNY', name: 'ABB Ltd' },
+  { ticker: 'ROLSY', name: 'Rolls-Royce' },
+  { ticker: 'LR', name: 'Loews Corporation' },
+  { ticker: 'NSP', name: 'Insperity' },
+  { ticker: 'TNC', name: 'Tennant Company' },
+  { ticker: 'CFX', name: 'Colfax Corporation' },
+  { ticker: 'ESAB', name: 'ESAB Corporation' },
+  { ticker: 'GTES', name: 'Gates Industrial' },
+  { ticker: 'SPXC', name: 'SPX Technologies' },
+  { ticker: 'GFF', name: 'Griffon Corporation' },
+  { ticker: 'HI', name: 'Hillenbrand' },
+  { ticker: 'KAI', name: 'Kadant Inc' },
+  { ticker: 'MGRC', name: 'McGrath RentCorp' },
+  { ticker: 'RUSHA', name: 'Rush Enterprises' },
+  { ticker: 'HZN', name: 'Horizon Global' },
+  { ticker: 'MPAA', name: 'Motorcar Parts of America' },
+  { ticker: 'LCII', name: 'LCI Industries' },
+  { ticker: 'YRCW', name: 'Yellow Corporation' },
+  { ticker: 'FWRD', name: 'Forward Air' },
+  { ticker: 'USAK', name: 'USA Truck' },
+  { ticker: 'PTSI', name: 'P.A.M. Transport Services' },
+  { ticker: 'HUBG', name: 'Hub Group' },
+  { ticker: 'LSTR', name: 'Landstar System' },
+  { ticker: 'ECHO', name: 'Echo Global Logistics' },
+  { ticker: 'TRTN', name: 'Triton International' },
+  { ticker: 'CAR', name: 'Avis Budget Group' },
+  { ticker: 'HTZ', name: 'Hertz Global Holdings' },
+  { ticker: 'FCNCA', name: 'First Citizens BancShares' },
+  { ticker: 'TFSL', name: 'Third Federal Savings & Loan' },
+  { ticker: 'PACW', name: 'PacWest Bancorp' },
+  { ticker: 'COLB', name: 'Columbia Banking System' },
+  { ticker: 'PRFT', name: 'Perficient' },
+  { ticker: 'LDOS', name: 'Leidos Holdings' },
+  { ticker: 'MEDP', name: 'Medpace Holdings' },
+  { ticker: 'PINC', name: 'Premier Inc' },
+  { ticker: 'CPRX', name: 'Catalyst Biosciences' },
+  { ticker: 'EXEL', name: 'Exelixis' },
+  { ticker: 'HALO', name: 'Halozyme Therapeutics' },
+  { ticker: 'JAZZ', name: 'Jazz Pharmaceuticals' },
+  { ticker: 'PRGO', name: 'Perrigo Company' },
+  { ticker: 'XRAY', name: 'Dentsply Sirona' },
+  { ticker: 'ITCI', name: 'Intra-Cellular Therapies' },
+  { ticker: 'NKTR', name: 'Nektar Therapeutics' },
+];
 
-    // ── Partial failures: financial data missing but API returns ──────────────
-    "DOW":   { name: "Dow Inc.", emps: 35900, profit: 890000000, ebitda: 3200000000, logo: "https://logo.clearbit.com/dow.com" },
-    "DD":    { name: "DuPont de Nemours", emps: 24000, profit: 1130000000, ebitda: 2600000000, logo: "https://logo.clearbit.com/dupont.com" },
-    "CC":    { name: "Chemours Company", emps: 6000, profit: 220000000, ebitda: 680000000, logo: "https://logo.clearbit.com/chemours.com" },
-    "HTZ":   { name: "Hertz Global Holdings", emps: 19000, profit: -2900000000, ebitda: 1200000000, logo: "https://logo.clearbit.com/hertz.com" },
-    "CAR":   { name: "Avis Budget Group", emps: 27000, profit: 382000000, ebitda: 1800000000, logo: "https://logo.clearbit.com/avisbudgetgroup.com" },
-    "ARE":   { name: "Alexandria Real Estate Equities", emps: 1000, profit: 540000000, ebitda: 1400000000, logo: "https://logo.clearbit.com/are.com" },
-    "H":     { name: "Hyatt Hotels Corporation", emps: 106000, profit: 350000000, ebitda: 900000000, logo: "https://logo.clearbit.com/hyatt.com" },
-    "VAC":   { name: "Marriott Vacations Worldwide", emps: 19000, profit: 185000000, ebitda: 620000000, logo: "https://logo.clearbit.com/marriottvacations.com" },
-    "STEP":  { name: "StepStone Group", emps: 800, profit: 180000000, ebitda: 240000000, logo: "https://logo.clearbit.com/stepstonegroup.com" },
-    "NAVI":  { name: "Navient Corporation", emps: 6000, profit: 290000000, ebitda: 290000000, logo: "https://logo.clearbit.com/navient.com" },
-    "RKT":   { name: "Rocket Companies", emps: 18000, profit: 7000000, ebitda: 600000000, logo: "https://logo.clearbit.com/rocketcompanies.com" },
-    "SFNC":  { name: "Simmons First National Corporation", emps: 3600, profit: 170000000, ebitda: 170000000, logo: "https://logo.clearbit.com/simmonsfirst.com" },
-    "VTRS":  { name: "Viatris Inc.", emps: 37000, profit: -289000000, ebitda: 2700000000, logo: "https://logo.clearbit.com/viatris.com" },
-    "ILPT":  { name: "Industrial Logistics Properties Trust", emps: 35, profit: -80000000, ebitda: 160000000, logo: "https://logo.clearbit.com/ilptreit.com" },
-    "LAC":   { name: "Lithium Americas Corp.", emps: 500, profit: -170000000, ebitda: -150000000, logo: "https://logo.clearbit.com/lithiumamericas.com" },
-    "PDCO":  { name: "Patterson Companies", emps: 8700, profit: 140000000, ebitda: 280000000, logo: "https://logo.clearbit.com/pattersoncompanies.com" },
-    "VTLE":  { name: "Vital Energy", emps: 500, profit: 320000000, ebitda: 1200000000, logo: "https://logo.clearbit.com/vitalenergy.com" },
-    "AFYA":  { name: "Afya Limited", emps: 5000, profit: 130000000, ebitda: 240000000, logo: "https://logo.clearbit.com/afya.com.br" },
-    "ITCI":  { name: "Intra-Cellular Therapies", emps: 1200, profit: 185000000, ebitda: 220000000, logo: "https://logo.clearbit.com/intracellulartherapies.com" },
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(n) {
+    if (n === null || n === undefined) return 'NULL';
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    if (abs >= 1e9) return sign + '$' + (abs/1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return sign + '$' + (abs/1e6).toFixed(2) + 'M';
+    return sign + '$' + abs.toLocaleString();
+}
 
-    // --- Year-contaminated (10-K parser returns filing year instead of headcount) ---
-    "UDR":  { name: "UDR Inc", emps: 1533 },
-    "KIM":  { name: "Kimco Realty", emps: 2000 },
-    "SITM": { name: "SiTime Corporation", emps: 220 },
-    "MTSI": { name: "MACOM Technology Solutions", emps: 1800 },
-    "SLAB": { name: "Silicon Laboratories", emps: 2200 },
-    "NN":   { name: "NN Inc", emps: 1700 },
+function apiFetch(url) {
+    return new Promise((resolve, reject) => {
+        const mod = url.startsWith('https') ? https : http;
+        mod.get(url, { timeout: 15000 }, (res) => {
+            let data = '';
+            res.on('data', d => data += d);
+            res.on('end', () => {
+                try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+                catch(e) { reject(new Error('JSON error: ' + data.slice(0,80))); }
+            });
+        }).on('error', reject).on('timeout', () => reject(new Error('timeout')));
+    });
+}
 
-    // --- Persistent regex failures: tiny/external REITs ---
-    "VICI": { name: "VICI Properties", emps: 0 },
-    "ADC":  { name: "Agree Realty", emps: 65 },
-    "NTST": { name: "NetSTREIT", emps: 35 },
-    "EPRT": { name: "Essential Properties Realty Trust", emps: 40 },
-    "LXP":  { name: "LXP Industrial Trust", emps: 80 },
-    "TRNO": { name: "Terreno Realty", emps: 100 },
-    "STAG": { name: "STAG Industrial", emps: 250 },
-    "APLE": { name: "Apple Hospitality REIT", emps: 250 },
-    "OHI":  { name: "Omega Healthcare Investors", emps: 175 },
-    "SBRA": { name: "Sabra Health Care REIT", emps: 60 },
-    "NHI":  { name: "National Health Investors", emps: 60 },
-    "LTC":  { name: "LTC Properties", emps: 30 },
-    "CHCT": { name: "Community Healthcare Trust", emps: 40 },
-    "IIPR": { name: "Innovative Industrial Properties", emps: 50 },
-    "VTR":  { name: "Ventas", emps: 500 },
+// Wikipedia direct scrape — used for EMPS failures
+async function wikiCheck(companyName, ticker) {
+    try {
+        const cleanName = companyName
+            .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')
+            .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|Co\.?|Holdings?|Group|Corporation|Limited|plc|Technologies)\s*$/i, '')
+            .trim();
 
-    // --- Persistent regex failures: community banks ---
-    "TFSL": { name: "Third Federal Savings & Loan", emps: 1200 },
-    "TRMK": { name: "Trustmark Corporation", emps: 3000 },
-    "IBOC": { name: "International Bancshares", emps: 3500 },
-    "TFIN": { name: "Triumph Financial", emps: 700 },
-    "CVBF": { name: "CVB Financial", emps: 1200 },
-    "WSFS": { name: "WSFS Financial", emps: 1900 },
-    "SBCF": { name: "Seacoast Banking", emps: 1300 },
-    "GABC": { name: "German American Bancorp", emps: 1700 },
-    "AROW": { name: "Arrow Financial", emps: 750 },
-    "CHMG": { name: "Chemung Financial", emps: 550 },
-    "HTLF": { name: "Heartland Financial USA", emps: 4200 },
-    "FBMS": { name: "First Bancshares", emps: 1400 },
-    "TBNK": { name: "Territorial Bancorp", emps: 250 },
+        const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search='
+            + encodeURIComponent(cleanName) + '&limit=5&format=json';
+        const sr = await apiFetch(searchUrl);
+        if (sr.status !== 200) return null;
+        const titles = sr.body[1] || [];
+        const descs  = sr.body[2] || [];
+        if (!titles.length) return null;
 
-    // --- Persistent regex failures: industrials/tech/services ---
-    "ESAB": { name: "ESAB Corporation", emps: 9500 },
-    "MPAA": { name: "Motorcar Parts of America", emps: 4000 },
-    "LCII": { name: "LCI Industries", emps: 9000 },
-    "MOD":  { name: "Modine Manufacturing", emps: 12000 },
-    "WSC":  { name: "WillScot Mobile Mini", emps: 5000 },
-    "DY":   { name: "Dycom Industries", emps: 15500 },
-    "NVST": { name: "Envista Holdings", emps: 14000 },
-    "COHU": { name: "Cohu Inc", emps: 3000 },
-    "POWI": { name: "Power Integrations", emps: 1900 },
-    "CVCO": { name: "Cavco Industries", emps: 7000 },
-    "PATK": { name: "Patrick Industries", emps: 12000 },
-    "PLAY": { name: "Dave & Buster's Entertainment", emps: 18000 },
-    "CARS": { name: "Cars.com", emps: 1600 },
-    "MTG":  { name: "MGIC Investment", emps: 1400 },
-    "SMAR": { name: "Smartsheet", emps: 3400 },
-    "PRPH": { name: "ProPhase Labs", emps: 300 },
+        const signals = ['company','corporation','conglomerate','manufacturer',
+                         'founded','headquartered','multinational','american',
+                         'industry','industries','financial','services'];
+        const blocklist = ['film','novel','song','game','album','fictional','disambiguation'];
 
-};
+        // Pick best candidate title
+        let match = titles.find(t => t.toLowerCase() === cleanName.toLowerCase())
+            || titles.find((t,i) =>
+                signals.some(s => (descs[i]||'').toLowerCase().includes(s)) &&
+                !blocklist.some(b => t.toLowerCase().includes(b)) &&
+                t.toLowerCase().includes(cleanName.toLowerCase().split(' ')[0])
+            )
+            || titles[0];
 
-module.exports = FALLBACK_DB;
+        if (!match) return null;
+
+        const pageUrl = 'https://en.wikipedia.org/w/api.php?action=query&titles='
+            + encodeURIComponent(match) + '&prop=revisions&rvprop=content&rvslots=main&format=json';
+        const pr = await apiFetch(pageUrl);
+        if (pr.status !== 200) return null;
+
+        const pages = pr.body?.query?.pages || {};
+        const page  = Object.values(pages)[0];
+        let text    = page?.revisions?.[0]?.slots?.main?.['*']
+                   || page?.revisions?.[0]?.['*'] || '';
+
+        // Follow redirects
+        const redir = text.match(/^#(?:REDIRECT|redirect)\s*\[\[([^\]]+)\]\]/m);
+        if (redir) {
+            const rt = redir[1].split('|')[0].trim();
+            const rr = await apiFetch('https://en.wikipedia.org/w/api.php?action=query&titles='
+                + encodeURIComponent(rt) + '&prop=revisions&rvprop=content&rvslots=main&format=json');
+            const rp = Object.values(rr.body?.query?.pages || {})[0];
+            text = rp?.revisions?.[0]?.slots?.main?.['*'] || rp?.revisions?.[0]?.['*'] || text;
+            match = rt;
+        }
+
+        // Parse employee count from infobox
+        const lines  = text.split('\n');
+        const empLine = lines.find(l => l.includes('num_employees') || l.includes('number_of_employees'));
+        let emps = null;
+        if (empLine) {
+            const stripped = empLine
+                .replace(/{{[^}]+}}/g, m => { const n = m.match(/\|([~\d,]{3,})/); return n?' '+n[1]+' ':' '; })
+                .replace(/<[^>]*>/g,' ').replace(/~/g,'').replace(/\bc\.\s*/g,'').replace(/\[\d+\]/g,' ');
+            const nums = (stripped.match(/[\d,]+/g)||[]).map(n=>parseInt(n.replace(/,/g,''),10)).filter(n=>!isNaN(n)&&n>100);
+            if (nums.length) emps = Math.max(...nums);
+        }
+
+        return { title: match, emps, hasInfobox: !!empLine };
+    } catch(e) {
+        return null;
+    }
+}
+
+// ─── PER-COMPANY TEST ────────────────────────────────────────────────────────
+async function testOne(ticker, name) {
+    try {
+        const url = BASE_URL + '?symbol=' + encodeURIComponent(ticker);
+        const { status, body: json } = await apiFetch(url);
+
+        if (status === 404 || json?.error) {
+            process.stdout.write(`❌ [${ticker.padEnd(7)}] ${name.padEnd(35)} API_ERROR: ${json?.error||'404'}\n`);
+            return { ticker, name, ok: false, missing: ['API_ERROR'], json: null, emps: null, profit: null, ebitda: null };
+        }
+
+        // Simulate client-side fallback merge — mirrors script.js behavior exactly
+        const resolvedSym = (json.resolvedSymbol || ticker).toUpperCase();
+        const db = FALLBACK_DB[resolvedSym] || FALLBACK_DB[ticker.toUpperCase()];
+        if (!json.name || json.name === 'undefined') {
+            // API returned no name — use full fallback row
+            if (db) { Object.assign(json, db); json.resolvedSymbol = ticker; }
+        } else if (db) {
+            // API has a name — fill only missing fields from fallback
+            if (!json.emps)          json.emps   = db.emps;
+            if (json.profit == null) json.profit = db.profit;
+            if (json.ebitda == null) json.ebitda = db.ebitda;
+            json.name = json.name || db.name;
+        }
+
+        const issues = [];
+        if (!json.emps)   issues.push('NO_EMPS');
+        if (!json.profit) issues.push('NO_PROFIT');
+        if (!json.ebitda) issues.push('NO_EBITDA');
+        const ok = issues.length === 0;
+
+        const empStr = json.emps   ? json.emps.toLocaleString().padStart(9)          : '     NULL';
+        const pStr   = json.profit ? fmt(json.profit).padStart(10)                   : '      NULL';
+        const eStr   = json.ebitda ? fmt(json.ebitda).padStart(10)                   : '      NULL';
+
+        process.stdout.write(`${ok ? '✅' : '❌'} [${ticker.padEnd(7)}] ${name.padEnd(35)} emps=${empStr}  profit=${pStr}  ebitda=${eStr}`);
+        if (issues.length) process.stdout.write(`  ⚠️  ${issues.join(', ')}`);
+        process.stdout.write('\n');
+        if (!ok) {
+            process.stdout.write(`         name="${json.name}"  resolved="${json.resolvedSymbol}"\n`);
+            if (json._errors?.length) for (const e of json._errors) process.stdout.write(`         ERROR: ${e}\n`);
+        }
+
+        return { ticker, name, ok, missing: issues, json, emps: json.emps, profit: json.profit, ebitda: json.ebitda };
+
+    } catch(err) {
+        process.stdout.write(`💥 [${ticker.padEnd(7)}] ${name.padEnd(35)} FETCH_ERR: ${err.message}\n`);
+        return { ticker, name, ok: false, missing: ['FETCH_ERROR'], json: null, emps: null, profit: null, ebitda: null };
+    }
+}
+
+// ─── MAIN ────────────────────────────────────────────────────────────────────
+async function main() {
+    console.log(`\n${'═'.repeat(78)}`);
+    console.log(`Fair Share Calculator — Top 1000 Companies Test`);
+    console.log(`Testing ${COMPANIES.length} unique companies at 250ms delay`);
+    console.log(`${'═'.repeat(78)}\n`);
+
+    const results = [];
+    let idx = 0;
+    for (const { ticker, name } of COMPANIES) {
+        idx++;
+        if (idx % 50 === 0) console.log(`\n  ── Progress: ${idx}/${COMPANIES.length} ──\n`);
+        const r = await testOne(ticker, name);
+        results.push(r);
+        await new Promise(r => setTimeout(r, 250));
+    }
+
+    // ── Summary ──────────────────────────────────────────────────────────────
+    const pass      = results.filter(r => r.ok);
+    const fail      = results.filter(r => !r.ok);
+    const empsOnly  = fail.filter(r => r.missing.includes('EMPS') && !r.missing.includes('PROFIT') && !r.missing.includes('EBITDA'));
+    const finOnly   = fail.filter(r => !r.missing.includes('EMPS') && (r.missing.includes('PROFIT') || r.missing.includes('EBITDA')));
+    const both      = fail.filter(r => r.missing.includes('EMPS') && (r.missing.includes('PROFIT') || r.missing.includes('EBITDA')));
+    const apiErr    = fail.filter(r => r.missing.includes('API_ERROR') || r.missing.includes('FETCH_ERROR'));
+
+    console.log(`\n${'═'.repeat(78)}`);
+    console.log(`RESULT: ${pass.length}/${COMPANIES.length} PASSING  (${fail.length} failures)\n`);
+    console.log(`  ⚠️  EMPS only         : ${empsOnly.length}`);
+    console.log(`  ⚠️  PROFIT/EBITDA only: ${finOnly.length}`);
+    console.log(`  ⚠️  EMPS + financials : ${both.length}`);
+    console.log(`  ❌  API errors        : ${apiErr.length}`);
+
+    if (fail.length) {
+        console.log(`\n${'─'.repeat(78)}`);
+        console.log(`ALL FAILURES (${fail.length}):\n`);
+        for (const f of fail) {
+            const missingStr = f.missing.join(', ').padEnd(25);
+            console.log(`  [${f.ticker.padEnd(7)}] ${f.name.padEnd(35)} → ${missingStr}`);
+        }
+    }
+
+    // ── Wikipedia pre-check for EMPS failures ────────────────────────────────
+    const empsFail = fail.filter(r => r.missing.includes('EMPS'));
+    if (empsFail.length > 0) {
+        console.log(`\n${'─'.repeat(78)}`);
+        console.log(`WIKIPEDIA PRE-CHECK — ${empsFail.length} companies missing EMPS\n`);
+        const suggestions = [];
+
+        for (const f of empsFail) {
+            const searchName = (f.json?.name || f.name)
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '').trim();
+            const wiki = await wikiCheck(searchName, f.ticker);
+            await new Promise(r => setTimeout(r, 200));
+
+            if (!wiki) {
+                console.log(`  ❌ [${f.ticker.padEnd(7)}] "${f.name}" — Wikipedia lookup failed`);
+            } else if (wiki.emps) {
+                console.log(`  ✅ [${f.ticker.padEnd(7)}] Found: "${wiki.title}"  emps=${wiki.emps.toLocaleString()}`);
+                suggestions.push({ ticker: f.ticker, title: wiki.title, emps: wiki.emps });
+            } else if (wiki.hasInfobox) {
+                console.log(`  ⚠️  [${f.ticker.padEnd(7)}] Found: "${wiki.title}"  — has infobox but no emps (needs manual check)`);
+                suggestions.push({ ticker: f.ticker, title: wiki.title, emps: null, needsCheck: true });
+            } else {
+                console.log(`  📄 [${f.ticker.padEnd(7)}] Found: "${wiki.title}"  — no employee infobox`);
+                suggestions.push({ ticker: f.ticker, title: wiki.title, emps: null });
+            }
+        }
+
+        if (suggestions.length) {
+            console.log(`\n${'─'.repeat(78)}`);
+            console.log(`WIKI_TITLE_MAP ADDITIONS for company.js:\n`);
+            for (const s of suggestions) {
+                const comment = s.emps
+                    ? `// emps: ${s.emps.toLocaleString()}`
+                    : s.needsCheck
+                    ? `// ⚠️  no emps in infobox — verify manually`
+                    : `// ⚠️  no employee data found on wiki`;
+                console.log(`    '${s.ticker}': '${s.title}',  ${comment}`);
+            }
+        }
+    }
+
+    // ── FALLBACK_DB suggestions for financial failures ────────────────────────
+    const finFail = fail.filter(r => r.missing.includes('PROFIT') || r.missing.includes('EBITDA'));
+    if (finFail.length) {
+        console.log(`\n${'─'.repeat(78)}`);
+        console.log(`FALLBACK_DB NEEDED for ${finFail.length} companies missing PROFIT or EBITDA:`);
+        console.log(`(Look up latest annual report figures and add to fallback.js)\n`);
+        for (const f of finFail) {
+            const fin = f.missing.filter(m => m !== 'EMPS').join('+');
+            console.log(`  [${f.ticker.padEnd(7)}] ${f.name.padEnd(35)} missing: ${fin}`);
+        }
+    }
+
+    // ── Debug script ──────────────────────────────────────────────────────────
+    console.log(`\n${'═'.repeat(78)}`);
+    console.log(`DEBUG SCRIPT — re-test only failures (paste into CodeSandbox):\n`);
+    console.log(`const https=require('https'),http=require('http');`);
+    console.log(`const BASE='https://fair-share-calc.vercel.app/api/company';`);
+    console.log(`function fetch(url){return new Promise((res,rej)=>{`);
+    console.log(`  const m=url.startsWith('https')?https:http;`);
+    console.log(`  m.get(url,r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{try{res(JSON.parse(d))}catch(e){rej(e)}})}).on('error',rej);`);
+    console.log(`})}`);
+    console.log(`const FAILURES=[`);
+    for (const f of fail) {
+        const nEsc = f.name.replace(/'/g, "\\'");
+        console.log(`  {ticker:'${f.ticker}',name:'${nEsc}',missing:${JSON.stringify(f.missing)}},`);
+    }
+    console.log(`];`);
+    console.log(`(async()=>{`);
+    console.log(`  for(const{ticker,name,missing}of FAILURES){`);
+    console.log(`    console.log('\\n['+ticker+'] '+name+' | missing: '+missing.join(','));`);
+    console.log(`    try{const j=await fetch(BASE+'/api/company?symbol='+encodeURIComponent(ticker));`);
+    console.log(`    console.log(JSON.stringify(j,null,2));}catch(e){console.log('ERR:',e.message)}`);
+    console.log(`    await new Promise(r=>setTimeout(r,400));`);
+    console.log(`  }`);
+    console.log(`})();`);
+}
+
+main().catch(console.error);
