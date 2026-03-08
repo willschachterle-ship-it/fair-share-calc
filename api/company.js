@@ -358,7 +358,7 @@ const SERVER_FALLBACK_DB = {
   "CIVI":{"name":"Civitas Resources","emps":700,"profit":900000000,"ebitda":2200000000},
   "BECN":{"name":"Beacon Roofing Supply","emps":9000,"profit":400000000,"ebitda":700000000},
   "SUM":{"name":"Summit Materials","emps":8000,"profit":200000000,"ebitda":700000000},
-  "CMA":{"name":"Comerica","profit":800000000,"ebitda":1100000000},
+  "CMA":{"name":"Comerica","emps":7565,"profit":800000000,"ebitda":1100000000},
   "SNV":{"name":"Synovus Financial","emps":5000,"profit":450000000,"ebitda":590000000},
   "CPAY":{"name":"Corpay","emps":10000},
   "CINF":{"name":"Cincinnati Financial","emps":6000},
@@ -468,7 +468,36 @@ const SERVER_FALLBACK_DB = {
   "HST":{"name":"Host Hotels & Resorts","emps":250},
   "ADP":{"name":"ADP","emps":58000},
   "PAYC":{"name":"Paycom Software","emps":7000},
-  "PFSI":{"name":"PennyMac Financial Services","emps":4000}
+  "PFSI":{"name":"PennyMac Financial Services","emps":4000},
+
+  // ── NO_EMPS fixes ─────────────────────────────────────────────────────────
+  "ALK":  {"name":"Alaska Air Group","emps":22000,"profit":100000000,"ebitda":1100000000},
+  "TT":   {"name":"Trane Technologies","emps":40000,"profit":2920000000,"ebitda":4360000000},
+  "HI":   {"name":"Hillenbrand","emps":10900,"profit":180000000,"ebitda":450000000},
+  "HESM": {"name":"Hess Midstream","emps":0,"profit":352900000,"ebitda":1220000000},
+  "DKL":  {"name":"Delek Logistics Partners","emps":0,"profit":176460000,"ebitda":307440000},
+  "ARCC": {"name":"Ares Capital Corporation","emps":0,"profit":1300000000,"ebitda":1690000000},
+  "CQP":  {"name":"Cheniere Energy Partners","emps":0,"profit":2990000000,"ebitda":4390000000},
+  "NEP":  {"name":"NextEra Energy Partners","emps":0,"profit":400000000,"ebitda":900000000},
+
+  // ── NO_PROFIT / NO_EBITDA fixes ───────────────────────────────────────────
+  "ZEUS": {"name":"Olympic Steel","emps":1700,"profit":85000000,"ebitda":180000000},
+  "VTRS": {"name":"Viatris","emps":32000,"profit":480000000,"ebitda":2800000000},
+
+  // ── Still-active companies returning API_ERROR ────────────────────────────
+  "DENN": {"name":"Denny's","emps":6900,"profit":28000000,"ebitda":95000000},
+  "SEAS": {"name":"SeaWorld Entertainment","emps":5000,"profit":180000000,"ebitda":480000000},
+  "LGF.A":{"name":"Lions Gate Entertainment","emps":3600,"profit":90000000,"ebitda":280000000},
+  "CORE": {"name":"Core & Main","emps":5500,"profit":340000000,"ebitda":560000000},
+  "DINE": {"name":"Dine Brands Global","emps":1100,"profit":110000000,"ebitda":230000000},
+  "SJW":  {"name":"SJW Group","emps":800,"profit":55000000,"ebitda":140000000},
+  "BIGC": {"name":"BigCommerce","emps":800,"profit":-60000000,"ebitda":-40000000},
+  "AMEH": {"name":"Apollo Medical Holdings","emps":350,"profit":35000000,"ebitda":65000000},
+  "ROLSY":{"name":"Rolls-Royce Holdings","emps":42000,"profit":2400000000,"ebitda":3200000000},
+  "CDAY": {"name":"Dayforce (Ceridian)","emps":8700,"profit":120000000,"ebitda":380000000},
+  "LANC": {"name":"Lancaster Colony","emps":4000,"profit":130000000,"ebitda":200000000},
+  "ROLL": {"name":"RBC Bearings","emps":6800,"profit":260000000,"ebitda":470000000},
+  "OMI":  {"name":"Owens & Minor","emps":21000,"profit":-80000000,"ebitda":320000000}
 };
 
 
@@ -1865,6 +1894,29 @@ const WIKI_TITLE_MAP = {
     'MAIN':  'Main Street Capital',
     'HTGC':  'Hercules Capital',
 
+    // ── Regional & Commercial Banks ───────────────────────────────────────────
+    'CMA':   'Comerica',
+    'ZION':  'Zions Bancorporation',
+
+    // ── Still-active companies with API lookup issues ──────────────────────
+    'ALK':   'Alaska Airlines',
+    'TT':    'Trane Technologies',
+    'DENN':  "Denny's",
+    'SEAS':  'SeaWorld Entertainment',
+    'LGF.A': 'Lionsgate',
+    'CORE':  'Core & Main',
+    'DINE':  'Dine Brands Global',
+    'SJW':   'SJW Group',
+    'BIGC':  'BigCommerce',
+    'AMEH':  'Apollo Medical Holdings',
+    'ROLSY': 'Rolls-Royce Holdings',
+    'CDAY':  'Dayforce HCM',
+    'LANC':  'Lancaster Colony',
+    'ROLL':  'RBC Bearings',
+    'OMI':   'Owens & Minor',
+    'VTRS':  'Viatris',
+    'ZEUS':  'Olympic Steel',
+
     // ── Aerospace & Aviation ──────────────────────────────────────────────────
     'JOBY':  'Joby Aviation',
     'ACHR':  'Archer Aviation',
@@ -2574,6 +2626,59 @@ module.exports = async function handler(req, res) {
         if (fb.ebitda != null && merged.ebitda == null) merged.ebitda = fb.ebitda;
         if (fb.logo && !merged.logo)                    merged.logo   = fb.logo;
     }
+
+    // Force-override block: some companies return bad API data (wrong entity, minority share
+    // attribution, data truncation, etc.). These are unconditional overwrites.
+    const FORCE_OVERRIDES = {
+        // Barrick Gold: API returns stub with 1,000 emps / $17M profit.
+        // Reality (FY2024): 26,800 employees, $2.14B net income, $5.19B EBITDA.
+        "GOLD":  { emps: 26800, profit: 2140000000, ebitda: 5190000000 },
+
+        // Interactive Brokers: API returns net income attributable to Class A public
+        // shareholders only (~15% of company). Full consolidated FY2024 net income = $755M.
+        "IBKR":  { profit: 755000000, ebitda: 1000000000 },
+
+        // Microchip Technology: profit = -$500,000 is a data truncation artifact.
+        // Real FY2024 GAAP net loss was approximately -$163M (inventory correction cycle).
+        "MCHP":  { profit: -163000000 },
+
+        // Ashland Global: API mixes periods/GAAP — returns profit=$505M / ebitda=-$538M.
+        // FY2024 (ending Sep 2024): net income=$169M, adjusted EBITDA=$459M.
+        "ASH":   { profit: 169000000, ebitda: 459000000 },
+
+        // Booking Holdings: profit=$288M is a single quarter, not full year.
+        // FY2024 full-year net income = $6.0B. EBITDA=$9.45B from API is correct.
+        "BKNG":  { profit: 6000000000 },
+
+        // Arthur J. Gallagher: API returns 706,000 employees. Reality: ~53,000.
+        "AJG":   { emps: 53000 },
+
+        // StoneX Group: ebitda=$2.8M is a data error (units confusion).
+        // Reality: ebitda ~$400M; profit $306M is correct.
+        "SNEX":  { ebitda: 400000000 },
+
+        // Estee Lauder: profit=$684M is from a blended/wrong period.
+        // FY2024 (ending June 2024) net income = $390M. EBITDA corrected to $600M.
+        "EL":    { profit: 390000000, ebitda: 600000000 },
+
+        // Duolingo: emps=700 is wrong (real: ~5,600). Profit=$414M inflated by tax benefit.
+        // Real FY2024 net income = $183M.
+        "DUOL":  { emps: 5600, profit: 183000000 },
+    };
+
+    if (FORCE_OVERRIDES[symbol]) {
+        const fo = FORCE_OVERRIDES[symbol];
+        if (fo.emps   != null) merged.emps   = fo.emps;
+        if (fo.profit != null) merged.profit = fo.profit;
+        if (fo.ebitda != null) merged.ebitda = fo.ebitda;
+    }
+
+    // Re-run one-time item detection after force overrides, then hard-force flag
+    // for known anomalous companies (EL: impairment charges; DUOL: tax benefit;
+    // LYFT: tax benefit already documented).
+    merged.hasOneTimeItem = detectOneTimeItem(merged.profit, merged.ebitda);
+    const FORCE_ONE_TIME = new Set(["LYFT", "EL", "DUOL"]);
+    if (FORCE_ONE_TIME.has(symbol)) merged.hasOneTimeItem = true;
 
     // If still no employee count, return what we have and let the client use fallback DB
     return res.status(200).json({ ...merged, resolvedSymbol: symbol, _errors: errors });
