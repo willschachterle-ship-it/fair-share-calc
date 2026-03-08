@@ -1,3 +1,49 @@
+// Notes shown on results for companies that are acquired, merged, or bankrupt
+const COMPANY_CONTEXT = {
+    // Acquired / merged
+    "MMP":   "⚠️ Magellan Midstream Partners was acquired by ONEOK in 2023 and no longer trades independently. These figures are from its last reported year as a public company.",
+    "PARA":  "⚠️ Paramount Global merged with Skydance Media in 2024 and was taken private. These figures are from its last reported year as a public company.",
+    "SAFM":  "⚠️ Sanderson Farms was taken private by Cargill and Continental Grain in 2022. These figures are from its last reported year as a public company.",
+    "SWM":   "⚠️ Schweitzer-Mauduit International renamed itself Mativ Holdings (MATV) in 2022 after merging with Neenah Inc. Try searching MATV for current data.",
+    "FBHS":  "⚠️ Fortune Brands Home & Security split into two separate companies in 2023: Fortune Brands Innovations (FBIN) and MasterBrand Cabinets (MBC). The ticker FBHS no longer trades.",
+    "FOE":   "⚠️ Ferro Corporation was acquired by Prince International in 2022 and is no longer publicly traded. These figures are from its last reported year as a public company.",
+    "AUY":   "⚠️ Yamana Gold was acquired by Pan American Silver (PAAS) in 2023. These figures are from its last reported year as a public company.",
+    "NCR":   "⚠️ NCR Corporation split into two separate public companies in 2023: NCR Atleos (NATL) and NCR Voyix (VYX). The ticker NCR no longer trades.",
+    "LHCG":  "⚠️ LHC Group was acquired by Optum (a UnitedHealth subsidiary) in 2023. These figures are from its last reported year as a public company.",
+    "MDC":   "⚠️ MDC Holdings was acquired by Sumitomo Forestry in 2024 and renamed Sekisui House. These figures are from its last reported year as a public company.",
+    "LUPE":  "⚠️ Lundin Petroleum merged into Lundin Energy, which was then acquired by APA Corporation in 2022. These figures are from its last reported year as a public company.",
+    "CPE":   "⚠️ Callon Petroleum was acquired by APA Corporation in 2024. These figures are from its last reported year as a public company.",
+    "AIMC":  "⚠️ Altra Industrial Motion merged with Regal Beloit to form Regal Rexnord (RRX) in 2022. The ticker AIMC no longer trades — try RRX for current data.",
+    "TMST":  "⚠️ TimkenSteel renamed itself Metallus (MTUS) in 2024. These figures are from its last reported period under the old ticker.",
+    "OSTK":  "⚠️ Overstock.com renamed itself Beyond, Inc. (BYON) in 2023. Try searching BYON for current data.",
+    "KMPH":  "⚠️ KemPharm was acquired by Aquestive Therapeutics in 2022. These figures are from its last reported year as a public company.",
+    "CDK":   "⚠️ CDK Global was taken private by Brookfield Business Partners in 2022. These figures are from its last reported year as a public company.",
+    "SEND":  "⚠️ SendGrid was acquired by Twilio (TWLO) in 2019. These figures are from its last reported year as a public company — try TWLO for current data.",
+    "PRSP":  "⚠️ Perspecta was acquired by Peraton (a private company) in 2021. These figures are from its last reported year as a public company.",
+    "CCMP":  "⚠️ CMC Materials was acquired by Entegris (ENTG) in 2022. These figures are from its last reported year as a public company.",
+    "LSI":   "⚠️ Life Storage merged with Extra Space Storage (EXR) in 2023. Try searching EXR for current data.",
+    "WRI":   "⚠️ Weingarten Realty was acquired by Kimco Realty (KIM) in 2021. Try searching KIM for current data.",
+    "CFX":   "⚠️ Colfax Corporation split into two companies in 2022: ESAB Corporation (ESAB) and Enovis Corporation (ENOV). The ticker CFX no longer trades.",
+    "USAK":  "⚠️ USA Truck was acquired by Knight-Swift Transportation (KNX) in 2022. Try searching KNX for current data.",
+    "PTSI":  "⚠️ P.A.M. Transport Services was acquired by Heartland Express in 2022. These figures are from its last reported year as a public company.",
+    "ECHO":  "⚠️ Echo Global Logistics was taken private by The Jordan Company in 2021. These figures are from its last reported year as a public company.",
+    "TRTN":  "⚠️ Triton International was acquired by Brookfield Infrastructure in 2023. These figures are from its last reported year as a public company.",
+    "PACW":  "⚠️ PacWest Bancorp merged with Banc of California (BANC) in 2023. Try searching BANC for current data.",
+    "USD":   "⚠️ US Silica Holdings was taken private by Apollo Global Management in 2018. These figures are from its last reported year as a public company.",
+    "CDAY":  "⚠️ Ceridian HCM rebranded to Dayforce and trades as DAY since 2024. Try searching DAY for current data.",
+    // Bankrupt / delisted
+    "SAVE":  "⚠️ Spirit Airlines filed for bankruptcy in November 2024 and its shares were delisted. These figures are from its last reported year as a public company.",
+    "REV":   "⚠️ Revlon filed for bankruptcy in 2022 and was subsequently delisted. These figures are from its last reported year as a public company.",
+    "BIG":   "⚠️ Big Lots filed for bankruptcy in 2024 and its stores were acquired by Nexus Capital. These figures are from its last reported year as a public company.",
+    "JOANN": "⚠️ JOANN Inc. filed for bankruptcy in 2024 and was delisted. These figures are from its last reported year as a public company.",
+    "PRTY":  "⚠️ Party City filed for bankruptcy and closed all stores in 2023. These figures are from its last reported year as a public company.",
+    "YRCW":  "⚠️ Yellow Corporation (formerly YRC Worldwide) filed for bankruptcy and shut down in 2023. These figures are from its last reported year as a public company.",
+    "HZN":   "⚠️ Horizon Global filed for bankruptcy and was delisted in 2023. These figures are from its last reported year as a public company.",
+    "NGAS":  "⚠️ Gastar Exploration filed for bankruptcy in 2018 and was delisted. These figures are historical.",
+    "PREIT": "⚠️ Pennsylvania REIT (PREIT) filed for bankruptcy in 2023 and was delisted. These figures are from its last reported year as a public company.",
+    "NWIN":  "⚠️ Northwest Indiana Bancorp was delisted and is no longer actively traded. These figures are from its last reported period.",
+};
+
 const PRIVATE_COMPANIES = {
     "GENENTECH": "Genentech is a private subsidiary of Roche and does not publicly report financials.",
     "SPACEX": "SpaceX is privately held and does not publicly report financials.",
@@ -247,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return prefix + rest.charAt(0) + rest.slice(1).toLowerCase();
                 });
         }
+        json._queriedSymbol = symbol.toUpperCase();
         return json;
     }
 
@@ -383,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                         '</div>' +
                         '<div style="margin-bottom:20px; padding-top:10px; border-top: 1px solid #eee;">' +
+                            (COMPANY_CONTEXT[data._queriedSymbol || ''] ? '<p style="font-size:0.85em; color:#6a3d00; margin:0 0 12px 0; padding:10px 12px; background:#fff8e1; border-left:3px solid #f9a825; border-radius:4px;">' + COMPANY_CONTEXT[data._queriedSymbol || ''] + '</p>' : '') +
                             (data.hasOneTimeItem ? '<p style="font-size:0.85em; color:#e65100; margin:0 0 12px 0; padding:10px 12px; background:#fff3e0; border-left:3px solid #e65100; border-radius:4px;">⚠️ <strong>Heads up:</strong> ' + data.name + ' officially reported <strong>$' + (data.profit/1e9).toFixed(2) + 'B in net income</strong> this year — which would have meant <strong>$' + Math.round(data.profit / data.emps).toLocaleString() + ' per worker</strong> if it had been shared. But this figure includes a one-time windfall (like a tax benefit or asset write-off), or an accounting error (math is hard), unrelated to the day-to-day work of its employees. The company still received that cash — it just did not go to workers. The calculations below use EBITDA, which reflects recurring operational profit and gives a more typical picture of what the company actually earns through its business.</p>' : '') +
                             (!data.hasOneTimeItem ? '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> - that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
                             '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' : '') +
