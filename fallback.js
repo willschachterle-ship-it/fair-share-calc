@@ -771,8 +771,15 @@ const FALLBACK_DB = {
     // CREE — old ticker for Wolfspeed; now trades as WOLF (passing ✅).
     "CREE":  { name: "Wolfspeed (formerly Cree)", emps: 3000, profit: -1610000000, ebitda: -1080000000 },
 
-    // EOG, PAG, CAKE, CAVA, ARES, DK — emps now resolved live via WIKI_TITLE_MAP
+    // EOG, PAG, CAVA, ARES — emps now resolved live via WIKI_TITLE_MAP
     // in company.js. Fallback entries removed to avoid stale hardcoded values.
+
+    // DK — Delek US Holdings: WIKI_TITLE_MAP set to 'Delek US'.
+    // Wikipedia shows 3,746 employees (2023). Adding as fallback for safety.
+    "DK":    { name: "Delek US Holdings", emps: 3746 },
+
+    // CAKE — The Cheesecake Factory: WIKI_TITLE_MAP set but scraper failing to extract emps.
+    // Wikipedia shows 47,500 employees (2022). Now also in SERVER_FALLBACK_DB in company.js.
 
     // PRTY — Party City: already covered in Batch 8 above.
 
