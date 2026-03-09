@@ -35,7 +35,7 @@ const COMPANY_CONTEXT = {
     "CBTX":  "⚠️ CommunityBank of Texas merged into Stellar Bank (STEL) in 2022 and no longer trades as CBTX. These figures are from its last reported year as a public company.",
     "STEL":  "ℹ️ Stellar Bank (STEL) was formed in 2022 by the merger of Allegiance Bank and CommunityBank of Texas. The data shown reflects the combined entity.",
     // Bankrupt / delisted
-    "REV":   "⚠️ Revlon filed for Chapter 11 bankruptcy in 2022 and was subsequently delisted. These figures are from its last reported year as a public company (FY2021).",
+    "REV":   "⚠️ Revlon filed for Chapter 11 bankruptcy in June 2022 and was subsequently delisted. It emerged from bankruptcy in May 2023 as a private company. These figures are from its last reported year as a public company (FY2021).",
     "BIG":   "⚠️ Big Lots filed for bankruptcy in September 2024. Its store leases were acquired by Nexus Capital. These figures are from its last reported year as a public company.",
     "JOANN": "⚠️ JOANN Inc. filed for bankruptcy in March 2024 and was liquidated. These figures are from its last reported year as a public company.",
     "SAVE":  "⚠️ Spirit Airlines filed for bankruptcy in November 2024 and its shares were delisted. These figures are from its last reported year as a public company.",
