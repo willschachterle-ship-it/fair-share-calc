@@ -660,10 +660,13 @@ const FALLBACK_DB = {
     //   (Paramount had massive debt load; negative profit reflects interest + write-downs)
     "PARA":  { name: "Paramount Global", emps: 23000, profit: -565000000, ebitda: 1900000000, logo: "https://logo.clearbit.com/paramount.com" },
 
-    // REV — Revlon: filed bankruptcy 2022, delisted. Last public financials FY2021.
-    //   Source: Wikipedia infobox — net income $206M (FY2021), emps ~5,800.
-    //   Operating income $103M; using net income as profit figure.
+    // REV — Revlon: filed bankruptcy June 2022, delisted. Emerged May 2023 as private company.
+    //   Last public financials FY2021. Source: Wikipedia — net income $206M, emps ~5,800.
     "REV":   { name: "Revlon", emps: 5800, profit: 206000000, ebitda: 300000000, logo: "https://logo.clearbit.com/revlon.com" },
+
+    // CAKE — The Cheesecake Factory: still public (NASDAQ). API/scraper fails to return emps.
+    //   Wikipedia: 47,500 employees (2022). FY2023 financials from output.
+    "CAKE":  { name: "The Cheesecake Factory", emps: 47500, profit: 148430000, ebitda: 296320000, logo: "https://logo.clearbit.com/thecheesecakefactory.com" },
 
     // PRTY — Party City: filed bankruptcy Jan 2023, closed all stores.
     //   Last meaningful public year FY2021: emps ~12,500, profit ~-$121M, EBITDA ~$310M
@@ -775,8 +778,8 @@ const FALLBACK_DB = {
     // in company.js. Fallback entries removed to avoid stale hardcoded values.
 
     // DK — Delek US Holdings: WIKI_TITLE_MAP set to 'Delek US'.
-    // Wikipedia shows 3,746 employees (2023). Adding as fallback for safety.
-    "DK":    { name: "Delek US Holdings", emps: 3746 },
+    // Wikipedia shows 3,746 employees (2023). FY2023: net income ~$220M, EBITDA ~$800M.
+    "DK":    { name: "Delek US Holdings", emps: 3746, profit: 220000000, ebitda: 800000000, logo: "https://logo.clearbit.com/delekus.com" },
 
     // CAKE — The Cheesecake Factory: WIKI_TITLE_MAP set but scraper failing to extract emps.
     // Wikipedia shows 47,500 employees (2022). Now also in SERVER_FALLBACK_DB in company.js.
