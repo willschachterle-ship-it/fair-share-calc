@@ -504,6 +504,8 @@ const SERVER_FALLBACK_DB = {
   "CAVA":  {"name":"Cava Group","emps":11000},
   // EMN: Eastman Chemical. Wikipedia says 14,000. Scraper fails on "Eastman Chemical Co".
   "EMN":   {"name":"Eastman Chemical","emps":14000},
+  // CAKE: The Cheesecake Factory. Wikipedia says 47,500 (2022). Scraper fails to extract.
+  "CAKE":  {"name":"The Cheesecake Factory","emps":47500},
 
   // ── API_ERROR: acquired/merged — need name to avoid 404, financials for calc ──
   // REV: Revlon filed bankruptcy 2022, emerged 2023. FY2021 data.
@@ -2793,6 +2795,85 @@ module.exports = async function handler(req, res) {
 
         // SITM — SiTime Corporation: API returns 2,022 (year artifact). Real: ~220.
         "SITM":  { emps: 220 },
+
+        // ── Year-artifact employee count fixes ──────────────────────────────
+        // These companies have fiscal year numbers (2020–2025) or other
+        // small round numbers returned as employee counts by the API.
+
+        // UNP — Union Pacific: API returns 600. Real FY2023: ~32,000.
+        "UNP":   { emps: 32000 },
+        // BWA — BorgWarner: API returns 200. Real FY2023: ~35,000.
+        "BWA":   { emps: 35000 },
+        // PAA — Plains All American: API returns 200. Real FY2023: ~4,300.
+        "PAA":   { emps: 4300 },
+        // AA — Alcoa: API returns 200. Real FY2023: ~14,800.
+        "AA":    { emps: 14800 },
+        // FFIV — F5 Networks: API returns 600. Real FY2023: ~6,600.
+        "FFIV":  { emps: 6600 },
+        // CBOE — Cboe Global Markets: API returns 2,025 (year). Real: ~1,500.
+        "CBOE":  { emps: 1500 },
+        // EQT — EQT Corporation: API returns 2,025 (year). Real: ~1,600.
+        "EQT":   { emps: 1600 },
+        // CTRA — Coterra Energy: API returns 2,024 (year). Real: ~1,200.
+        "CTRA":  { emps: 1200 },
+        // RRC — Range Resources: API returns 2,025 (year). Real: ~490.
+        "RRC":   { emps: 490 },
+        // SWN — Southwestern Energy: API returns 2,023 (year). Real: ~1,000.
+        "SWN":   { emps: 1000 },
+        // CNX — CNX Resources: API returns 2,024 (year). Real: ~1,000.
+        "CNX":   { emps: 1000 },
+        // OVV — Ovintiv: API returns 2,022 (year). Real FY2023: ~2,600.
+        "OVV":   { emps: 2600 },
+        // FANG — Diamondback Energy: API returns 2,024 (year). Real: ~950.
+        "FANG":  { emps: 950 },
+        // EXE — Expand Energy (fka Chesapeake): API returns 2,024 (year). Real: ~1,300.
+        "EXE":   { emps: 1300 },
+        // TPL — Texas Pacific Land: API returns 2,025 (year). Real: ~100.
+        "TPL":   { emps: 100 },
+        // O — Realty Income: API returns 2,023 (year). Real: ~450.
+        "O":     { emps: 450 },
+        // INVH — Invitation Homes: API returns 2,021 (year). Real: ~1,800.
+        "INVH":  { emps: 1800 },
+        // AMH — American Homes 4 Rent: API returns 2,023 (year). Real: ~2,000.
+        "AMH":   { emps: 2000 },
+        // FRT — Federal Realty: API returns 2,021 (year). Real: ~200 (small REIT staff).
+        "FRT":   { emps: 200 },
+        // BXP — Boston Properties: API returns 2,023 (year). Real: ~750.
+        "BXP":   { emps: 750 },
+        // ARE — Alexandria Real Estate: API returns 2,024 (year). Real: ~600.
+        "ARE":   { emps: 600 },
+        // UDR — UDR Inc: API returns 2,024 (year). Real: ~500.
+        "UDR":   { emps: 500 },
+        // VRSN — VeriSign: API returns 2,025 (year). Real: ~1,100.
+        "VRSN":  { emps: 1100 },
+        // DOC — Physicians Realty Trust: API returns 2,024 (year). Real: ~200.
+        "DOC":   { emps: 200 },
+        // BMBL — Bumble: API returns 2,024 (year). Real FY2023: ~600.
+        "BMBL":  { emps: 600 },
+        // GO — Grocery Outlet: API returns 2,024 (year). Real: ~6,400.
+        "GO":    { emps: 6400 },
+        // IRDM — Iridium Communications: API returns 2,024 (year). Real: ~600.
+        "IRDM":  { emps: 600 },
+        // AMCX — AMC Networks: API returns 2,024 (year). Real: ~2,900.
+        "AMCX":  { emps: 2900 },
+        // OWL — Blue Owl Capital: API returns 2,025 (year). Real: ~800.
+        "OWL":   { emps: 800 },
+        // HLNE — Hamilton Lane: API returns 2,024 (year). Real: ~800.
+        "HLNE":  { emps: 800 },
+        // DINE — Dine Brands Global: API returns 2,023 (year). Real: ~500 (franchises out).
+        "DINE":  { emps: 500 },
+        // IONS — Ionis Pharmaceuticals: API returns 2,024 (year). Real: ~2,000.
+        "IONS":  { emps: 2000 },
+        // NN — NN Inc: API returns 2,021 (year). Real: ~6,500.
+        "NN":    { emps: 6500 },
+        // TNDM — Tandem Diabetes Care: API returns 2,020 (year). Real: ~1,900.
+        "TNDM":  { emps: 1900 },
+        // VTLE — Vital Energy: API returns 2,020 (year). Real: ~700.
+        "VTLE":  { emps: 700 },
+        // HAS — Hasbro: API returns 2,023 (year). Real: ~6,300.
+        "HAS":   { emps: 6300 },
+        // ZEUS — Olympic Steel: API returns 2,020 (year). Real: ~2,100.
+        "ZEUS":  { emps: 2100 },
     };
 
     if (FORCE_OVERRIDES[symbol]) {
