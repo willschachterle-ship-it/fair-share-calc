@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fair Share — Data Quality Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #12121a;
+    --border:   #1e1e2e;
+    --text:     #e2e2f0;
+    --muted:    #6b6b8a;
+    --accent:   #6ee7b7;   /* teal-green */
+    --warn:     #fbbf24;   /* amber */
+    --danger:   #f87171;   /* red */
+    --info:     #818cf8;   /* indigo */
+    --purple:   #c084fc;
+    --mono:     'DM Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  header h1 span { color: var(--accent); }
+  .meta-pill {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    background: var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .meta-pill.good { background: rgba(110,231,183,0.12); color: var(--accent); }
+  .meta-pill.warn { background: rgba(251,191,36,0.12);  color: var(--warn); }
+  .meta-pill.bad  { background: rgba(248,113,113,0.12); color: var(--danger); }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    margin: 40px auto;
+    max-width: 640px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .upload-zone:hover, .upload-zone.drag {
+    border-color: var(--accent);
+    background: rgba(110,231,183,0.04);
+  }
+  .upload-zone h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .upload-zone p  { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .upload-zone .icon { font-size: 2.5rem; margin-bottom: 16px; }
+  .file-input { display: none; }
+  .btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 24px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .demo-link { margin-top: 12px; font-size: 0.75rem; color: var(--muted); }
+  .demo-link a { color: var(--info); text-decoration: none; }
+
+  /* ── Dashboard layout ── */
+  #dashboard { display: none; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+  /* ── Section titles ── */
+  .section {
+    margin-top: 52px;
+  }
+  .section-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── KPI cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 18px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--accent));
+    border-radius: 12px 12px 0 0;
+  }
+  .kpi-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 1.9rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--kpi-color, var(--accent));
+  }
+  .kpi-sub {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── Chart cards ── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .chart-card.wide {
+    grid-column: 1 / -1;
+  }
+  .chart-card h3 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 240px;
+  }
+  .chart-wrap.tall { height: 320px; }
+  .chart-wrap.short { height: 180px; }
+
+  /* ── Source table ── */
+  .source-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+  }
+  .source-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .source-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .source-table tr:last-child td { border-bottom: none; }
+  .bar-cell { position: relative; }
+  .bar-bg {
+    position: absolute;
+    top: 50%; left: 12px;
+    transform: translateY(-50%);
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    width: calc(100% - 24px);
+    z-index: 0;
+  }
+  .bar-fill {
+    position: absolute;
+    top: 50%; left: 12px;
+    transform: translateY(-50%);
+    height: 4px;
+    border-radius: 2px;
+    z-index: 1;
+    transition: width 0.6s ease;
+  }
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Failures table ── */
+  .fail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+  }
+  .fail-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .fail-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+  }
+  .fail-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    margin: 1px;
+    white-space: nowrap;
+  }
+  .badge.no-emps   { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .badge.no-profit { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .badge.api-err   { background: rgba(129,140,248,0.15); color: var(--info); }
+  .badge.fetch-err { background: rgba(192,132,252,0.15); color: var(--purple); }
+
+  /* ── Scrollable wrapper for failures ── */
+  .scroll-wrap {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .scroll-wrap::-webkit-scrollbar { width: 6px; }
+  .scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+  .scroll-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Sector breakdown ── */
+  .sector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .sector-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sector-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sector-pass-bar {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .sector-pass-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+  .sector-stats {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  .run-info {
+    margin-top: 48px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: var(--mono);
+    font-size: 0.73rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .run-info strong { color: var(--text); }
+
+  /* ── Artifact warning banner ── */
+  .artifact-banner {
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 0.8rem;
+    color: var(--warn);
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ── No data state ── */
+  .empty { color: var(--muted); font-size: 0.82rem; padding: 20px 0; text-align: center; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Fair Share <span>Data Quality</span></h1>
+  </div>
+  <div id="header-meta" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
+</header>
+
+<!-- Upload zone (shown before data loaded) -->
+<div id="upload-area" class="page">
+  <div class="upload-zone" id="drop-zone">
+    <div class="icon">📊</div>
+    <h2>Load Test Results</h2>
+    <p>Upload the JSON file output by <code>test_extended.js</code><br>
+       or <code>test_top1000_v3.js</code> (run with <code>--out results.json</code>)</p>
+    <button class="btn" onclick="document.getElementById('file-input').click()">Choose File</button>
+    <input type="file" id="file-input" class="file-input" accept=".json">
+    <div class="demo-link">
+      Or <a href="#" id="load-demo">load demo data</a> to preview the dashboard
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard (hidden until data loaded) -->
+<div id="dashboard">
+<div class="page">
+
+  <!-- ── 1. Overview KPIs ── -->
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+  </div>
+
+  <!-- ── 2. Source Attribution ── -->
+  <div class="section">
+    <div class="section-title">Data Source Attribution</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Employee Count — Source</h3>
+        <div class="chart-wrap"><canvas id="chart-src-emps"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Net Income — Source</h3>
+        <div class="chart-wrap"><canvas id="chart-src-profit"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>EBITDA — Source</h3>
+        <div class="chart-wrap"><canvas id="chart-src-ebitda"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Source Breakdown (All Fields)</h3>
+        <div class="chart-wrap"><canvas id="chart-src-all"></canvas></div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="chart-card">
+        <h3>Source counts — per field</h3>
+        <table class="source-table" id="source-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. Profitability ── -->
+  <div class="section">
+    <div class="section-title">Profitability</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Net Income Distribution</h3>
+        <div class="chart-wrap"><canvas id="chart-profit-dist"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>EBITDA Distribution</h3>
+        <div class="chart-wrap"><canvas id="chart-ebitda-dist"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Profit vs EBITDA Relationship</h3>
+        <div class="chart-wrap"><canvas id="chart-profit-ebitda"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Profitability Summary</h3>
+        <div id="profit-summary" style="padding-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. Employee Distribution ── -->
+  <div class="section">
+    <div class="section-title">Employee Distribution</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Companies by Headcount Tier</h3>
+        <div class="chart-wrap"><canvas id="chart-emp-tiers"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Employee Count — Log Scale Histogram</h3>
+        <div class="chart-wrap"><canvas id="chart-emp-hist"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. Sector Breakdown ── -->
+  <div class="section">
+    <div class="section-title">By Sector</div>
+    <div class="chart-grid">
+      <div class="chart-card wide">
+        <h3>Pass Rate &amp; Company Count per Sector</h3>
+        <div class="chart-wrap tall"><canvas id="chart-sector"></canvas></div>
+      </div>
+    </div>
+    <div class="sector-grid" id="sector-grid" style="margin-top:20px"></div>
+  </div>
+
+  <!-- ── 6. Data Quality Flags ── -->
+  <div class="section">
+    <div class="section-title">Data Quality Flags</div>
+    <div class="artifact-banner" id="artifact-banner"></div>
+    <div class="kpi-grid" id="flag-kpis"></div>
+    <div style="margin-top:20px">
+      <div class="chart-card">
+        <h3>Flagged Companies (year artifacts, round artifacts, one-time items)</h3>
+        <div class="scroll-wrap" style="margin-top:4px">
+          <table class="fail-table" id="flag-table">
+            <thead><tr>
+              <th>Ticker</th><th>Name</th><th>Sector</th>
+              <th>Employees</th><th>Flags</th>
+            </tr></thead>
+            <tbody id="flag-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. Failures ── -->
+  <div class="section">
+    <div class="section-title">All Failures</div>
+    <div class="scroll-wrap">
+      <table class="fail-table" id="fail-table">
+        <thead><tr>
+          <th>Ticker</th><th>Name</th><th>Sector</th>
+          <th>Missing Fields</th>
+        </tr></thead>
+        <tbody id="fail-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 8. Run Info ── -->
+  <div class="run-info" id="run-info"></div>
+
+</div><!-- /page -->
+</div><!-- /dashboard -->
+
+<script>
+// ─── COLOR PALETTE ────────────────────────────────────────────────────────────
+const C = {
+  accent:  '#6ee7b7',
+  warn:    '#fbbf24',
+  danger:  '#f87171',
+  info:    '#818cf8',
+  purple:  '#c084fc',
+  muted:   '#6b6b8a',
+  border:  '#1e1e2e',
+  surface: '#12121a',
+  text:    '#e2e2f0',
+};
+
+const SRC_COLORS = {
+  api_live:             C.accent,
+  fallback_db_wiki:     C.info,
+  fallback_db_claude:   C.purple,
+  fallback_db_unknown:  C.warn,
+  missing:              C.danger,
+};
+
+const SRC_LABELS = {
+  api_live:             'Live API',
+  fallback_db_wiki:     'Fallback DB (Wikipedia)',
+  fallback_db_claude:   'Fallback DB (Claude)',
+  fallback_db_unknown:  'Fallback DB (Unknown src)',
+  missing:              'Missing',
+};
+
+Chart.defaults.color = C.muted;
+Chart.defaults.borderColor = C.border;
+Chart.defaults.font.family = "'DM Mono', monospace";
+
+function chartDefaults(extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: C.text, boxWidth: 12, padding: 14, font: { size: 11 } }
+      },
+      tooltip: {
+        backgroundColor: '#1e1e2e',
+        titleColor: C.text,
+        bodyColor: C.muted,
+        borderColor: '#2e2e42',
+        borderWidth: 1,
+      },
+    },
+    ...extra,
+  };
+}
+
+// ─── UTILITY ─────────────────────────────────────────────────────────────────
+function pct(n, d) { return d ? ((n/d)*100).toFixed(1)+'%' : '—'; }
+function fmtN(n) {
+  if (n === null || n === undefined) return 'NULL';
+  const s = n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  if (a >= 1e9) return s + '$' + (a/1e9).toFixed(1) + 'B';
+  if (a >= 1e6) return s + '$' + (a/1e6).toFixed(1) + 'M';
+  return s + '$' + a.toLocaleString();
+}
+function fmtEmp(n) {
+  if (!n) return '—';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+function median(arr) {
+  if (!arr.length) return 0;
+  const s = [...arr].sort((a,b) => a-b);
+  const m = Math.floor(s.length/2);
+  return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+}
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function countBy(arr, fn) {
+  return arr.reduce((m,v) => { const k=fn(v); m[k]=(m[k]||0)+1; return m; }, {});
+}
+
+let activeCharts = [];
+function mkChart(id, cfg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const existing = Chart.getChart(el);
+  if (existing) existing.destroy();
+  const c = new Chart(el, cfg);
+  activeCharts.push(c);
+  return c;
+}
+
+// ─── MAIN RENDER ─────────────────────────────────────────────────────────────
+function render(data) {
+  const { meta, results } = data;
+  const R   = results;
+  const N   = R.length;
+  const pass = R.filter(r => r.ok);
+  const fail = R.filter(r => !r.ok);
+
+  // Show dashboard
+  document.getElementById('upload-area').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // ── Header meta pills ──
+  const passRate = ((pass.length/N)*100).toFixed(1);
+  const headerMeta = document.getElementById('header-meta');
+  headerMeta.innerHTML = `
+    <span class="meta-pill">${N.toLocaleString()} companies</span>
+    <span class="meta-pill good">${pass.length.toLocaleString()} passing (${passRate}%)</span>
+    ${fail.length ? `<span class="meta-pill bad">${fail.length} failing</span>` : ''}
+    <span class="meta-pill">${new Date(meta.generatedAt||Date.now()).toLocaleDateString()}</span>
+  `;
+
+  // ── 1. KPIs ──
+  const hasEmps   = R.filter(r => r.emps   && r.emps > 0);
+  const hasProfit = R.filter(r => r.profit !== null && r.profit !== undefined);
+  const hasEbitda = R.filter(r => r.ebitda !== null && r.ebitda !== undefined);
+  const profitable = R.filter(r => r.profit > 0);
+  const posEbitda  = R.filter(r => r.ebitda > 0);
+
+  const kpis = [
+    { label: 'Pass Rate',       value: passRate + '%',          sub: `${pass.length}/${N}`,                        color: passRate >= 99 ? C.accent : passRate >= 95 ? C.warn : C.danger },
+    { label: 'Have Employees',  value: pct(hasEmps.length, N),  sub: `${hasEmps.length}/${N}`,                     color: C.info },
+    { label: 'Have Net Income', value: pct(hasProfit.length,N), sub: `${hasProfit.length}/${N}`,                   color: C.info },
+    { label: 'Have EBITDA',     value: pct(hasEbitda.length,N), sub: `${hasEbitda.length}/${N}`,                   color: C.info },
+    { label: 'Profitable',      value: pct(profitable.length, hasProfit.length), sub: `${profitable.length} positive net income`, color: C.accent },
+    { label: 'Pos EBITDA',      value: pct(posEbitda.length,  hasEbitda.length), sub: `${posEbitda.length} positive EBITDA`,      color: C.accent },
+    { label: 'API Failures',    value: fail.filter(r=>r.missing.includes('API_ERROR')||r.missing.includes('FETCH_ERROR')).length, sub: 'timeout or 404', color: C.warn },
+    { label: 'Used Fallback',   value: R.filter(r=>r.usedFallback||r.flags?.usedFallback).length, sub: `of ${N} companies`, color: C.purple },
+  ];
+  const kpiGrid = document.getElementById('kpi-grid');
+  kpiGrid.innerHTML = kpis.map(k => `
+    <div class="kpi" style="--kpi-color:${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+
+  // ── 2. Source Attribution ──
+  const fields = ['emps','profit','ebitda'];
+  const srcKeys = ['api_live','fallback_db_wiki','fallback_db_claude','fallback_db_unknown','missing'];
+
+  // Count sources per field
+  const srcCounts = {};
+  fields.forEach(f => {
+    srcCounts[f] = countBy(R, r => r.sources?.[f] || 'missing');
+  });
+
+  // Per-field doughnut charts
+  fields.forEach((field, i) => {
+    const ids = ['chart-src-emps','chart-src-profit','chart-src-ebitda'];
+    const counts = srcCounts[field];
+    mkChart(ids[i], {
+      type: 'doughnut',
+      data: {
+        labels: srcKeys.map(k => SRC_LABELS[k]),
+        datasets: [{
+          data: srcKeys.map(k => counts[k] || 0),
+          backgroundColor: srcKeys.map(k => SRC_COLORS[k] + 'cc'),
+          borderColor: srcKeys.map(k => SRC_COLORS[k]),
+          borderWidth: 2,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        ...chartDefaults(),
+        cutout: '62%',
+        plugins: {
+          ...chartDefaults().plugins,
+          tooltip: {
+            ...chartDefaults().plugins.tooltip,
+            callbacks: {
+              label: ctx => {
+                const v = ctx.raw;
+                return ` ${ctx.label}: ${v} (${pct(v,N)})`;
+              }
+            }
+          }
+        }
+      },
+    });
+  });
+
+  // Combined bar chart
+  mkChart('chart-src-all', {
+    type: 'bar',
+    data: {
+      labels: fields.map(f => f === 'emps' ? 'Employees' : f === 'profit' ? 'Net Income' : 'EBITDA'),
+      datasets: srcKeys.map(k => ({
+        label: SRC_LABELS[k],
+        data: fields.map(f => srcCounts[f][k] || 0),
+        backgroundColor: SRC_COLORS[k] + 'b0',
+        borderColor: SRC_COLORS[k],
+        borderWidth: 1,
+      })),
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { stacked: true, ticks: { color: C.muted } },
+        y: { stacked: true, ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+      plugins: {
+        ...chartDefaults().plugins,
+      }
+    }
+  });
+
+  // Source table
+  const tbl = document.getElementById('source-table');
+  tbl.innerHTML = `
+    <thead><tr>
+      <th>Source</th>
+      <th>Employees</th>
+      <th>Net Income</th>
+      <th>EBITDA</th>
+    </tr></thead>
+    <tbody>
+      ${srcKeys.map(k => `
+        <tr>
+          <td><span class="dot" style="background:${SRC_COLORS[k]}"></span>${SRC_LABELS[k]}</td>
+          ${fields.map(f => {
+            const v = srcCounts[f][k] || 0;
+            return `<td>${v.toLocaleString()} <span style="color:${C.muted}">(${pct(v,N)})</span></td>`;
+          }).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  // ── 3. Profitability ──
+  const profitVals = hasProfit.map(r => r.profit/1e9); // in billions
+  const ebitdaVals = hasEbitda.map(r => r.ebitda/1e9);
+
+  // Bucket profit values
+  function bucketFin(vals) {
+    const buckets = [
+      { label: '< -$5B',    min: -Infinity, max: -5e9 },
+      { label: '-$5B–-$1B', min: -5e9,      max: -1e9 },
+      { label: '-$1B–$0',   min: -1e9,      max: 0 },
+      { label: '$0–$1B',    min: 0,          max: 1e9 },
+      { label: '$1B–$5B',   min: 1e9,        max: 5e9 },
+      { label: '$5B–$20B',  min: 5e9,        max: 20e9 },
+      { label: '> $20B',    min: 20e9,       max: Infinity },
+    ];
+    return buckets.map(b => ({
+      label: b.label,
+      count: vals.filter(v => v > b.min/1e9 && v <= b.max/1e9).length,
+    }));
+  }
+
+  const profitBuckets = bucketFin(hasProfit.map(r => r.profit));
+  const ebitdaBuckets = bucketFin(hasEbitda.map(r => r.ebitda));
+
+  mkChart('chart-profit-dist', {
+    type: 'bar',
+    data: {
+      labels: profitBuckets.map(b => b.label),
+      datasets: [{
+        label: 'Companies',
+        data: profitBuckets.map(b => b.count),
+        backgroundColor: profitBuckets.map(b =>
+          b.label.startsWith('<') || b.label.startsWith('-') ? C.danger+'80' : C.accent+'80'),
+        borderColor: profitBuckets.map(b =>
+          b.label.startsWith('<') || b.label.startsWith('-') ? C.danger : C.accent),
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { ticks: { color: C.muted, maxRotation: 35 } },
+        y: { ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+      plugins: { ...chartDefaults().plugins, legend: { display: false } },
+    }
+  });
+
+  mkChart('chart-ebitda-dist', {
+    type: 'bar',
+    data: {
+      labels: ebitdaBuckets.map(b => b.label),
+      datasets: [{
+        label: 'Companies',
+        data: ebitdaBuckets.map(b => b.count),
+        backgroundColor: ebitdaBuckets.map(b =>
+          b.label.startsWith('<') || b.label.startsWith('-') ? C.danger+'80' : C.info+'80'),
+        borderColor: ebitdaBuckets.map(b =>
+          b.label.startsWith('<') || b.label.startsWith('-') ? C.danger : C.info),
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { ticks: { color: C.muted, maxRotation: 35 } },
+        y: { ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+      plugins: { ...chartDefaults().plugins, legend: { display: false } },
+    }
+  });
+
+  // Profit vs EBITDA: scatter of companies with both
+  const both = R.filter(r => r.profit !== null && r.ebitda !== null);
+  mkChart('chart-profit-ebitda', {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Company',
+        data: both.slice(0, 500).map(r => ({ x: r.profit/1e9, y: r.ebitda/1e9, name: r.name, ticker: r.ticker })),
+        backgroundColor: C.info + '60',
+        borderColor: C.info,
+        borderWidth: 1,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }],
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { title: { display: true, text: 'Net Income ($B)', color: C.muted }, ticks: { color: C.muted }, grid: { color: C.border } },
+        y: { title: { display: true, text: 'EBITDA ($B)',     color: C.muted }, ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+      plugins: {
+        ...chartDefaults().plugins,
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return [`${d.ticker}: ${d.name}`, `Net Income: ${fmtN(d.x*1e9)}`, `EBITDA: ${fmtN(d.y*1e9)}`];
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Profitability summary cards
+  const lossCoCount   = R.filter(r => r.profit !== null && r.profit < 0).length;
+  const ebitdaNeg     = R.filter(r => r.ebitda !== null && r.ebitda < 0).length;
+  const ebitda2x      = R.filter(r => r.profit && r.ebitda && r.ebitda >= r.profit * 2).length;
+  const profitPosEbitdaNeg = R.filter(r => r.profit > 0 && r.ebitda !== null && r.ebitda < 0).length;
+
+  const profitSum = document.getElementById('profit-summary');
+  const kpiData = [
+    { label: 'Profitable (net income > 0)',     val: profitable.length, total: hasProfit.length, color: C.accent },
+    { label: 'Loss-making (net income < 0)',     val: lossCoCount,       total: hasProfit.length, color: C.danger },
+    { label: 'Positive EBITDA',                 val: posEbitda.length,  total: hasEbitda.length, color: C.info },
+    { label: 'Negative EBITDA',                 val: ebitdaNeg,         total: hasEbitda.length, color: C.warn },
+    { label: 'EBITDA ≥ 2× net income',          val: ebitda2x,          total: both.length,      color: C.purple },
+    { label: 'Profit+ but EBITDA− (unusual)',   val: profitPosEbitdaNeg,total: both.length,      color: C.warn },
+  ];
+  profitSum.innerHTML = kpiData.map(k => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid ${C.border}">
+      <div style="font-size:0.78rem;color:${C.muted}">${k.label}</div>
+      <div style="font-family:var(--mono);font-size:0.82rem;color:${k.color};text-align:right;white-space:nowrap;margin-left:12px">
+        ${k.val} <span style="color:${C.muted}">(${pct(k.val,k.total)})</span>
+      </div>
+    </div>
+  `).join('') + `<div style="padding-top:10px;font-size:0.68rem;color:${C.muted}">Denominators: net income fields where non-null</div>`;
+
+  // ── 4. Employee Distribution ──
+  const empVals = hasEmps.map(r => r.emps).filter(e => e > 0 && !isYearArt(e));
+  const tiers = [
+    { label: 'Micro\n<1K',      min: 0,      max: 999 },
+    { label: 'Small\n1K–10K',   min: 1000,   max: 9999 },
+    { label: 'Mid\n10K–50K',    min: 10000,  max: 49999 },
+    { label: 'Large\n50K–250K', min: 50000,  max: 249999 },
+    { label: 'Mega\n250K+',     min: 250000, max: Infinity },
+  ];
+  const tierCounts = tiers.map(t => empVals.filter(e => e >= t.min && e <= t.max).length);
+
+  mkChart('chart-emp-tiers', {
+    type: 'doughnut',
+    data: {
+      labels: tiers.map(t => t.label.replace('\n', ' ')),
+      datasets: [{
+        data: tierCounts,
+        backgroundColor: [C.accent+'aa', C.info+'aa', C.purple+'aa', C.warn+'aa', C.danger+'aa'],
+        borderColor:     [C.accent,       C.info,      C.purple,      C.warn,      C.danger],
+        borderWidth: 2, hoverOffset: 6,
+      }],
+    },
+    options: { ...chartDefaults(), cutout: '55%' }
+  });
+
+  // Log-scale histogram of employee counts
+  const logBuckets = [];
+  const powers = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, Infinity];
+  const powLabels = ['1–10','10–50','50–100','100–500','500–1K','1K–5K','5K–10K','10K–50K','50K–100K','100K–500K','500K–1M','1M+'];
+  powers.forEach((p, i) => {
+    const lo = i === 0 ? 0 : powers[i-1];
+    logBuckets.push({ label: powLabels[i], count: empVals.filter(e => e > lo && e <= p).length });
+  });
+
+  mkChart('chart-emp-hist', {
+    type: 'bar',
+    data: {
+      labels: logBuckets.map(b => b.label),
+      datasets: [{
+        data: logBuckets.map(b => b.count),
+        backgroundColor: C.purple + '70',
+        borderColor: C.purple,
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { ticks: { color: C.muted, maxRotation: 45 } },
+        y: { ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+      plugins: { ...chartDefaults().plugins, legend: { display: false } },
+    }
+  });
+
+  // ── 5. Sector Breakdown ──
+  const sectors = [...new Set(R.map(r => r.sector || 'Unknown'))].sort();
+  const sectorData = sectors.map(s => {
+    const cos = R.filter(r => (r.sector||'Unknown') === s);
+    const passing = cos.filter(r => r.ok).length;
+    return { sector: s, total: cos.length, passing, passRate: (passing/cos.length)*100 };
+  }).sort((a,b) => b.total - a.total);
+
+  mkChart('chart-sector', {
+    type: 'bar',
+    data: {
+      labels: sectorData.map(s => s.sector),
+      datasets: [
+        {
+          label: 'Passing',
+          data: sectorData.map(s => s.passing),
+          backgroundColor: C.accent + '80',
+          borderColor: C.accent,
+          borderWidth: 1,
+        },
+        {
+          label: 'Failing',
+          data: sectorData.map(s => s.total - s.passing),
+          backgroundColor: C.danger + '80',
+          borderColor: C.danger,
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      ...chartDefaults(),
+      scales: {
+        x: { stacked: true, ticks: { color: C.muted, maxRotation: 45 } },
+        y: { stacked: true, ticks: { color: C.muted }, grid: { color: C.border } },
+      },
+    }
+  });
+
+  const sectorGrid = document.getElementById('sector-grid');
+  sectorGrid.innerHTML = sectorData.map(s => `
+    <div class="sector-row">
+      <div class="sector-name">${s.sector}</div>
+      <div class="sector-pass-bar"><div class="sector-pass-fill" style="width:${s.passRate.toFixed(0)}%"></div></div>
+      <div class="sector-stats">${s.passing}/${s.total} passing · ${s.passRate.toFixed(0)}%</div>
+    </div>
+  `).join('');
+
+  // ── 6. Data Quality Flags ──
+  const yearArt   = R.filter(r => r.flags?.yearArtifact  || (r.emps && isYearArt(r.emps)));
+  const roundArt  = R.filter(r => r.flags?.roundArtifact || (r.emps && isRoundArt(r.emps)));
+  const oneTime   = R.filter(r => r.hasOneTimeItem || r.flags?.hasOneTimeItem);
+  const usedFb    = R.filter(r => r.usedFallback   || r.flags?.usedFallback);
+
+  const flagKpis = [
+    { label: 'Year Artifacts',    value: yearArt.length,  sub: 'emps looks like a year',       color: C.warn },
+    { label: 'Round Artifacts',   value: roundArt.length, sub: 'emps is suspiciously round',   color: C.warn },
+    { label: 'One-Time Items',    value: oneTime.length,  sub: 'profit ≠ EBITDA signal',        color: C.purple },
+    { label: 'Used Fallback DB',  value: usedFb.length,   sub: 'needed client-side fallback',  color: C.info },
+  ];
+  document.getElementById('flag-kpis').innerHTML = flagKpis.map(k => `
+    <div class="kpi" style="--kpi-color:${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+
+  if (yearArt.length || roundArt.length) {
+    const banner = document.getElementById('artifact-banner');
+    banner.style.display = 'block';
+    banner.textContent = `⚠️  ${yearArt.length} year-artifact and ${roundArt.length} round-artifact employee counts detected. These companies are shown in the table below and may need FORCE_OVERRIDES in company.js.`;
+  }
+
+  const flagged = [...new Set([...yearArt, ...roundArt, ...oneTime])];
+  const flagTbody = document.getElementById('flag-tbody');
+  flagTbody.innerHTML = flagged.length ? flagged.map(r => {
+    const flags = [];
+    if (r.flags?.yearArtifact  || isYearArt(r.emps))  flags.push(`<span class="badge no-emps">Year artifact: ${r.emps?.toLocaleString()}</span>`);
+    if (r.flags?.roundArtifact || isRoundArt(r.emps))  flags.push(`<span class="badge no-emps">Round: ${r.emps?.toLocaleString()}</span>`);
+    if (r.hasOneTimeItem || r.flags?.hasOneTimeItem)   flags.push(`<span class="badge api-err">One-time item</span>`);
+    return `<tr>
+      <td style="color:${C.warn}">${r.ticker}</td>
+      <td>${r.name}</td>
+      <td style="color:${C.muted}">${r.sector||'—'}</td>
+      <td style="font-family:var(--mono)">${fmtEmp(r.emps)}</td>
+      <td>${flags.join(' ')}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" class="empty">No flagged companies</td></tr>`;
+
+  // ── 7. Failures ──
+  const failTbody = document.getElementById('fail-tbody');
+  failTbody.innerHTML = fail.length ? fail.map(r => {
+    const badges = r.missing.map(m => {
+      const cls = m==='NO_EMPS'?'no-emps':m==='NO_PROFIT'||m==='NO_EBITDA'?'no-profit':m==='API_ERROR'?'api-err':'fetch-err';
+      return `<span class="badge ${cls}">${m}</span>`;
+    }).join(' ');
+    return `<tr>
+      <td style="color:${C.danger}">${r.ticker}</td>
+      <td>${r.name}</td>
+      <td style="color:${C.muted}">${r.sector||'—'}</td>
+      <td>${badges}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty" style="padding:20px">🎉 No failures!</td></tr>`;
+
+  // ── 8. Run info ──
+  const empMedian = median(empVals);
+  const empMean   = Math.round(mean(empVals));
+  document.getElementById('run-info').innerHTML = `
+    <strong>Run info</strong> · Generated ${new Date(meta.generatedAt||Date.now()).toLocaleString()} ·
+    ${N.toLocaleString()} companies · ${meta.delayMs||'—'}ms delay<br>
+    <strong>Employee stats</strong> · Median: ${fmtEmp(empMedian)} · Mean: ${fmtEmp(empMean)} ·
+    Min: ${fmtEmp(Math.min(...empVals))} · Max: ${fmtEmp(Math.max(...empVals))}<br>
+    <strong>Total employees represented:</strong> ${fmtEmp(empVals.reduce((a,b)=>a+b,0))} across ${empVals.length} companies
+  `;
+}
+
+// ─── ARTIFACT HELPERS ────────────────────────────────────────────────────────
+function isYearArt(n)  { return n >= 2015 && n <= 2025; }
+function isRoundArt(n) { return n > 0 && n <= 900 && n % 100 === 0; }
+
+// ─── DEMO DATA ────────────────────────────────────────────────────────────────
+function makeDemoData() {
+  const sectors = ['Retail','Finance','Banking','Energy','Utilities','Technology','Healthcare','Transportation','Automotive','Defense','Industrials','Real Estate','Food & Beverage','Pharma'];
+  const results = [];
+  for (let i = 0; i < 993; i++) {
+    const sector = sectors[i % sectors.length];
+    const emps   = Math.round(Math.exp(Math.random() * 13 + 2));
+    const profit = (Math.random() > 0.2) ? (Math.random() * 10 - 1.5) * 1e9 : -(Math.random() * 2e9);
+    const ebitda = profit * (1 + Math.random() * 2);
+    const srcKeys = ['api_live','api_live','api_live','api_live','fallback_db_wiki','fallback_db_claude','fallback_db_unknown'];
+    results.push({
+      ticker: 'CO' + String(i).padStart(3,'0'),
+      name: 'Company ' + i,
+      sector,
+      ok: i < 993,
+      missing: [],
+      emps, profit, ebitda,
+      hasOneTimeItem: Math.random() < 0.08,
+      usedFallback: Math.random() < 0.12,
+      sources: {
+        emps:   srcKeys[Math.floor(Math.random()*srcKeys.length)],
+        profit: srcKeys[Math.floor(Math.random()*srcKeys.length)],
+        ebitda: srcKeys[Math.floor(Math.random()*srcKeys.length)],
+      },
+      flags: { yearArtifact: Math.random()<0.02, roundArtifact: Math.random()<0.03 },
+    });
+  }
+  // Add a few failures
+  ['FAIL1','FAIL2','FAIL3','FAIL4','FAIL5','FAIL6','FAIL7'].forEach((t,i) => {
+    results.push({ ticker:t, name:'Failing Co '+i, sector:sectors[i%sectors.length],
+      ok:false, missing:i<2?['FETCH_ERROR']:i<5?['NO_EMPS']:['NO_PROFIT'],
+      emps:i<5?null:1000, profit:i<7&&i>=5?null:1e8, ebitda:1e8,
+      sources:{emps:'missing',profit:'missing',ebitda:'missing'}, flags:{} });
+  });
+  return { meta: { generatedAt: new Date().toISOString(), totalTested:1000, passing:993, failing:7, delayMs:300 }, results };
+}
+
+// ─── FILE LOADING ─────────────────────────────────────────────────────────────
+function loadJSON(text) {
+  try {
+    const data = JSON.parse(text);
+    // Support both { meta, results } format and bare array
+    if (Array.isArray(data)) {
+      render({ meta: { generatedAt: new Date().toISOString(), totalTested: data.length, passing: data.filter(r=>r.ok).length, failing: data.filter(r=>!r.ok).length }, results: data });
+    } else if (data.results) {
+      render(data);
+    } else {
+      alert('Unrecognized JSON format. Expected { meta, results } or array of results.');
+    }
+  } catch(e) {
+    alert('Could not parse JSON: ' + e.message);
+  }
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => loadJSON(ev.target.result);
+  r.readAsText(f);
+});
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => loadJSON(ev.target.result);
+  r.readAsText(f);
+});
+
+document.getElementById('load-demo').addEventListener('click', e => {
+  e.preventDefault();
+  render(makeDemoData());
+});
+</script>
+</body>
+</html>
