@@ -260,6 +260,10 @@ const TICKER_ALIASES = {
     "CIENA": "CIEN",
     "LUMENTUM": "LITE",
     "FOXCONN": "HNHPF", "HON HAI": "HNHPF",
+    // Delisted / special cases — route to ticker so fallback DB can serve them
+    "REVLON": "REV",
+    "CHEESECAKE FACTORY": "CAKE", "THE CHEESECAKE FACTORY": "CAKE",
+    "DELEK": "DK", "DELEK US": "DK", "DELEK US HOLDINGS": "DK",
 };
 
 document.addEventListener('DOMContentLoaded', function() {
