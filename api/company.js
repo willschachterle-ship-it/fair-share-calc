@@ -2038,6 +2038,107 @@ const WIKI_TITLE_MAP = {
     'OSTK':  'Overstock.com',    // now Beyond Inc / BYON
     'DK':    'Delek US',
     'ARES':  'Ares Management',
+    // Fix 1 additions — disambiguate generic names that Wikipedia gets wrong
+    'BOX':   'Box (company)',
+    'DBX':   'Dropbox',
+    'LULU':  'Lululemon Athletica',
+    'DKS':   "Dick's Sporting Goods",
+    'BBWI':  'Bath & Body Works',
+    'SCI':   'Service Corporation International',
+    'TFC':   'Truist Financial',
+    'ORI':   'Old Republic International',
+    'GEF':   'Greif',
+    'IDA':   'IDACORP',
+    'BKH':   'Black Hills Corporation',
+    'RGLD':  'Royal Gold',
+    'RBC':   'RBC Bearings',
+    'REYN':  'Reynolds Consumer Products',
+    'HELE':  'Helen of Troy Limited',
+    'WDFC':  'WD-40 Company',
+    'CHDN':  'Churchill Downs',
+    'HGV':   'Hilton Grand Vacations',
+    'BSM':   'Black Stone Minerals',
+    'CQP':   'Cheniere Energy Partners',
+    'HESM':  'Hess Midstream',
+    'NOG':   'Northern Oil and Gas',
+    'BLKB':  'Blackbaud',
+    'CGNX':  'Cognex',
+    'PLTK':  'Playtika',
+    'SPOK':  'Spok Holdings',
+    'AMN':   'AMN Healthcare',
+    'CCRN':  'Cross Country Healthcare',
+    'SXI':   'Standex International',
+    'PLXS':  'Plexus Corp.',
+    'TWIN':  'Twin Disc',
+    'GOOD':  'Gladstone Commercial',
+    'ARCC':  'Ares Capital',
+    'WRLD':  'World Acceptance Corporation',
+    'UBSI':  'United Bankshares',
+    'BANF':  'BancFirst',
+    'WASH':  'Washington Trust Bancorp',
+    'INDB':  'Independent Bank Corp',
+    'SNBR':  'Sleep Number',
+    'OLLI':  "Ollie's Bargain Outlet",
+    'GIII':  'G-III Apparel Group',
+    'OXM':   'Oxford Industries',
+    'CATO':  'Cato Corporation',
+    'SHOO':  'Steve Madden',
+    'BOOT':  'Boot Barn',
+    'VSCO':  "Victoria's Secret & Co.",
+    'TPG':   'TPG Inc.',
+    'DXC':   'DXC Technology',
+    'TDOC':  'Teladoc Health',
+    'AVNS':  'Avanos Medical',
+    'PRVA':  'Privia Health',
+    'BJRI':  "BJ's Restaurants",
+    'LWAY':  'Lifeway Foods',
+    'NGVC':  'Natural Grocers by Vitamin Cottage',
+    'PTLO':  "Portillo's",
+    'ARTNA': 'Artesian Resources',
+    'CWCO':  'Consolidated Water',
+    'AMC':   'AMC Entertainment',
+    'LKQ':   'LKQ Corporation',
+    'EXPO':  'Exponent Inc.',
+    'ANDE':  'Andersons Inc.',
+    'GNK':   'Genco Shipping & Trading',
+    'ULCC':  'Frontier Airlines',
+    'ALGT':  'Allegiant Travel',
+    'CURI':  'CuriosityStream',
+    'ATOM':  'Atomera',
+    'GLAD':  'Gladstone Capital',
+    'ECPG':  'Encore Capital Group',
+    'LOAN':  'Manhattan Bridge Capital',
+    'SHFS':  'SHF Holdings',
+    'GSHD':  'Goosehead Insurance',
+    'UFCS':  'United Fire Group',
+    'CBKM':  'Consumers Bancorp',
+    'WLKP':  'Westlake Chemical Partners',
+    'RGEN':  'Repligen',
+    'IPI':   'Intrepid Potash',
+    'FIGS':  'Figs Inc.',
+    'BARK':  'Bark Inc.',
+    'CRDO':  'Credo Technology',
+    'AMSF':  'AMERISAFE',
+    'PRCT':  'PROCEPT BioRobotics',
+    'RXST':  'RxSight',
+    'HCAT':  'Health Catalyst',
+    'CNMD':  'Conmed',
+    'BLFS':  'BioLife Solutions',
+    'ATMU':  'Atmus Filtration Technologies',
+    'FTCI':  'FTC Solar',
+    'SPWR':  'SunPower',
+    'SHLS':  'Shoals Technologies',
+    'DKL':   'Delek Logistics Partners',
+    'BRT':   'BRT Apartments',
+    'NXRT':  'NexPoint Residential Trust',
+    'PINE':  'Alpine Income Property Trust',
+    'GTY':   'Getty Realty',
+    'SHO':   'Sunstone Hotel Investors',
+    'RLJ':   'RLJ Lodging Trust',
+    'CLDT':  'Chatham Lodging Trust',
+    'CTRE':  'CareTrust REIT',
+    'UNIT':  'Uniti Group',
+    'ALEX':  'Alexander & Baldwin',
 };
 
 // ── Wikidata ticker→Wikipedia article lookup ─────────────────────────────────
@@ -2159,21 +2260,36 @@ async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null, t
     if (!knownTitle) knownTitle = WIKI_TITLE_MAP[upperName] || null;
 
     // Normalise company name for search
-    const preStripped = companyName.replace(/\s*\/[A-Z]{2,}\/\s*$/, '').trim();
+    // Strip trailing state/exchange suffixes like /DE/ /MD/ or INC/WV
+    const preStripped = companyName
+        .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')    // /DE/ style (both slashes)
+        .replace(/\s+(inc|corp|co|ltd)\.?\s*\/[A-Z]{2,}\s*$/i, '') // INC/WV style
+        .trim();
     const isAllCaps = preStripped === preStripped.toUpperCase() && /[A-Z]{3}/.test(preStripped);
     const normalizedName = isAllCaps
+        // Title-case, then fix apostrophe: "Dick'S" -> "Dick's"
         ? preStripped.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+                                   .replace(/(\w)'([A-Z])/g, (_, a, b) => a + "'" + b.toLowerCase())
         : preStripped;
     const cleanName = normalizedName
-        .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|L\.L\.C\.?|Co\.?|Holdings?|Holding|Corporation|Limited|plc|Incorporated|Companies)\s*$/i, '')
+        // Strip legal suffixes — now includes LP, L.P., MLP
+        .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|L\.L\.C\.?|L\.P\.?|\bLP\b|\bMLP\b|Co\.?|Holdings?|Holding|Corporation|Limited|plc|Incorporated|Companies)\s*$/i, '')
+        .replace(/,\s*$/, '')
         .replace(/\s+/g, ' ').trim();
-    const firstWord = cleanName.split(' ')[0];
-    const firstTwo = cleanName.split(' ').slice(0, 2).join(' ');
+    // Fix title-case prepositions/articles: "Helen Of Troy" -> "Helen of Troy"
+    const fixedCleanName = cleanName
+        .replace(/\b(Of|And|The|In|At|By|For|Or|To|A|An)\b/g, w => w.toLowerCase())
+        .replace(/^([a-z])/, c => c.toUpperCase());
+    const firstWord = fixedCleanName.split(' ')[0];
+    const firstTwo = fixedCleanName.split(' ').slice(0, 2).join(' ');
 
     const nameCandidates = [
-        knownTitle, cleanName, companyName,
-        cleanName + ' Corporation', cleanName + ' Company',
-        cleanName + ' Group', cleanName + ' Inc.',
+        knownTitle,
+        fixedCleanName,
+        cleanName,
+        companyName,
+        fixedCleanName + ' Corporation', fixedCleanName + ' Company',
+        fixedCleanName + ' Group', fixedCleanName + ' Inc.',
         firstTwo, firstTwo + ' Corporation',
         firstWord + ' Corporation', firstWord,
     ].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i);
@@ -2189,6 +2305,10 @@ async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null, t
         'contractor', 'technologies', 'systems', 'industry', 'industries',
         'pharmaceutical', 'financial', 'services', 'holding', 'nasdaq', 'nyse',
         'listed', 'publicly traded', 'stock exchange', 'incorporated',
+        'american', 'software', 'cloud', 'enterprise', 'revenue', 'employees',
+        'subsidiary', 'acquisition', 'merger', 'ipo', 'shares', 'investors',
+        'bank', 'insurance', 'reit', 'trust', 'energy', 'retail', 'healthcare',
+        'biotech', 'startup', 'provider', 'platform', 'market cap',
     ];
 
     // Strategy A: Wikidata ticker lookup (authoritative disambiguation)
@@ -2226,19 +2346,20 @@ async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null, t
                 const descs = searchJson[2] || [];
 
                 let match = titles.find(t => t.toLowerCase() === query.toLowerCase());
+                if (!match) match = titles.find(t => t.toLowerCase() === fixedCleanName.toLowerCase());
                 if (!match) match = titles.find((t, i) => {
                     const tl = t.toLowerCase(), dl = (descs[i] || '').toLowerCase();
-                    return tl.includes(cleanName.toLowerCase()) &&
+                    return tl.includes(fixedCleanName.toLowerCase()) &&
                         !blocklist.some(b => tl.includes(b) || dl.includes(b)) &&
                         companySignals.some(s => dl.includes(s));
                 });
                 if (!match) match = titles.find(t =>
-                    t.toLowerCase().startsWith(cleanName.toLowerCase()) &&
+                    t.toLowerCase().startsWith(fixedCleanName.toLowerCase()) &&
                     !blocklist.some(b => t.toLowerCase().includes(b))
                 );
                 if (!match) match = titles.find((t, i) => {
                     const tl = t.toLowerCase(), dl = (descs[i] || '').toLowerCase();
-                    return tl.includes(cleanName.toLowerCase()) &&
+                    return tl.includes(fixedCleanName.toLowerCase()) &&
                         !blocklist.some(b => tl.includes(b) || dl.includes(b));
                 });
                 if (!match) continue;
@@ -2564,6 +2685,111 @@ const TICKER_ALIASES = {
     'tsmc': 'TSM',
     'alibaba': 'BABA',
     'sony': 'SONY',
+    // Fix 2 additions — companies where name->ticker resolution needs help
+    'block': 'XYZ',
+    'block inc': 'XYZ',
+    'square': 'XYZ',
+    'cyberark': 'CYBR',
+    'cyberark software': 'CYBR',
+    'gen digital': 'GEN',
+    'nortonlifelock': 'GEN',
+    'cencora': 'COR',
+    'amerisourcebergen': 'COR',
+    'revvity': 'RVTY',
+    'perkinelmer': 'RVTY',
+    'origin bancorp': 'OBNK',
+    'golub capital': 'GBDC',
+    'blue owl capital': 'OWL',
+    'owl rock capital': 'OWL',
+    'championx': 'CHX',
+    'suncoke energy': 'SXC',
+    'renewable energy group': 'REGI',
+    'dish': 'DISH',
+    'dish network': 'DISH',
+    'gannett': 'GCI',
+    'mesa air': 'MESA',
+    'shyft group': 'SHYF',
+    'the shyft group': 'SHYF',
+    'eagle bulk': 'EGLE',
+    'eagle bulk shipping': 'EGLE',
+    'summit materials': 'SUM',
+    'totalenergies': 'TTE',
+    'total energies': 'TTE',
+    'icici bank': 'IBN',
+    'astrazeneca': 'AZN',
+    'meituan': 'MPNGY',
+    'america movil': 'AMX',
+    'américa móvil': 'AMX',
+    'irobot': 'IRBT',
+    'vizio': 'VZIO',
+    'jbs': 'JBSAY',
+    'brf': 'BRFS',
+    'hibbett': 'HIBB',
+    'hibbett sports': 'HIBB',
+    'nordstrom': 'JWN',
+    'skechers': 'SKX',
+    'big 5 sporting goods': 'BGFV',
+    'big5': 'BGFV',
+    'express': 'EXPR',
+    "francesca's": 'FRAN',
+    "conn's": 'CONN',
+    'tuesday morning': 'TUEM',
+    'petiq': 'PETQ',
+    'r1 rcm': 'RCM',
+    'benchmark electronics': 'BEL',
+    'icf international': 'ICFI',
+    'medical properties trust': 'MPW',
+    'primo brands': 'PRMB',
+    'primo water': 'PRMB',
+    'treehouse foods': 'THS',
+    'everi holdings': 'EVRI',
+    'everi': 'EVRI',
+    'despegar': 'DESP',
+    'scandinavian tobacco': 'SWMAY',
+    'aphria': 'APHA',
+    'ssr mining': 'SSRM',
+    'ezcorp': 'EZPW',
+    'composecure': 'CMPO',
+    'faro technologies': 'FARO',
+    'jamf': 'JAMF',
+    'knowbe4': 'KNBE',
+    'blueprint medicines': 'BPMC',
+    'cymabay': 'CBAY',
+    'dril-quip': 'DRQ',
+    'drillquip': 'DRQ',
+    'enerplus': 'ERF',
+    'us silica': 'SLCA',
+    'u.s. silica': 'SLCA',
+    'solaris oilfield': 'SOI',
+    'marathon oil': 'MRO',
+    'pioneer natural resources': 'PXD',
+    'potbelly': 'PBPB',
+    'msg networks': 'MSGN',
+    'california bancorp': 'CALB',
+    'first bank': 'FRBA',
+    'capstar financial': 'CSTR',
+    'guaranty federal': 'GFED',
+    'veritex': 'VBTX',
+    'veritex community bank': 'VBTX',
+    'american national bankshares': 'AMNB',
+    'bryn mawr bank': 'BMTC',
+    'lakeland bancorp': 'LBAI',
+    'old line bancshares': 'OLBK',
+    'united community banks': 'UCBI',
+    'independent bank group': 'IBTX',
+    'atlas air': 'AAWW',
+    'air transport services': 'ATSG',
+    'revance': 'RVNC',
+    'revance therapeutics': 'RVNC',
+    'athira pharma': 'ATHA',
+    'blucora': 'BCOR',
+    'infosys': 'INFY',
+    'nintendo': 'NTDOY',
+    'matterport': 'MTTR',
+    'umpqua': 'UMPQ',
+    'umpqua holdings': 'UMPQ',
+    'lamar advertising': 'LAMR',
+    'lamar': 'LAMR',
 };
 
 async function resolveTicker(input) {
@@ -2735,9 +2961,13 @@ module.exports = async function handler(req, res) {
             const isAllCapsName = rawMergedName === rawMergedName.toUpperCase() && /[A-Z]{3}/.test(rawMergedName);
             const finnhubName = (isAllCapsName
                 ? rawMergedName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+                                             .replace(/(\w)'([A-Z])/g, (_, a, b) => a + "'" + b.toLowerCase())
                 : rawMergedName)
-                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ /MD/ etc
+                .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')       // strip /DE/ /MD/ etc
+                .replace(/\s+(inc|corp|co|ltd)\.?\s*\/[A-Z]{2,}\s*$/i, '') // INC/WV style
                 .replace(/\s*\(US\)\s*$/i, '')              // strip Finnhub's (US) suffix
+                .replace(/,?\s+(L\.P\.|LP|MLP)\s*$/i, '')  // strip LP/L.P. suffix
+                .replace(/,\s*$/, '')
                 .trim();
             const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle, symbol);
             if (wikiEmps) merged.emps = wikiEmps;
