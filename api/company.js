@@ -2040,164 +2040,229 @@ const WIKI_TITLE_MAP = {
     'ARES':  'Ares Management',
 };
 
-async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null) {
-    // Strategy: build a rich candidate list using multiple general approaches
-    // so we don't need to hardcode every company in WIKI_TITLE_MAP
+// ── Wikidata ticker→Wikipedia article lookup ─────────────────────────────────
+// Uses Wikidata SPARQL to map a stock ticker symbol directly to a Wikipedia title.
+// Most reliable disambiguation — avoids Lord of the Rings, GPU articles, etc.
+async function lookupWikidataTitle(tickerSymbol) {
+    const query = `SELECT ?articleTitle WHERE {
+  ?company wdt:P249 "${tickerSymbol.toUpperCase()}" .
+  ?article schema:about ?company ;
+           schema:isPartOf <https://en.wikipedia.org/> ;
+           schema:name ?articleTitle .
+} LIMIT 3`;
+    const url = 'https://query.wikidata.org/sparql?query=' + encodeURIComponent(query) + '&format=json';
+    const res = await fetch(url, {
+        headers: {
+            'Accept': 'application/sparql-results+json',
+            'User-Agent': 'YourFairShare/1.0 (admin@yourfairshare.com)'
+        }
+    });
+    if (!res.ok) throw new Error('Wikidata SPARQL HTTP ' + res.status);
+    const json = await res.json();
+    const bindings = json?.results?.bindings || [];
+    if (!bindings.length) throw new Error('Wikidata: no result for ticker ' + tickerSymbol);
+    return bindings[0].articleTitle.value;
+}
 
-    // Also check WIKI_TITLE_MAP by the uppercased name itself
+// ── Parse employee count from Wikipedia infobox wikitext ─────────────────────
+// Handles: ~10,000 | circa 10,000 | c. 10,000 | 10,000 (2021) | 10,000–12,000
+// {{increase}} 10,000 | {{formatnum:10000}} | 10 000 (European spacing)
+function parseEmployeeCountFromWikitext(wikitext) {
+    if (!wikitext) return null;
+    const lines = wikitext.split('\n');
+    const empLine = lines.find(l =>
+        /\|\s*(?:num_employees|number_of_employees)\s*=/.test(l)
+    );
+    if (!empLine) return null;
+
+    // Extract value after the = sign
+    let cleaned = empLine.replace(/^\|\s*(?:num_employees|number_of_employees)\s*=\s*/, '');
+
+    // Remove ref tags
+    cleaned = cleaned.replace(/<ref[^>]*\/>/g, ' ');
+    cleaned = cleaned.replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, ' ');
+    cleaned = cleaned.replace(/<[^>]+>/g, ' ');
+
+    // Flatten known templates
+    cleaned = cleaned.replace(/\{\{(?:increase|decrease|steady|profit|loss)[^}]*\}\}/gi, ' ');
+    cleaned = cleaned.replace(/\{\{formatnum:\s*([\d,\s]+)\s*\}\}/gi, ' $1 ');
+    cleaned = cleaned.replace(/\{\{(?:circa|c\.|approximately)[^|]*\|\s*([\d,\s]+)\s*\}\}/gi, ' $1 ');
+    cleaned = cleaned.replace(/\{\{val\s*\|\s*([\d,\s]+)[^}]*\}\}/gi, ' $1 ');
+    cleaned = cleaned.replace(/\{\{[^}]+\}\}/g, ' ');
+
+    // Remove wikilinks
+    cleaned = cleaned.replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, '$1');
+
+    // Remove approximate prefixes and citation brackets
+    cleaned = cleaned.replace(/[~≈]/g, '');
+    cleaned = cleaned.replace(/\b(?:circa|c\.|approximately|approx\.?|about)\s*/gi, '');
+    cleaned = cleaned.replace(/\[\w+\]/g, ' ');
+    cleaned = cleaned.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // Handle ranges — return the midpoint
+    const rangeMatch = cleaned.match(/([\d][\d,.\s]*[\d])\s*[–\-—]\s*([\d][\d,.\s]*[\d])/);
+    if (rangeMatch) {
+        const lo = parseInt(rangeMatch[1].replace(/[,.\s]/g, ''), 10);
+        const hi = parseInt(rangeMatch[2].replace(/[,.\s]/g, ''), 10);
+        if (!isNaN(lo) && !isNaN(hi) && hi > 100) return Math.round((lo + hi) / 2);
+    }
+
+    // Extract standalone numbers (including European-style "10 000")
+    const numPattern = /\b(\d{1,3}(?:[,.\s]\d{3})+|\d{4,})\b/g;
+    const candidates = [];
+    let m;
+    while ((m = numPattern.exec(cleaned)) !== null) {
+        const raw = m[1].replace(/[,.\s]/g, '');
+        const n = parseInt(raw, 10);
+        if (!isNaN(n) && n > 100 && !(n >= 2010 && n <= 2030)) candidates.push(n);
+    }
+
+    // For tiny companies (REITs, royalty trusts) allow smaller numbers
+    if (!candidates.length) {
+        const smallMatch = cleaned.match(/\b(\d{2,3})\b/);
+        if (smallMatch) {
+            const n = parseInt(smallMatch[1], 10);
+            if (n >= 10 && !(n >= 20 && n <= 30)) candidates.push(n);
+        }
+    }
+
+    if (!candidates.length) return null;
+    return Math.max(...candidates);
+}
+
+// ── Fetch Wikipedia wikitext by page title (follows redirects) ────────────────
+async function fetchWikitextByTitle(title) {
+    const url = 'https://en.wikipedia.org/w/api.php?action=query&titles=' +
+        encodeURIComponent(title) + '&prop=revisions&rvprop=content&rvslots=main&format=json&redirects=1';
+    const res = await fetch(url, {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
+    });
+    if (!res.ok) throw new Error('Wikipedia page HTTP ' + res.status);
+    const json = await res.json();
+    const pages = json?.query?.pages || {};
+    const page = Object.values(pages)[0];
+    if (!page || page.missing === '') throw new Error('Wikipedia: page missing');
+    const text = page?.revisions?.[0]?.slots?.main?.['*']
+              || page?.revisions?.[0]?.['*'] || '';
+    if (!text) throw new Error('Wikipedia: empty wikitext');
+    // Manual redirect fallback (in case redirects=1 missed something)
+    const redirectMatch = text.match(/^#(?:REDIRECT|redirect)\s*\[\[([^\]]+)\]\]/m);
+    if (redirectMatch) {
+        return fetchWikitextByTitle(redirectMatch[1].split('|')[0].trim());
+    }
+    return text;
+}
+
+async function fetchEmployeeCountFromWikipedia(companyName, knownTitle = null, tickerSymbol = null) {
+    // Check WIKI_TITLE_MAP by uppercased name
     const upperName = companyName.toUpperCase().trim();
     if (!knownTitle) knownTitle = WIKI_TITLE_MAP[upperName] || null;
 
-    // Try multiple name variations to find the Wikipedia page
-
-    // Try multiple name variations to find the Wikipedia page
-
-    // Strip /STATE/ suffixes FIRST (before title-casing so regex still matches)
+    // Normalise company name for search
     const preStripped = companyName.replace(/\s*\/[A-Z]{2,}\/\s*$/, '').trim();
-
-    // If name is ALL CAPS (from EDGAR e.g. "HUMANA INC"), convert to title case
     const isAllCaps = preStripped === preStripped.toUpperCase() && /[A-Z]{3}/.test(preStripped);
     const normalizedName = isAllCaps
         ? preStripped.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
         : preStripped;
-
-    // Strip trailing legal suffixes — but only at end of string, not mid-name
     const cleanName = normalizedName
         .replace(/,?\s+(Inc\.?|Corp\.?|Ltd\.?|LLC|L\.L\.C\.?|Co\.?|Holdings?|Holding|Corporation|Limited|plc|Incorporated|Companies)\s*$/i, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+        .replace(/\s+/g, ' ').trim();
     const firstWord = cleanName.split(' ')[0];
-    // Build rich candidate list using general strategies:
-    // 1. Known title from WIKI_TITLE_MAP (most reliable)
-    // 2. Clean name as-is (e.g. "Parker Hannifin")
-    // 3. Clean name + " Corporation" / " Company" / " Group" / " Inc"
-    // 4. Original Finnhub name (may include Corp/Inc which helps disambiguation)
-    // 5. First two words (handles "Lockheed Martin Corp" -> "Lockheed Martin")
-    // 6. First word only (last resort)
     const firstTwo = cleanName.split(' ').slice(0, 2).join(' ');
-    const candidates = [
-        knownTitle,                        // exact known title
-        cleanName,                         // clean name
-        companyName,                       // original finnhub name (may have Corp/Inc)
-        cleanName + ' Corporation',        // try adding Corporation
-        cleanName + ' Company',            // try adding Company
-        cleanName + ' Group',              // try adding Group
-        cleanName + ' Inc.',               // try adding Inc.
-        firstTwo,                          // first two words
-        firstTwo + ' Corporation',         // first two + Corporation
-        firstWord + ' Corporation',        // first word + Corporation
-        firstWord,                         // first word only
-    ].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i); // dedupe, remove nulls
 
-    let wikitext = null;
-    let foundTitle = null;
+    const nameCandidates = [
+        knownTitle, cleanName, companyName,
+        cleanName + ' Corporation', cleanName + ' Company',
+        cleanName + ' Group', cleanName + ' Inc.',
+        firstTwo, firstTwo + ' Corporation',
+        firstWord + ' Corporation', firstWord,
+    ].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i);
 
-    const blocklist = ['middle-earth', 'lord of the rings', 'disambiguation', 'film', 'novel', 'song', 'graphics', 'gpu', 'nvidia'];
-    for (const query of candidates) {
-        if (!query || query.length < 2) continue;
-        try {
-            const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
-                encodeURIComponent(query) + '&limit=8&format=json';
-            const searchRes = await fetch(searchUrl, {
-                headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
-            });
-            if (!searchRes.ok) continue;
-            const searchJson = await searchRes.json();
-            const titles = searchJson[1] || [];
-            const descs = searchJson[2] || [];
+    const blocklist = [
+        'middle-earth', 'lord of the rings', 'tolkien', 'disambiguation',
+        'film', 'novel', 'song', 'album', 'band', 'musician', 'athlete',
+        'footballer', 'politician', 'character', 'fictional',
+    ];
+    const companySignals = [
+        'company', 'corporation', 'conglomerate', 'manufacturer', 'aerospace',
+        'defense', 'defence', 'founded', 'headquartered', 'multinational',
+        'contractor', 'technologies', 'systems', 'industry', 'industries',
+        'pharmaceutical', 'financial', 'services', 'holding', 'nasdaq', 'nyse',
+        'listed', 'publicly traded', 'stock exchange', 'incorporated',
+    ];
 
-            // Strategy 1: exact match on the query
-            let match = titles.find(t => t.toLowerCase() === query.toLowerCase());
-
-            // Strategy 2: title matches AND description signals it's a company
-            const companySignals = ['company', 'corporation', 'conglomerate', 'manufacturer',
-                'aerospace', 'defense', 'defence', 'american', 'founded', 'headquartered',
-                'multinational', 'contractor', 'technologies', 'systems', 'industry', 'industries'];
-            if (!match) match = titles.find((t, i) => {
-                const tl = t.toLowerCase();
-                const dl = (descs[i] || '').toLowerCase();
-                return tl.includes(cleanName.toLowerCase()) &&
-                    !blocklist.some(b => tl.includes(b)) &&
-                    companySignals.some(s => dl.includes(s));
-            });
-
-            // Strategy 3: title starts with cleanName (e.g. "Parker Hannifin Corporation")
-            if (!match) match = titles.find(t =>
-                t.toLowerCase().startsWith(cleanName.toLowerCase()) &&
-                !blocklist.some(b => t.toLowerCase().includes(b))
-            );
-
-            // Strategy 4: title contains cleanName and isn't in blocklist
-            if (!match) match = titles.find(t =>
-                t.toLowerCase().includes(cleanName.toLowerCase()) &&
-                !blocklist.some(b => t.toLowerCase().includes(b))
-            );
-
-            if (!match) continue;
-
-            const pageUrl = 'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-                encodeURIComponent(match) + '&prop=revisions&rvprop=content&rvslots=main&format=json';
-            const pageRes = await fetch(pageUrl, {
-                headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
-            });
-            if (!pageRes.ok) continue;
-            const pageJson = await pageRes.json();
-            const pages = pageJson?.query?.pages || {};
-            const page = Object.values(pages)[0];
-            const text = page?.revisions?.[0]?.slots?.main?.['*']
-                      || page?.revisions?.[0]?.['*'] || '';
-            if (text) {
-                // Follow redirects e.g. "L3Harris" -> "L3Harris Technologies"
-                const redirectMatch = text.match(/^#(?:REDIRECT|redirect)\s*\[\[([^\]]+)\]\]/m);
-                if (redirectMatch) {
-                    const redirectTitle = redirectMatch[1].split('|')[0].trim();
-                    const redirRes = await fetch(
-                        'https://en.wikipedia.org/w/api.php?action=query&titles=' +
-                        encodeURIComponent(redirectTitle) + '&prop=revisions&rvprop=content&rvslots=main&format=json',
-                        { headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' } }
-                    );
-                    if (redirRes.ok) {
-                        const redirJson = await redirRes.json();
-                        const redirPages = redirJson?.query?.pages || {};
-                        const redirPage = Object.values(redirPages)[0];
-                        const redirText = redirPage?.revisions?.[0]?.slots?.main?.['*']
-                                       || redirPage?.revisions?.[0]?.['*'] || '';
-                        if (redirText) { wikitext = redirText; foundTitle = redirectTitle; break; }
-                    }
-                } else {
-                    wikitext = text; foundTitle = match; break;
-                }
-            }
-        } catch(e) { continue; }
+    // Strategy A: Wikidata ticker lookup (authoritative disambiguation)
+    async function strategyWikidata() {
+        if (!tickerSymbol) throw new Error('No ticker for Wikidata lookup');
+        const title = await lookupWikidataTitle(tickerSymbol);
+        const text = await fetchWikitextByTitle(title);
+        const count = parseEmployeeCountFromWikitext(text);
+        if (!count) throw new Error('Wikidata path: employee count not found in ' + title);
+        return count;
     }
 
-    if (!wikitext) throw new Error('Wikipedia: page not found for ' + companyName);
+    // Strategy B: Name-based fuzzy search
+    async function strategyNameSearch() {
+        // If we have a known title, try it directly first (no search needed)
+        if (knownTitle) {
+            try {
+                const text = await fetchWikitextByTitle(knownTitle);
+                const count = parseEmployeeCountFromWikitext(text);
+                if (count) return count;
+            } catch(e) { /* fall through to opensearch */ }
+        }
 
-    // Find employee count line in infobox
-    const lines = wikitext.split('\n');
-    const empLine = lines.find(l =>
-        l.indexOf('num_employees') >= 0 || l.indexOf('number_of_employees') >= 0
-    );
+        for (const query of nameCandidates) {
+            if (!query || query.length < 2) continue;
+            try {
+                const searchUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' +
+                    encodeURIComponent(query) + '&limit=8&format=json';
+                const searchRes = await fetch(searchUrl, {
+                    headers: { 'Accept': 'application/json', 'User-Agent': 'YourFairShare/1.0' }
+                });
+                if (!searchRes.ok) continue;
+                const searchJson = await searchRes.json();
+                const titles = searchJson[1] || [];
+                const descs = searchJson[2] || [];
 
-    if (empLine) {
-        // Strip templates, handle ~approx prefix, refs like [1]
-        const stripped = empLine
-            .replace(/{{[^}]+}}/g, (match) => {
-                // Only keep content if it looks like an employee number, otherwise drop
-                const inner = match.match(/\|([~\d,]{3,})/);
-                return inner ? ' ' + inner[1] + ' ' : ' ';
-            })
-            .replace(/<ref[^>]*\/>/g, ' ')
-            .replace(/<ref[^>]*>.*?<\/ref>/g, ' ')
-            .replace(/~/g, '')
-            .replace(/\bc\.\s*/g, '')
-            .replace(/\[\d+\]/g, ' ');
-        const allNums = stripped.match(/[\d,]+/g) || [];
-        const parsed = allNums.map(n => parseInt(n.replace(/,/g, ''), 10)).filter(n => !isNaN(n) && n > 100);
-        if (parsed.length > 0) return Math.max(...parsed);
+                let match = titles.find(t => t.toLowerCase() === query.toLowerCase());
+                if (!match) match = titles.find((t, i) => {
+                    const tl = t.toLowerCase(), dl = (descs[i] || '').toLowerCase();
+                    return tl.includes(cleanName.toLowerCase()) &&
+                        !blocklist.some(b => tl.includes(b) || dl.includes(b)) &&
+                        companySignals.some(s => dl.includes(s));
+                });
+                if (!match) match = titles.find(t =>
+                    t.toLowerCase().startsWith(cleanName.toLowerCase()) &&
+                    !blocklist.some(b => t.toLowerCase().includes(b))
+                );
+                if (!match) match = titles.find((t, i) => {
+                    const tl = t.toLowerCase(), dl = (descs[i] || '').toLowerCase();
+                    return tl.includes(cleanName.toLowerCase()) &&
+                        !blocklist.some(b => tl.includes(b) || dl.includes(b));
+                });
+                if (!match) continue;
+
+                const text = await fetchWikitextByTitle(match);
+                const count = parseEmployeeCountFromWikitext(text);
+                if (count) return count;
+                // Page found but no emp count — keep trying other candidates
+            } catch(e) { continue; }
+        }
+        throw new Error('Wikipedia: employee count not found for ' + companyName);
     }
-    throw new Error('Wikipedia: employee count not found for ' + foundTitle);
+
+    // Strategy: Wikidata first (authoritative), name search as fallback
+    try {
+        const count = await strategyWikidata();
+        if (count) return count;
+    } catch(e) {
+        // Wikidata failed or returned no employee count — fall through to name search
+    }
+
+    return strategyNameSearch();
 }
+
 
 
 // Known name->ticker aliases to avoid fuzzy match failures
@@ -2674,7 +2739,7 @@ module.exports = async function handler(req, res) {
                 .replace(/\s*\/[A-Z]{2,}\/\s*$/, '')  // strip /DE/ /MD/ etc
                 .replace(/\s*\(US\)\s*$/i, '')              // strip Finnhub's (US) suffix
                 .trim();
-            const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle);
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle, symbol);
             if (wikiEmps) merged.emps = wikiEmps;
         } catch(e) {
             errors.push('Wikipedia: ' + e.message);
@@ -2722,7 +2787,7 @@ module.exports = async function handler(req, res) {
     if (!merged.name && WIKI_TITLE_MAP[symbol]) {
         merged.name = WIKI_TITLE_MAP[symbol];
         try {
-            const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name, WIKI_TITLE_MAP[symbol]);
+            const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name, WIKI_TITLE_MAP[symbol], symbol);
             if (wikiEmps) merged.emps = wikiEmps;
         } catch(e) {
             errors.push('Wikipedia (fallback name): ' + e.message);
