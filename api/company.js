@@ -965,16 +965,35 @@ async function fetchFromFMP(symbol) {
     const profileArr = await profileRes.json();
     if (!profileArr?.[0]?.companyName) throw new Error('FMP: no profile');
     const p = profileArr[0];
+    const reportedCurrency = p.reportedCurrency || p.currency || 'USD';
     let profit = null, ebitda = null;
     try {
         const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&apikey=${FMP_KEY}`);
         if (incomeRes.ok) {
             const incomeArr = await incomeRes.json();
             const inc = incomeArr?.[0] || {};
-            profit = inc.netIncome || null;
-            ebitda = inc.ebitda || null;
+            profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
+            ebitda = (inc.ebitda != null && inc.ebitda !== 0) ? inc.ebitda : null;
         }
     } catch(e) {}
+    // Try key-metrics for ebitda if income-statement missed it
+    if (ebitda === null) {
+        try {
+            const kmRes = await fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${FMP_KEY}`);
+            if (kmRes.ok) {
+                const kmArr = await kmRes.json();
+                const km = kmArr?.[0] || {};
+                if (km.enterpriseValue && km.evToEbitda && km.evToEbitda > 0) {
+                    ebitda = Math.round(km.enterpriseValue / km.evToEbitda);
+                }
+            }
+        } catch(e) {}
+    }
+    // Convert non-USD currencies to USD
+    if (reportedCurrency !== 'USD') {
+        profit = await toUSD(profit, reportedCurrency);
+        ebitda = await toUSD(ebitda, reportedCurrency);
+    }
     return {
         name: p.companyName || null,
         emps: p.fullTimeEmployees || null,
@@ -1047,61 +1066,43 @@ async function fetchFromAlphaVantage(symbol) {
 }
 
 async function fetchFromYahooFinance(symbol) {
-    // Yahoo Finance quoteSummary API — covers foreign ADRs, Canadian, Israeli, etc.
-    // No API key required. Returns financials in local currency + currency code.
-    const modules = 'financialData,defaultKeyStatistics,summaryProfile';
-    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}&corsDomain=finance.yahoo.com`;
-    const yfController = new AbortController();
-    const yfTimeout = setTimeout(() => yfController.abort(), 5000);
-    let res;
+    // Yahoo Finance is blocked from Vercel's AWS IPs.
+    // Instead, use FMP's financial-statements-as-reported endpoint
+    // which covers foreign ADRs and returns data in reported currency.
+    // Also try twelvedata as a secondary source.
+    
+    // Attempt 1: FMP financial-statements-as-reported (broader coverage)
     try {
-        res = await fetch(url, {
-            signal: yfController.signal,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'application/json,text/html;q=0.9',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Origin': 'https://finance.yahoo.com',
-                'Referer': 'https://finance.yahoo.com/',
-            }
-        });
-    } finally {
-        clearTimeout(yfTimeout);
-    }
-    if (!res || !res.ok) throw new Error(`Yahoo Finance HTTP ${res?.status} for ${symbol}`);
-    const json = await res.json();
-
-    const result = json?.quoteSummary?.result?.[0];
-    if (!result) throw new Error(`Yahoo Finance: no data for ${symbol}`);
-
-    const fd  = result.financialData  || {};
-    const ks  = result.defaultKeyStatistics || {};
-    const sp  = result.summaryProfile  || {};
-
-    // Employee count
-    const emps = sp.fullTimeEmployees || null;
-
-    // Net income — Yahoo reports in reported currency
-    // Try totalCash minus debt proxy, or netIncomeToCommon
-    let profit = ks.netIncomeToCommon?.raw ?? null;
-    // EBITDA
-    let ebitda = fd.ebitda?.raw ?? null;
-
-    // Also try profitMargins * totalRevenue
-    if (!profit && fd.profitMargins?.raw && fd.totalRevenue?.raw) {
-        profit = Math.round(fd.profitMargins.raw * fd.totalRevenue.raw);
-    }
-
-    // Currency conversion
-    const currency = fd.financialCurrency || 'USD';
-    if (currency && currency !== 'USD') {
-        profit = await toUSD(profit, currency);
-        ebitda = await toUSD(ebitda, currency);
-    }
-
-    if (!profit && !ebitda && !emps) throw new Error(`Yahoo Finance: all fields null for ${symbol}`);
-
-    return { name: null, emps, profit, ebitda, logo: null, source: 'yahoo' };
+        const [incRes, cfRes] = await Promise.all([
+            fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
+            fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
+        ]);
+        const incArr = incRes.ok ? await incRes.json() : [];
+        const cfArr  = cfRes.ok  ? await cfRes.json()  : [];
+        const inc = incArr?.[0] || {};
+        const cf  = cfArr?.[0]  || {};
+        
+        // Derive ebitda from cash flow if income-statement ebitda is missing
+        // EBITDA ≈ operatingIncome + D&A (from cash flow)
+        let profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
+        let ebitda = (inc.ebitda != null && inc.ebitda !== 0) ? inc.ebitda : null;
+        
+        if (!ebitda && inc.operatingIncome && cf.depreciationAndAmortization) {
+            ebitda = inc.operatingIncome + Math.abs(cf.depreciationAndAmortization);
+        }
+        
+        const reportedCurrency = inc.reportedCurrency || 'USD';
+        if (reportedCurrency !== 'USD') {
+            profit = await toUSD(profit, reportedCurrency);
+            ebitda = await toUSD(ebitda, reportedCurrency);
+        }
+        
+        if (profit !== null || ebitda !== null) {
+            return { name: null, emps: null, profit, ebitda, logo: null, source: 'fmp_intl' };
+        }
+    } catch(e) {}
+    
+    throw new Error(`fetchFromYahooFinance: no financial data for ${symbol}`);
 }
 
 
@@ -3051,6 +3052,46 @@ const TICKER_ALIASES = {
     'chimerix': 'CMRX',
     'catalent': 'CTLT',
     '89bio': 'ETNB',
+    // Round 4 — missing aliases discovered in testing
+    'inari medical': 'NARI',
+    'inari': 'NARI',
+    'fat brands': 'FAT',
+    'h&e equipment services': 'HEES',
+    'h&e equipment': 'HEES',
+    'zynex medical': 'ZYXI',
+    'zynex': 'ZYXI',
+    'verve therapeutics': 'VERV',
+    'verve': 'VERV',
+    'guaranty bancshares': 'GNTY',
+    'model n': 'MODN',
+    'nuvei': 'NVEI',
+    'nuvei corp': 'NVEI',
+    'marinus pharmaceuticals': 'MRNS',
+    'marinus': 'MRNS',
+    'apartment income reit': 'AIRC',
+    'equitrans midstream': 'ETRN',
+    'luna innovations': 'LUNA',
+    'tpi composites': 'TPIC',
+    'evans bancorp': 'EVBN',
+    'first of long island': 'FLIC',
+    'first of long island corp': 'FLIC',
+    'jamf': 'JAMF',
+    'knowbe4': 'KNBE',
+    'composecure': 'CMPO',
+    'faro technologies': 'FARO',
+    'faro': 'FARO',
+    'gannett': 'GCI',
+    'bright scholar': 'BEDU',
+    'bright scholar education': 'BEDU',
+    'ssrm': 'SSRM',
+    'ssr mining': 'SSRM',
+    'nycb': 'NYCB',
+    'new york community bancorp': 'NYCB',
+    'triumph financial': 'TBK',
+    'mackinac savings': 'MCBC',
+    'macatawa bank': 'MCBC',
+    'veritex community bank': 'VBTX',
+    'veritex': 'VBTX',
 };
 
 async function resolveTicker(input) {
