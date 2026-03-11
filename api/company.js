@@ -853,13 +853,23 @@ async function fetchEmployeeCountFromStockAnalysis(symbol) {
     // URL: https://stockanalysis.com/stocks/{ticker}/employees/
     // Page contains e.g. "had 39,000 employees" and a stat block with the number
     const url = `https://stockanalysis.com/stocks/${symbol.toLowerCase()}/employees/`;
-    const res = await fetch(url, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; YourFairShare/1.0)',
-            'Accept': 'text/html',
-        }
-    });
-    if (!res.ok) throw new Error(`StockAnalysis employees HTTP ${res.status} for ${symbol}`);
+    const saController = new AbortController();
+    const saTimeout = setTimeout(() => saController.abort(), 4000); // 4s hard limit
+    let res;
+    try {
+        res = await fetch(url, {
+            signal: saController.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cache-Control': 'no-cache',
+            }
+        });
+    } finally {
+        clearTimeout(saTimeout);
+    }
+    if (!res || !res.ok) throw new Error(`StockAnalysis employees HTTP ${res?.status} for ${symbol}`);
     const html = await res.text();
 
     // Pattern 1: "had X,XXX employees as of" — the introductory sentence
@@ -1035,6 +1045,65 @@ async function fetchFromAlphaVantage(symbol) {
 
     return { name: overview.Name || null, emps, profit, ebitda, logo: null, source: 'alphavantage' };
 }
+
+async function fetchFromYahooFinance(symbol) {
+    // Yahoo Finance quoteSummary API — covers foreign ADRs, Canadian, Israeli, etc.
+    // No API key required. Returns financials in local currency + currency code.
+    const modules = 'financialData,defaultKeyStatistics,summaryProfile';
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}&corsDomain=finance.yahoo.com`;
+    const yfController = new AbortController();
+    const yfTimeout = setTimeout(() => yfController.abort(), 5000);
+    let res;
+    try {
+        res = await fetch(url, {
+            signal: yfController.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json,text/html;q=0.9',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Origin': 'https://finance.yahoo.com',
+                'Referer': 'https://finance.yahoo.com/',
+            }
+        });
+    } finally {
+        clearTimeout(yfTimeout);
+    }
+    if (!res || !res.ok) throw new Error(`Yahoo Finance HTTP ${res?.status} for ${symbol}`);
+    const json = await res.json();
+
+    const result = json?.quoteSummary?.result?.[0];
+    if (!result) throw new Error(`Yahoo Finance: no data for ${symbol}`);
+
+    const fd  = result.financialData  || {};
+    const ks  = result.defaultKeyStatistics || {};
+    const sp  = result.summaryProfile  || {};
+
+    // Employee count
+    const emps = sp.fullTimeEmployees || null;
+
+    // Net income — Yahoo reports in reported currency
+    // Try totalCash minus debt proxy, or netIncomeToCommon
+    let profit = ks.netIncomeToCommon?.raw ?? null;
+    // EBITDA
+    let ebitda = fd.ebitda?.raw ?? null;
+
+    // Also try profitMargins * totalRevenue
+    if (!profit && fd.profitMargins?.raw && fd.totalRevenue?.raw) {
+        profit = Math.round(fd.profitMargins.raw * fd.totalRevenue.raw);
+    }
+
+    // Currency conversion
+    const currency = fd.financialCurrency || 'USD';
+    if (currency && currency !== 'USD') {
+        profit = await toUSD(profit, currency);
+        ebitda = await toUSD(ebitda, currency);
+    }
+
+    if (!profit && !ebitda && !emps) throw new Error(`Yahoo Finance: all fields null for ${symbol}`);
+
+    return { name: null, emps, profit, ebitda, logo: null, source: 'yahoo' };
+}
+
 
 
 // Known Wikipedia page titles for ambiguous tickers/names
@@ -2173,8 +2242,54 @@ const WIKI_TITLE_MAP = {
     'VSTM':  'Verastem',
     'ARI':   'Apollo Commercial Real Estate Finance',
     'BBVA':  'BBVA',
-    'HSBC':  'HSBC',
+    'HSBC':  'HSBC Holdings',
     'CRVL':  'CorVel',
+    // Round 3 — persistent NO_EMPS + foreign companies
+    'TPVG':  'TriplePoint Venture Growth BDC',
+    'SLRC':  'SLR Investment Corp',
+    'DKL':   'Delek Logistics Partners',
+    'GOOD':  'Gladstone Commercial',
+    'PINE':  'Alpine Income Property Trust',
+    'RPT':   'Rithm Property Trust',
+    'GLAD':  'Gladstone Capital',
+    'WLKP':  'Westlake Chemical Partners',
+    'DCOMP': 'Dime Community Bancshares',
+    'CBKM':  'Consumers Bancorp',
+    // Foreign companies — explicit titles avoid wrong-article disambiguation
+    'CHKP':  'Check Point Software Technologies',
+    'NICE':  'Nice Systems',
+    'INMD':  'InMode',
+    'GLBE':  'Global-E Online',
+    'ICLR':  'ICON plc',
+    'DAVA':  'Endava',
+    'GOOS':  'Canada Goose',
+    'GLOB':  'Globant',
+    'SSYS':  'Stratasys',
+    'ZIM':   'ZIM Integrated Shipping Services',
+    'SRAD':  'Sportradar',
+    'STNE':  'StoneCo',
+    'DLO':   'dLocal',
+    'NOMD':  'Nomad Foods',
+    'CLBT':  'Cellebrite',
+    'GFL':   'GFL Environmental',
+    'CVE':   'Cenovus Energy',
+    'TECK':  'Teck Resources',
+    'BTG':   'B2Gold',
+    'PAAS':  'Pan American Silver',
+    'GFI':   'Gold Fields',
+    'FNV':   'Franco-Nevada',
+    'MANU':  'Manchester United',
+    'MLCO':  'Melco Resorts & Entertainment',
+    'MMYT':  'MakeMyTrip',
+    'HTHT':  'H World Group',
+    'PDD':   'PDD Holdings',
+    'SE':    'Sea Limited',
+    'GRAB':  'Grab Holdings',
+    'NU':    'Nu Holdings',
+    'DCBO':  'Docebo',
+    'DSGX':  'Descartes Systems',
+    'ASND':  'Ascendis Pharma',
+    'LEGN':  'Legend Biotech',
 };
 
 // ── Wikidata ticker→Wikipedia article lookup ─────────────────────────────────
@@ -2833,6 +2948,7 @@ const TICKER_ALIASES = {
     'medical properties': 'MPW',
     'icf international': 'ICFI',
     'icf': 'ICFI',
+    'icfi': 'ICFI',
     'benchmark electronics': 'BEL',
     'csw industrials': 'CSWI',
     'lincoln educational': 'LRFC',
@@ -2882,6 +2998,59 @@ const TICKER_ALIASES = {
     'diamondrock hospitality': 'DRH',
     'easterly government': 'DEA',
     'farmland partners': 'FPI',
+    // Round 3 additions — persistent API_ERROR fixes
+    'check point': 'CHKP',
+    'checkpoint software': 'CHKP',
+    'check point software': 'CHKP',
+    'championx': 'CHX',
+    'champion x': 'CHX',
+    'everi': 'EVRI',
+    'everi holdings': 'EVRI',
+    'light wonder': 'LNW',
+    'light & wonder': 'LNW',
+    'scientific games': 'LNW',
+    'cool company': 'CLCO',
+    'golden ocean': 'GOGL',
+    'golden ocean group': 'GOGL',
+    'infinera': 'INFN',
+    'treehouse foods': 'THS',
+    'brf': 'BRFS',
+    'brf sa': 'BRFS',
+    'jbs': 'JBSAY',
+    'glencore': 'GLNCY',
+    'geely automobile': 'GELYF',
+    'geely': 'GELYF',
+    'byd': 'BYDDY',
+    'byd company': 'BYDDY',
+    'tencent': 'TCEHY',
+    'tencent holdings': 'TCEHY',
+    'marpai': 'MRAI',
+    'northeast bank': 'NBN',
+    'enstar group': 'ESGR',
+    'ssr mining': 'SSRM',
+    'william penn bancorporation': 'WMPN',
+    'axonics': 'AXNX',
+    'triumph group': 'TGI',
+    'avid bioservices': 'CDMO',
+    'cadence bank': 'CADE',
+    'dynavax': 'DVAX',
+    'dynavax technologies': 'DVAX',
+    'enfusion': 'ENFN',
+    'hingham institution': 'HIFS',
+    'hingham savings': 'HIFS',
+    'icad': 'ICAD',
+    'petiq': 'PETQ',
+    'companhia paranaense': 'ELP',
+    'copel': 'ELP',
+    'marathon oil': 'MRO',
+    'potbelly': 'PBPB',
+    'air transport services': 'ATSG',
+    'slca': 'SLCA',
+    'us silica': 'SLCA',
+    'athira pharma': 'ATHA',
+    'chimerix': 'CMRX',
+    'catalent': 'CTLT',
+    '89bio': 'ETNB',
 };
 
 async function resolveTicker(input) {
@@ -3039,6 +3208,20 @@ module.exports = async function handler(req, res) {
             Object.assign(merged, remerged);
         } catch(e) {
             errors.push('AV: ' + e.message);
+        }
+    }
+
+    // Yahoo Finance — used when profit/ebitda are missing (foreign companies,
+    // companies not covered by FMP/Finnhub/EDGAR, or unusual fiscal structures)
+    if (merged.name && (merged.profit === null || merged.ebitda === null)) {
+        try {
+            const yfResult = await fetchFromYahooFinance(symbol);
+            // Merge: only fill in what's missing
+            if (yfResult.emps   && !merged.emps)   merged.emps   = yfResult.emps;
+            if (yfResult.profit !== null && merged.profit === null) merged.profit = yfResult.profit;
+            if (yfResult.ebitda !== null && merged.ebitda === null) merged.ebitda = yfResult.ebitda;
+        } catch(e) {
+            errors.push('Yahoo: ' + e.message);
         }
     }
 
