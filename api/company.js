@@ -848,21 +848,58 @@ async function fetchEmployeeCountFrom10K(cik) {
 // ── companiesmarketcap.com employee count fetcher ────────────────────────────
 // Uses CMC's JSON search API to find the slug, then scrapes the /employees/ page.
 // Only called as a last resort when all other sources fail.
+async function fetchEmployeeCountFromStockAnalysis(symbol) {
+    // stockanalysis.com has clean employee history pages for most US-listed stocks
+    // URL: https://stockanalysis.com/stocks/{ticker}/employees/
+    // Page contains e.g. "had 39,000 employees" and a stat block with the number
+    const url = `https://stockanalysis.com/stocks/${symbol.toLowerCase()}/employees/`;
+    const res = await fetch(url, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; YourFairShare/1.0)',
+            'Accept': 'text/html',
+        }
+    });
+    if (!res.ok) throw new Error(`StockAnalysis employees HTTP ${res.status} for ${symbol}`);
+    const html = await res.text();
+
+    // Pattern 1: "had X,XXX employees as of" — the introductory sentence
+    const sentenceMatch = html.match(/had\s+([\d,]+)\s+employees\s+as\s+of/i);
+    if (sentenceMatch) {
+        const n = parseInt(sentenceMatch[1].replace(/,/g, ''), 10);
+        if (!isNaN(n) && n >= 1) return n;
+    }
+
+    // Pattern 2: The big stat number — appears in a <td> or <div> right after "Employees" label
+    // StockAnalysis renders: Employees then 39,000 as adjacent elements
+    const statMatch = html.match(/Employees[^<]{0,60}<[^>]+>\s*([\d,]+)\s*</i);
+    if (statMatch) {
+        const n = parseInt(statMatch[1].replace(/,/g, ''), 10);
+        if (!isNaN(n) && n >= 1) return n;
+    }
+
+    // Pattern 3: JSON-LD or meta
+    const jsonMatch = html.match(/"numberOfEmployees"\s*:\s*([\d]+)/i);
+    if (jsonMatch) {
+        const n = parseInt(jsonMatch[1], 10);
+        if (!isNaN(n) && n >= 1) return n;
+    }
+
+    throw new Error(`StockAnalysis: employee count not found for ${symbol}`);
+}
+
+// Keep CMC as a secondary fallback with fixed slug logic
 async function fetchEmployeeCountFromCMC(symbol, companyName) {
-    // Strategy 1: try the CMC search JSON API
     let slug = null;
 
+    // Strategy 1: CMC search API
     try {
-        // CMC exposes a search endpoint that returns JSON
         const searchUrl = `https://companiesmarketcap.com/api/companies/search/?query=${encodeURIComponent(symbol)}&limit=5`;
         const searchRes = await fetch(searchUrl, {
             headers: { 'User-Agent': 'YourFairShare/1.0 (research)', 'Accept': 'application/json' }
         });
         if (searchRes.ok) {
             const results = await searchRes.json();
-            // Results are an array of {name, ticker, slug, ...}
             const arr = Array.isArray(results) ? results : (results.data || results.results || []);
-            // Prefer exact ticker match, then name match
             const byTicker = arr.find(r => r.ticker && r.ticker.toUpperCase() === symbol.toUpperCase());
             const byName = companyName && arr.find(r =>
                 r.name && r.name.toLowerCase().includes(companyName.split(' ')[0].toLowerCase())
@@ -870,15 +907,14 @@ async function fetchEmployeeCountFromCMC(symbol, companyName) {
             const match = byTicker || byName || arr[0];
             if (match && match.slug) slug = match.slug;
         }
-    } catch(e) { /* fall through to strategy 2 */ }
+    } catch(e) { /* fall through */ }
 
-    // Strategy 2: derive slug from company name heuristically
-    // CMC slugs are typically lowercase, spaces→hyphens, stripped of Inc/Corp/etc.
+    // Strategy 2: derive slug from name
     if (!slug && companyName) {
         slug = companyName
             .toLowerCase()
             .replace(/[,.'&]/g, '')
-            .replace(/\s+(inc\.?|corp\.?|ltd\.?|llc|co\.?|holdings?|group|corporation|limited|plc|technologies|company)$/i, '')
+            .replace(/,?\s+(inc\.?|corp\.?|ltd\.?|llc|l\.p\.?|\blp\b|co\.?|holdings?|group|corporation|limited|plc|technologies|company)\s*$/i, '')
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-]/g, '')
             .replace(/-+/g, '-')
@@ -887,43 +923,29 @@ async function fetchEmployeeCountFromCMC(symbol, companyName) {
 
     if (!slug) throw new Error('CMC: could not determine slug');
 
-    // Fetch the employees page
     const empUrl = `https://companiesmarketcap.com/${slug}/employees/`;
     const empRes = await fetch(empUrl, {
         headers: { 'User-Agent': 'YourFairShare/1.0 (research)', 'Accept': 'text/html' }
     });
-    if (!empRes.ok) {
-        // If slug didn't work, try a search-page approach
-        throw new Error(`CMC employees page HTTP ${empRes.status} for slug: ${slug}`);
-    }
+    if (!empRes.ok) throw new Error(`CMC HTTP ${empRes.status} for slug: ${slug}`);
 
     const html = await empRes.text();
-
-    // Extract employee count — CMC renders it as a large number in a specific element
-    // Try multiple patterns to be robust to layout changes
     const patterns = [
-        // JSON-LD structured data (most reliable)
-        /"numberOfEmployees"\s*:\s*["{]?\s*"?([\d,]+)"?/i,
-        // The big stat displayed on the page
+        /"numberOfEmployees"\s*:\s*[\"{]?\s*"?([\d,]+)"?/i,
         /class="[^"]*company-stat-value[^"]*"[^>]*>\s*([\d,.]+\s*[KkMm]?)\s*</i,
-        // Table cell with "Employees" label nearby
         /Employees[^<]*<\/[^>]+>\s*<[^>]+>\s*([\d,]+)/i,
-        // Any large standalone number followed by context
         />\s*([\d,]{3,})\s*<\/[^>]+>\s*(?:<[^>]+>)*\s*(?:employees?|workers?|staff)/i,
     ];
-
     for (const pattern of patterns) {
         const m = html.match(pattern);
         if (m) {
             let raw = m[1].trim().replace(/,/g, '');
-            // Handle K/M suffixes
             if (/k$/i.test(raw)) return Math.round(parseFloat(raw) * 1000);
             if (/m$/i.test(raw)) return Math.round(parseFloat(raw) * 1000000);
             const n = parseInt(raw, 10);
             if (!isNaN(n) && n >= 10 && n <= 5000000) return n;
         }
     }
-
     throw new Error('CMC: employee count not found in page');
 }
 
@@ -2139,6 +2161,20 @@ const WIKI_TITLE_MAP = {
     'CTRE':  'CareTrust REIT',
     'UNIT':  'Uniti Group',
     'ALEX':  'Alexander & Baldwin',
+    // Regression fixes — these broke in the name normalization update
+    'PAYO':  'Payoneer',
+    'RELY':  'Remitly',
+    'DXLG':  'Destination XL Group',
+    'AMWL':  'American Well',
+    'HE':    'Hawaiian Electric Industries',
+    'BLMN':  "Bloomin' Brands",
+    'FIZZ':  'National Beverage Corp',
+    'DOCS':  'Doximity',
+    'VSTM':  'Verastem',
+    'ARI':   'Apollo Commercial Real Estate Finance',
+    'BBVA':  'BBVA',
+    'HSBC':  'HSBC',
+    'CRVL':  'CorVel',
 };
 
 // ── Wikidata ticker→Wikipedia article lookup ─────────────────────────────────
@@ -2790,6 +2826,62 @@ const TICKER_ALIASES = {
     'umpqua holdings': 'UMPQ',
     'lamar advertising': 'LAMR',
     'lamar': 'LAMR',
+    // Round 2 additions
+    'frontier communications': 'FYBR',
+    'frontier': 'FYBR',
+    'medical properties trust': 'MPW',
+    'medical properties': 'MPW',
+    'icf international': 'ICFI',
+    'icf': 'ICFI',
+    'benchmark electronics': 'BEL',
+    'csw industrials': 'CSWI',
+    'lincoln educational': 'LRFC',
+    'tandy leather': 'TSC',
+    'guess': 'GES',
+    "guess?": 'GES',
+    'luna innovations': 'LUNA',
+    'capstar financial': 'CSTR',
+    'capstar': 'CSTR',
+    'guaranty federal bancshares': 'GFED',
+    'guaranty federal': 'GFED',
+    'veritex community bank': 'VBTX',
+    'veritex': 'VBTX',
+    'united community banks': 'UCBI',
+    'golub capital': 'GBDC',
+    'golub capital bdc': 'GBDC',
+    'blue owl': 'OWL',
+    'blue owl capital': 'OWL',
+    'owl rock': 'OWL',
+    'cushman wakefield': 'CWK',
+    'cushman & wakefield': 'CWK',
+    'tpi composites': 'TPIC',
+    'corvel': 'CRVL',
+    'akero therapeutics': 'AKRO',
+    'chimerix': 'CMRX',
+    'catalent': 'CTLT',
+    '89bio': 'ETNB',
+    'evelo biosciences': 'EVLO',
+    'everbridge': 'EVBG',
+    'aspen technology': 'AZPN',
+    'aspentech': 'AZPN',
+    'redfin': 'RDFN',
+    'essa bancorp': 'ESSA',
+    'triumph financial': 'TBK',
+    'evans bancorp': 'EVBN',
+    'first of long island': 'FLIC',
+    'knowbe4': 'KNBE',
+    'composecure': 'CMPO',
+    'compoSecure': 'CMPO',
+    'new york community bancorp': 'NYCB',
+    'nycb': 'NYCB',
+    'sumitomo mitsui': 'SMFG',
+    'meituan': 'MEITUY',
+    'america movil': 'AMX',
+    'summit hotel properties': 'INN',
+    'diamondrock': 'DRH',
+    'diamondrock hospitality': 'DRH',
+    'easterly government': 'DEA',
+    'farmland partners': 'FPI',
 };
 
 async function resolveTicker(input) {
@@ -3001,8 +3093,17 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // Final fallback: companiesmarketcap.com — only called when everything else failed
-    // Live web scrape, only fires when emps is still null.
+    // StockAnalysis.com — reliable employee data, fires before CMC
+    if (!merged.emps) {
+        try {
+            const saEmps = await fetchEmployeeCountFromStockAnalysis(symbol);
+            if (saEmps) merged.emps = saEmps;
+        } catch(e) {
+            errors.push('StockAnalysis: ' + e.message);
+        }
+    }
+
+    // Final fallback: companiesmarketcap.com
     if (!merged.emps && merged.name) {
         try {
             const cmcEmps = await fetchEmployeeCountFromCMC(symbol, merged.name);
