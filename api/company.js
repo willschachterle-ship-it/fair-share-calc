@@ -601,6 +601,21 @@ const SERVER_FALLBACK_DB = {
 
 
 
+// Retry wrapper for transient fetch failures (timeouts, 5xx, network blips)
+async function fetchWithRetry(url, opts, retries = 2) {
+    let lastErr;
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const res = await fetch(url, opts);
+            return res;
+        } catch(e) {
+            lastErr = e;
+            if (i < retries) await new Promise(r => setTimeout(r, 600 * (i + 1)));
+        }
+    }
+    throw lastErr;
+}
+
 // Fetch USD exchange rate for a given currency code
 // Uses frankfurter.app - free, no key required
 const FX_CACHE = {};
@@ -621,7 +636,7 @@ async function toUSD(amount, currency) {
 }
 
 async function fetchFromEDGAR(symbol) {
-    const tickerRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
+    const tickerRes = await fetchWithRetry('https://www.sec.gov/files/company_tickers.json', {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
     if (!tickerRes.ok) throw new Error('EDGAR tickers HTTP ' + tickerRes.status);
@@ -640,7 +655,7 @@ async function fetchFromEDGAR(symbol) {
     }
     if (!cik) throw new Error('EDGAR: ticker not found');
 
-    const factsRes = await fetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`, {
+    const factsRes = await fetchWithRetry(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`, {
         headers: { 'User-Agent': 'YourFairShare admin@yourfairshare.com' }
     });
     if (!factsRes.ok) throw new Error('EDGAR facts HTTP ' + factsRes.status);
@@ -648,6 +663,7 @@ async function fetchFromEDGAR(symbol) {
 
     const us_gaap = facts.facts['us-gaap'] || {};
     const dei = facts.facts['dei'] || {};
+    const ifrs = facts.facts['ifrs-full'] || {};
 
     // Employee count - many companies don't file this
     let emps = null;
@@ -655,7 +671,7 @@ async function fetchFromEDGAR(symbol) {
         const empFact = dei[field];
         if (empFact && empFact.units && empFact.units['pure']) {
             const sorted = empFact.units['pure']
-                .filter(e => e.form === '10-K' || e.form === '10-K/A')
+                .filter(e => e.form === '10-K' || e.form === '10-K/A' || e.form === '20-F')
                 .sort((a, b) => b.end.localeCompare(a.end));
             if (sorted.length > 0) { emps = sorted[0].val; break; }
         }
@@ -666,6 +682,8 @@ async function fetchFromEDGAR(symbol) {
     const today = new Date().toISOString().split('T')[0];
     // Use last completed fiscal year - filed within 12 months of period end
     let profit = null;
+    // Try US-GAAP fields first, then IFRS fields (foreign private issuers file 20-F with IFRS)
+    const profitFields20F = ['ProfitLoss', 'ProfitLossAttributableToOwnersOfParent'];
     for (const field of ['NetIncomeLoss', 'NetIncome', 'ProfitLoss']) {
         const fact = us_gaap[field];
         if (fact && fact.units && fact.units['USD']) {
@@ -679,6 +697,18 @@ async function fetchFromEDGAR(symbol) {
                 })
                 .sort((a, b) => b.end.localeCompare(a.end));
             if (entries.length > 0) { profit = entries[0].val; break; }
+        }
+    }
+    // IFRS fallback for foreign private issuers (20-F filers)
+    if (profit === null) {
+        for (const field of profitFields20F) {
+            const fact = ifrs[field];
+            if (fact && fact.units && fact.units['USD']) {
+                const entries = fact.units['USD']
+                    .filter(e => e.form === '20-F' && e.start && e.end <= today)
+                    .sort((a, b) => b.end.localeCompare(a.end));
+                if (entries.length > 0) { profit = entries[0].val; break; }
+            }
         }
     }
 
@@ -968,15 +998,35 @@ async function fetchFromFMP(symbol) {
     const reportedCurrency = p.reportedCurrency || p.currency || 'USD';
     let profit = null, ebitda = null;
     try {
-        const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&apikey=${FMP_KEY}`);
+        const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`);
         if (incomeRes.ok) {
             const incomeArr = await incomeRes.json();
             const inc = incomeArr?.[0] || {};
             profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
             ebitda = (inc.ebitda != null && inc.ebitda !== 0) ? inc.ebitda : null;
+            // Derive EBITDA from operatingIncome + D&A when not directly available
+            if (ebitda === null && inc.operatingIncome && inc.depreciationAndAmortization) {
+                ebitda = inc.operatingIncome + Math.abs(inc.depreciationAndAmortization);
+            }
         }
     } catch(e) {}
-    // Try key-metrics for ebitda if income-statement missed it
+    // Try cash flow statement for D&A-derived EBITDA if income-statement missed it
+    if (ebitda === null) {
+        try {
+            const [incRes2, cfRes] = await Promise.all([
+                fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
+                fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
+            ]);
+            const incArr2 = incRes2.ok ? await incRes2.json() : [];
+            const cfArr   = cfRes.ok  ? await cfRes.json()  : [];
+            const inc2 = incArr2?.[0] || {};
+            const cf   = cfArr?.[0]  || {};
+            if (inc2.operatingIncome && cf.depreciationAndAmortization) {
+                ebitda = inc2.operatingIncome + Math.abs(cf.depreciationAndAmortization);
+            }
+        } catch(e) {}
+    }
+    // Try key-metrics for ebitda if still missing
     if (ebitda === null) {
         try {
             const kmRes = await fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${FMP_KEY}`);
@@ -1071,7 +1121,7 @@ async function fetchFromYahooFinance(symbol) {
     // which covers foreign ADRs and returns data in reported currency.
     // Also try twelvedata as a secondary source.
     
-    // Attempt 1: FMP financial-statements-as-reported (broader coverage)
+    // Attempt 1: FMP annual income + cash-flow statements
     try {
         const [incRes, cfRes] = await Promise.all([
             fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
@@ -1081,27 +1131,66 @@ async function fetchFromYahooFinance(symbol) {
         const cfArr  = cfRes.ok  ? await cfRes.json()  : [];
         const inc = incArr?.[0] || {};
         const cf  = cfArr?.[0]  || {};
-        
-        // Derive ebitda from cash flow if income-statement ebitda is missing
-        // EBITDA ≈ operatingIncome + D&A (from cash flow)
+
         let profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
         let ebitda = (inc.ebitda != null && inc.ebitda !== 0) ? inc.ebitda : null;
-        
-        if (!ebitda && inc.operatingIncome && cf.depreciationAndAmortization) {
-            ebitda = inc.operatingIncome + Math.abs(cf.depreciationAndAmortization);
+
+        // Derive EBITDA from operatingIncome + D&A when not directly provided
+        if (!ebitda && inc.operatingIncome && (inc.depreciationAndAmortization || cf.depreciationAndAmortization)) {
+            const dna = inc.depreciationAndAmortization || cf.depreciationAndAmortization;
+            ebitda = inc.operatingIncome + Math.abs(dna);
         }
-        
+
         const reportedCurrency = inc.reportedCurrency || 'USD';
         if (reportedCurrency !== 'USD') {
             profit = await toUSD(profit, reportedCurrency);
             ebitda = await toUSD(ebitda, reportedCurrency);
         }
-        
+
         if (profit !== null || ebitda !== null) {
             return { name: null, emps: null, profit, ebitda, logo: null, source: 'fmp_intl' };
         }
     } catch(e) {}
-    
+
+    // Attempt 2: TTM from quarterly data (covers companies without a full annual filing in FMP)
+    try {
+        const [incQRes, cfQRes] = await Promise.all([
+            fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=4&period=quarter&apikey=${FMP_KEY}`),
+            fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=4&period=quarter&apikey=${FMP_KEY}`)
+        ]);
+        const incQArr = incQRes.ok ? await incQRes.json() : [];
+        const cfQArr  = cfQRes.ok  ? await cfQRes.json()  : [];
+
+        if (incQArr.length >= 4) {
+            const reportedCurrency = incQArr[0].reportedCurrency || 'USD';
+            // Sum last 4 quarters for TTM
+            let ttmProfit = 0, ttmEbitda = 0, ttmOpInc = 0, ttmDna = 0;
+            let hasProfit = false, hasEbitda = false;
+            for (const q of incQArr) {
+                if (q.netIncome != null && q.netIncome !== 0) { ttmProfit += q.netIncome; hasProfit = true; }
+                if (q.ebitda != null && q.ebitda !== 0) { ttmEbitda += q.ebitda; hasEbitda = true; }
+                if (q.operatingIncome != null) ttmOpInc += q.operatingIncome;
+            }
+            for (const q of cfQArr) {
+                if (q.depreciationAndAmortization != null) ttmDna += q.depreciationAndAmortization;
+            }
+            // Derive TTM EBITDA from operatingIncome + D&A if not directly available
+            if (!hasEbitda && ttmOpInc && ttmDna) {
+                ttmEbitda = ttmOpInc + Math.abs(ttmDna);
+                hasEbitda = true;
+            }
+            let profit = hasProfit ? ttmProfit : null;
+            let ebitda = hasEbitda ? ttmEbitda : null;
+            if (reportedCurrency !== 'USD') {
+                profit = await toUSD(profit, reportedCurrency);
+                ebitda = await toUSD(ebitda, reportedCurrency);
+            }
+            if (profit !== null || ebitda !== null) {
+                return { name: null, emps: null, profit, ebitda, logo: null, source: 'fmp_ttm' };
+            }
+        }
+    } catch(e) {}
+
     throw new Error(`fetchFromYahooFinance: no financial data for ${symbol}`);
 }
 
@@ -2291,6 +2380,34 @@ const WIKI_TITLE_MAP = {
     'DSGX':  'Descartes Systems',
     'ASND':  'Ascendis Pharma',
     'LEGN':  'Legend Biotech',
+    // Companies that frequently fail name-based Wikipedia lookup
+    'NFLX':  'Netflix',
+    'PARA':  'Paramount Global',
+    'PFGC':  'Performance Food Group',
+    'ENSG':  'Ensign Group',
+    'CHKP':  'Check Point Software Technologies',
+    'NICE':  'NICE Ltd.',
+    'CYBR':  'CyberArk',
+    'GLOB':  'Globant',
+    'DAVA':  'Endava',
+    'AZPN':  'Aspen Technology',
+    'ARCO':  'Arcos Dorados',
+    'GOOS':  'Canada Goose',
+    'MNSO':  'MINISO',
+    'NU':    'Nu Holdings',
+    'PAGS':  'PagSeguro',
+    'QFIN':  'Qifu Technology',
+    'GLBE':  'Global-E Online',
+    'WIT':   'Wipro',
+    'LDI':   'loanDepot',
+    'SQ':    'Block, Inc.',
+    'TCEHY': 'Tencent',
+    'BYDDY': 'BYD Company',
+    'IBN':   'ICICI Bank',
+    'NTDOY': 'Nintendo',
+    'GELYF': 'Geely',
+    'BRFS':  'BRF S.A.',
+    'JBSAY': 'JBS S.A.',
 };
 
 // ── Wikidata ticker→Wikipedia article lookup ─────────────────────────────────
@@ -3459,9 +3576,8 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // FMP cash-flow fallback — only when BOTH profit AND ebitda are completely missing
-    // (avoids extra HTTP calls for companies that already have partial data)
-    if (merged.name && merged.profit === null && merged.ebitda === null) {
+    // FMP cash-flow / TTM fallback — fires when profit or ebitda are missing
+    if (merged.name && (merged.profit === null || merged.ebitda === null)) {
         try {
             const yfResult = await fetchFromYahooFinance(symbol);
             // Merge: only fill in what's missing
@@ -3704,6 +3820,12 @@ module.exports = async function handler(req, res) {
         "HAS":   { emps: 6300 },
         // ZEUS — Olympic Steel: API returns 2,020 (year). Real: ~2,100.
         "ZEUS":  { emps: 2100 },
+
+        // ── API returns incorrect/missing financial data ──────────────────────
+        // PARA — Paramount Global: FY2024 net loss = -$5.98B (goodwill impairment).
+        // EBITDA (operating-basis) ~$2.4B. Live API frequently returns null/stale data
+        // due to the large write-down confusing FMP/Finnhub field mapping.
+        "PARA":  { profit: -5978000000, ebitda: 2400000000 },
     };
 
     if (FORCE_OVERRIDES[symbol]) {
