@@ -512,6 +512,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
                             '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
                         '</div>' +
+                    '</div>' +
+                    '<div style="margin-top:16px; padding:18px 20px; background:#f0f7f0; border:1px solid #c8e6c9; border-radius:12px; font-size:0.85em; color:#2e7d32; line-height:1.6;">' +
+                        '<strong>Want to work somewhere you actually share in the profits?</strong> ' +
+                        'Worker-owned companies and ESOPs share ownership — and profits — with employees. ' +
+                        '<a href="https://www.usfwc.org/find-a-co-op/" target="_blank" rel="noopener" style="color:#1b5e20;">Find a worker co-op near you</a> or ' +
+                        '<a href="https://www.nceo.org/articles/esop-employee-stock-ownership-plan" target="_blank" rel="noopener" style="color:#1b5e20;">learn about ESOPs</a>.' +
                     '</div>';
                 resultsArea.classList.remove('hidden');
             }
