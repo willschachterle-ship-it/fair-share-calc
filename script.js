@@ -489,9 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     edgar: 'SEC EDGAR', fmp: 'Financial Modeling Prep',
                     finnhub: 'Finnhub', alphavantage: 'Alpha Vantage',
                     wikipedia: 'Wikipedia', '10k': 'SEC 10-K',
-                    stockanalysis: 'Stock Analysis', cmc: 'CompaniesMarketCap',
-                    yahoo: 'Yahoo Finance', fallback: 'Cached data',
-                    verified: 'Verified', estimated: 'Estimated', yahoo: 'Yahoo Finance'
+                    stockanalysis: 'StockAnalysis.com', cmc: 'CompaniesMarketCap.com',
+                    yahoo: 'Yahoo Finance', claude: 'Claude (training data)',
+                    verified: 'Manually verified', estimated: 'Estimated from net income'
                 };
                 var s = data._sources;
                 var parts = [];

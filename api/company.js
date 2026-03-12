@@ -4234,9 +4234,9 @@ module.exports = async function handler(req, res) {
     if (!merged.name && SERVER_FALLBACK_DB[symbol]) {
         const fb = SERVER_FALLBACK_DB[symbol];
         merged.name = fb.name;
-        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = 'fallback'; }
-        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = 'fallback'; }
-        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = 'fallback'; }
+        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = (fb._src && fb._src.emps)   || 'claude'; }
+        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = (fb._src && fb._src.profit) || 'claude'; }
+        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = (fb._src && fb._src.ebitda) || 'claude'; }
         if (fb.logo && !merged.logo) merged.logo = fb.logo;
     }
     if (!merged.name) {
@@ -4246,9 +4246,9 @@ module.exports = async function handler(req, res) {
     // Fill any remaining null fields from SERVER_FALLBACK_DB (even when name resolved via API)
     if (SERVER_FALLBACK_DB[symbol]) {
         const fb = SERVER_FALLBACK_DB[symbol];
-        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = 'fallback'; }
-        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = 'fallback'; }
-        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = 'fallback'; }
+        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = (fb._src && fb._src.emps)   || 'claude'; }
+        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = (fb._src && fb._src.profit) || 'claude'; }
+        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = (fb._src && fb._src.ebitda) || 'claude'; }
         if (fb.logo && !merged.logo)                    merged.logo   = fb.logo;
     }
 
