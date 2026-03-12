@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             summaryLine +
-                            '<p style="margin:0 0 4px;">The federal government kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
+                            '<p style="margin:0 0 4px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
                             '<details style="margin-top:2px;">' +
                                 '<summary style="cursor:pointer; list-style:none; font-size:0.78em; color:#1565c0; text-decoration:underline; text-underline-offset:2px;">How is this calculated?</summary>' +
                                 '<div style="margin-top:10px; padding:12px 14px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
