@@ -794,4 +794,4 @@ const FALLBACK_DB = {
 
 };
 
-module.exports = FALLBACK_DB;
+if (typeof module !== 'undefined') module.exports = FALLBACK_DB;

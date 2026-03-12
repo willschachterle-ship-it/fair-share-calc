@@ -518,6 +518,98 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ── Autocomplete ──────────────────────────────────────────────────────────
+    (function() {
+        var companyInput = document.getElementById('company');
+        var dropdown = document.getElementById('ac-dropdown');
+        if (!companyInput || !dropdown) return;
+
+        // Build suggestion list from FALLBACK_DB (loaded via fallback.js)
+        var suggestions = [];
+        if (typeof FALLBACK_DB !== 'undefined') {
+            Object.keys(FALLBACK_DB).forEach(function(ticker) {
+                var e = FALLBACK_DB[ticker];
+                if (e && e.name) suggestions.push({ name: e.name, ticker: ticker });
+            });
+            suggestions.sort(function(a, b) { return a.name.localeCompare(b.name); });
+        }
+
+        var activeIdx = -1;
+        var currentItems = [];
+
+        function render(items) {
+            currentItems = items;
+            activeIdx = -1;
+            dropdown.innerHTML = '';
+            items.forEach(function(item, idx) {
+                var div = document.createElement('div');
+                div.className = 'ac-item';
+                div.innerHTML = '<span class="ac-item-name">' + esc(item.name) + '</span>' +
+                                '<span class="ac-item-ticker">' + esc(item.ticker) + '</span>';
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    companyInput.value = item.name;
+                    hide();
+                });
+                div.addEventListener('mouseover', function() { setActive(idx); });
+                dropdown.appendChild(div);
+            });
+            dropdown.style.display = items.length ? 'block' : 'none';
+        }
+
+        function hide() {
+            dropdown.style.display = 'none';
+            activeIdx = -1;
+        }
+
+        function setActive(idx) {
+            Array.from(dropdown.querySelectorAll('.ac-item')).forEach(function(el, i) {
+                el.classList.toggle('active', i === idx);
+            });
+            activeIdx = idx;
+        }
+
+        function esc(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        var timer;
+        companyInput.addEventListener('input', function() {
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+                var q = companyInput.value.trim().toLowerCase();
+                if (q.length < 2) { hide(); return; }
+                var matches = suggestions.filter(function(s) {
+                    return s.name.toLowerCase().indexOf(q) !== -1 ||
+                           s.ticker.toLowerCase().indexOf(q) === 0;
+                }).slice(0, 8);
+                render(matches);
+            }, 120);
+        });
+
+        companyInput.addEventListener('keydown', function(e) {
+            if (dropdown.style.display === 'none') return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActive(Math.min(activeIdx + 1, currentItems.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActive(Math.max(activeIdx - 1, 0));
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                companyInput.value = currentItems[activeIdx].name;
+                hide();
+            } else if (e.key === 'Escape') {
+                hide();
+            }
+        });
+
+        companyInput.addEventListener('blur', function() {
+            setTimeout(hide, 150);
+        });
+    })();
+    // ── End Autocomplete ──────────────────────────────────────────────────────
+
     var annualToggle = document.getElementById('annualToggle');
     var hourlyToggle = document.getElementById('hourlyToggle');
     if (annualToggle) annualToggle.onclick = function(e) { toggleUI(e, 'salary'); };
