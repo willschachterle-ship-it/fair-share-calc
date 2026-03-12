@@ -3406,6 +3406,71 @@ const TICKER_ALIASES = {
     'nintendo': 'NTDOY',
     'guess': 'GES',
     'guess?': 'GES',
+    // Round 6/7 — companies missing from aliases that failed name resolution
+    'monolithic power systems': 'MPWR',
+    'monolithic power': 'MPWR',
+    'lattice semiconductor': 'LSCC',
+    'f5 networks': 'FFIV',
+    'f5': 'FFIV',
+    'zoominfo technologies': 'ZI',
+    'zoominfo': 'ZI',
+    'wipro': 'WIT',
+    'unity technologies': 'U',
+    'unity software': 'U',
+    'opendoor technologies': 'OPEN',
+    'opendoor': 'OPEN',
+    'clps technology': 'CLPS',
+    'allot communications': 'ALLT',
+    'allot': 'ALLT',
+    'ceridian hcm': 'DAY',
+    'ceridian': 'DAY',
+    'dayforce': 'DAY',
+    '21vianet group': 'VNET',
+    '21vianet': 'VNET',
+    'nice systems': 'NICE',
+    'nice ltd': 'NICE',
+    'pnc financial services': 'PNC',
+    'pnc bank': 'PNC',
+    'apollo global management': 'APO',
+    'apollo global': 'APO',
+    'fis': 'FIS',
+    'fidelity national information services': 'FIS',
+    't. rowe price': 'TROW',
+    't rowe price': 'TROW',
+    'fair isaac': 'FICO',
+    'fair isaac corporation': 'FICO',
+    'w. r. berkley': 'WRB',
+    'w.r. berkley': 'WRB',
+    'wr berkley': 'WRB',
+    'western alliance bancorporation': 'WAL',
+    'western alliance': 'WAL',
+    'first financial bankshares': 'FFIN',
+    'international bancshares': 'IBOC',
+    'columbia banking system': 'COLB',
+    'columbia bank': 'COLB',
+    'cyberark': 'CYBR',
+    'cyberark software': 'CYBR',
+    'endava': 'DAVA',
+    'amplitude': 'AMPL',
+    'globant': 'GLOB',
+    'origin bancorp': 'OBNK',
+    'aspen technology': 'AZPN',
+    'check point software': 'CHKP',
+    'checkpoint software': 'CHKP',
+    'paramount global': 'PARA',
+    'paramount': 'PARA',
+    'performance food group': 'PFGC',
+    'ensign group': 'ENSG',
+    'terex corporation': 'TEX',
+    'nu holdings': 'NU',
+    'pagseguro digital': 'PAGS',
+    'pagseguro': 'PAGS',
+    'global-e online': 'GLBE',
+    'global e online': 'GLBE',
+    'arcos dorados': 'ARCO',
+    'canada goose': 'GOOS',
+    'miniso': 'MNSO',
+    'miniso group': 'MNSO',
 };
 
 async function resolveTicker(input) {
@@ -3413,15 +3478,37 @@ async function resolveTicker(input) {
     const alias = TICKER_ALIASES[input.toLowerCase().trim()];
     if (alias) return alias;
 
-    const res = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(input)}&token=${FINNHUB_KEY}`);
-    if (!res.ok) throw new Error(`Finnhub search HTTP ${res.status}`);
-    const json = await res.json();
-    const results = json?.result || [];
-    const match = results.find(r => r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'))
-               || results.find(r => r.type === 'Common Stock' && r.symbol)
-               || results.find(r => r.symbol);
-    if (!match) throw new Error(`No ticker found for: ${input}`);
-    return match.symbol;
+    // Try Finnhub search first, FMP search as fallback
+    let symbol = null;
+
+    try {
+        const res = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(input)}&token=${FINNHUB_KEY}`);
+        if (res.ok) {
+            const json = await res.json();
+            const results = json?.result || [];
+            const match = results.find(r => r.type === 'Common Stock' && r.symbol && !r.symbol.includes('.'))
+                       || results.find(r => r.type === 'Common Stock' && r.symbol)
+                       || results.find(r => r.symbol);
+            if (match) symbol = match.symbol;
+        }
+    } catch(e) {}
+
+    // FMP search fallback (more reliable when Finnhub is rate-limited)
+    if (!symbol) {
+        try {
+            const res = await fetch(`https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(input)}&limit=5&apikey=${FMP_KEY}`);
+            if (res.ok) {
+                const results = await res.json();
+                const match = results.find(r => r.symbol && !r.symbol.includes('.') && (r.exchangeShortName === 'NASDAQ' || r.exchangeShortName === 'NYSE' || r.exchangeShortName === 'NYSE ARCA'))
+                           || results.find(r => r.symbol && !r.symbol.includes('.'))
+                           || results[0];
+                if (match) symbol = match.symbol;
+            }
+        } catch(e) {}
+    }
+
+    if (!symbol) throw new Error(`No ticker found for: ${input}`);
+    return symbol;
 }
 
 // ── Smart cross-validation merge ─────────────────────────────────────────────
