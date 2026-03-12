@@ -507,7 +507,27 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             summaryLine +
-                            '<p>The federal government kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
+                            '<details style="margin-top:6px;">' +
+                                '<summary style="cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:6px;">' +
+                                    '<p style="margin:0;">The federal government kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
+                                    '<span style="font-size:0.78em; color:#1565c0; white-space:nowrap; text-decoration:underline; text-underline-offset:2px;">How is this calculated?</span>' +
+                                '</summary>' +
+                                '<div style="margin-top:10px; padding:12px 14px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
+                                    '<p style="margin:0 0 6px;"><strong>2024 U.S. federal income tax estimate</strong> — single filer, standard deduction ($14,600) applied.</p>' +
+                                    '<p style="margin:0 0 6px;">Tax brackets used:</p>' +
+                                    '<table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.95em;">' +
+                                        '<tr style="color:#666;"><th style="text-align:left; padding:2px 6px;">Income</th><th style="text-align:left; padding:2px 6px;">Rate</th></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$0 – $11,600</td><td style="padding:2px 6px;">10%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$11,601 – $47,150</td><td style="padding:2px 6px;">12%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$47,151 – $100,525</td><td style="padding:2px 6px;">22%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$100,526 – $191,950</td><td style="padding:2px 6px;">24%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$191,951 – $243,725</td><td style="padding:2px 6px;">32%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">$243,726 – $609,350</td><td style="padding:2px 6px;">35%</td></tr>' +
+                                        '<tr><td style="padding:2px 6px;">Over $609,350</td><td style="padding:2px 6px;">37%</td></tr>' +
+                                    '</table>' +
+                                    '<p style="margin:0; color:#777;"><strong>Not included:</strong> state/local taxes, FICA (Social Security + Medicare ~7.65%), capital gains rates, filing status (married, head of household), or any tax credits or deductions beyond the standard deduction. This is a rough illustration — not a tax filing tool.</p>' +
+                                '</div>' +
+                            '</details>' +
                         '</div>' +
                     '</div>';
                 resultsArea.classList.remove('hidden');
