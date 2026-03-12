@@ -453,39 +453,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 netIncomeSection =
-                    '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made' +
-                    ' (<details style="display:inline;"><summary style="display:inline; cursor:pointer; color:#1565c0; text-decoration:underline; text-underline-offset:2px; list-style:none;">net income</summary>' +
-                    '<span style="display:block; margin-top:6px; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6; font-weight:normal;">' +
-                    '<strong>Net income</strong> is what a company officially "made" after paying all expenses, interest, and taxes — the bottom line on their income statement. ' +
-                    'It can be heavily influenced by one-time charges, tax strategies, or debt structure. ' +
-                    '<a href="https://en.wikipedia.org/wiki/Net_income" target="_blank" style="color:#1565c0;">Learn more →</a>' +
-                    '</span></details>)' +
-                    ', your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> — that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
-                    '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>';
+                    '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made (net income), your salary would be <strong>$' + netTotal.toLocaleString() + '</strong> — that is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
+                    '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
+                    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:0.78em; color:#1565c0; list-style:none;">What is net income?</summary>' +
+                    '<p style="margin:6px 0 0; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
+                    '<strong>Net income</strong> is what a company officially "made" after paying all expenses, interest, and taxes — the bottom line on their income statement. It can be heavily influenced by one-time charges, tax strategies, or debt structure. ' +
+                    '<a href="https://en.wikipedia.org/wiki/Net_income" target="_blank" style="color:#1565c0;">Learn more →</a></p></details>';
             }
-
-            var ebitdaTooltip =
-                '<details style="display:inline;"><summary style="display:inline; cursor:pointer; color:#1565c0; text-decoration:underline; text-underline-offset:2px; list-style:none;">EBITDA</summary>' +
-                '<span style="display:block; margin-top:6px; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6; font-weight:normal;">' +
-                '<strong>EBITDA</strong> stands for <em>Earnings Before Interest, Taxes, Depreciation, and Amortization</em>. ' +
-                'It strips out accounting adjustments and financing costs to show how much cash the core business generates — often a cleaner picture of ongoing performance than net income. ' +
-                'For capital-intensive industries it can be 2–5× higher than net income. ' +
-                '<a href="https://en.wikipedia.org/wiki/EBITDA" target="_blank" style="color:#1565c0;">Learn more →</a>' +
-                '</span></details>';
 
             // ── EBITDA section ──────────────────────────────────────────────
             var ebitdaSection;
             if (ebitdaNegative) {
                 ebitdaSection =
                     '<div style="padding:12px 14px; background:#fce4ec; border-left:3px solid #c62828; border-radius:4px;">' +
-                    '<p style="margin:0; font-size:0.9em; color:#b71c1c;"><strong>' + data.name + ' also ran at an operating loss (' + ebitdaTooltip + ': ' + fmtBig(data.ebitda) + ')</strong> — burning roughly <strong>$' + Math.abs(Math.round(data.ebitda / data.emps)).toLocaleString() + ' per employee</strong> in operating costs. There is no operating surplus to distribute either.</p>' +
+                    '<p style="margin:0; font-size:0.9em; color:#b71c1c;"><strong>' + data.name + ' also ran at an operating loss (EBITDA: ' + fmtBig(data.ebitda) + ')</strong> — burning roughly <strong>$' + Math.abs(Math.round(data.ebitda / data.emps)).toLocaleString() + ' per employee</strong> in operating costs. There is no operating surplus to distribute either.</p>' +
                     '</div>';
             } else {
                 ebitdaSection =
-                    '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made' +
-                    ' (' + ebitdaTooltip + ')' +
-                    ', your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> — that is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>' +
-                    '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>';
+                    '<p style="margin-bottom:8px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made (EBITDA), your salary would be <strong>$' + ebitdaTotal.toLocaleString() + '</strong> — that is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>' +
+                    '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
+                    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:0.78em; color:#1565c0; list-style:none;">What is EBITDA?</summary>' +
+                    '<p style="margin:6px 0 0; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
+                    '<strong>EBITDA</strong> stands for <em>Earnings Before Interest, Taxes, Depreciation, and Amortization</em>. It strips out accounting adjustments and financing costs to show how much cash the core business generates — often a cleaner picture of ongoing performance than net income. For capital-intensive industries it can be 2–5× higher than net income. ' +
+                    '<a href="https://en.wikipedia.org/wiki/EBITDA" target="_blank" style="color:#1565c0;">Learn more →</a></p></details>';
             }
 
             // ── Summary line ────────────────────────────────────────────────
