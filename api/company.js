@@ -990,43 +990,33 @@ async function fetchEmployeeCountFromCMC(symbol, companyName) {
 }
 
 async function fetchFromFMP(symbol) {
-    const profileRes = await fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`);
+    // Fetch profile + income + cash-flow in parallel to minimize latency
+    const [profileRes, incomeRes, cfRes] = await Promise.all([
+        fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`),
+        fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
+        fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
+    ]);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
     const profileArr = await profileRes.json();
     if (!profileArr?.[0]?.companyName) throw new Error('FMP: no profile');
     const p = profileArr[0];
     const reportedCurrency = p.reportedCurrency || p.currency || 'USD';
-    let profit = null, ebitda = null;
-    try {
-        const incomeRes = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`);
-        if (incomeRes.ok) {
-            const incomeArr = await incomeRes.json();
-            const inc = incomeArr?.[0] || {};
-            profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
-            ebitda = (inc.ebitda != null && inc.ebitda !== 0) ? inc.ebitda : null;
-            // Derive EBITDA from operatingIncome + D&A when not directly available
-            if (ebitda === null && inc.operatingIncome && inc.depreciationAndAmortization) {
-                ebitda = inc.operatingIncome + Math.abs(inc.depreciationAndAmortization);
-            }
-        }
-    } catch(e) {}
-    // Try cash flow statement for D&A-derived EBITDA if income-statement missed it
-    if (ebitda === null) {
-        try {
-            const [incRes2, cfRes] = await Promise.all([
-                fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
-                fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
-            ]);
-            const incArr2 = incRes2.ok ? await incRes2.json() : [];
-            const cfArr   = cfRes.ok  ? await cfRes.json()  : [];
-            const inc2 = incArr2?.[0] || {};
-            const cf   = cfArr?.[0]  || {};
-            if (inc2.operatingIncome && cf.depreciationAndAmortization) {
-                ebitda = inc2.operatingIncome + Math.abs(cf.depreciationAndAmortization);
-            }
-        } catch(e) {}
+
+    const incomeArr = incomeRes.ok ? await incomeRes.json() : [];
+    const cfArr     = cfRes.ok     ? await cfRes.json()     : [];
+    const inc = incomeArr?.[0] || {};
+    const cf  = cfArr?.[0]    || {};
+
+    let profit = (inc.netIncome != null && inc.netIncome !== 0) ? inc.netIncome : null;
+    let ebitda = (inc.ebitda   != null && inc.ebitda   !== 0) ? inc.ebitda   : null;
+
+    // Derive EBITDA from operatingIncome + D&A (income statement first, then cash flow)
+    if (ebitda === null && inc.operatingIncome) {
+        const dna = inc.depreciationAndAmortization || cf.depreciationAndAmortization;
+        if (dna) ebitda = inc.operatingIncome + Math.abs(dna);
     }
-    // Try key-metrics for ebitda if still missing
+
+    // Key-metrics fallback for EBITDA via EV/EBITDA ratio
     if (ebitda === null) {
         try {
             const kmRes = await fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${FMP_KEY}`);
@@ -3576,8 +3566,10 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // FMP cash-flow / TTM fallback — fires when profit or ebitda are missing
-    if (merged.name && (merged.profit === null || merged.ebitda === null)) {
+    // FMP cash-flow / TTM fallback — fires when BOTH profit AND ebitda are missing
+    // (avoids extra HTTP calls for banks/REITs where EBITDA is structurally absent
+    //  but profit is known — smartMerge will estimate ebitda from profit * 1.3)
+    if (merged.name && merged.profit === null && merged.ebitda === null) {
         try {
             const yfResult = await fetchFromYahooFinance(symbol);
             // Merge: only fill in what's missing
