@@ -3882,6 +3882,58 @@ const TICKER_ALIASES = {
     'jack in the box': 'JACK',
     'dine brands global': 'DIN',
 
+    // Restaurants / Retail
+    'texas roadhouse': 'TXRH',
+    'five below': 'FIVE',
+    'lithia motors': 'LAD',
+    'genesco': 'GCO',
+    'cinemark': 'CNK',
+    'cinemark holdings': 'CNK',
+    "bj's wholesale club": 'BJ',
+    'bjs wholesale club': 'BJ',
+    "victoria's secret": 'VSCO',
+    'victoria secret': 'VSCO',
+    'tapestry': 'TPR',
+    'amedisys': 'AMED',
+
+    // Consumer / Industrial
+    'sherwin-williams': 'SHW',
+    'sherwin williams': 'SHW',
+    'colgate-palmolive': 'CL',
+    'colgate palmolive': 'CL',
+    'mattel': 'MAT',
+    'seagate technology': 'STX',
+    'seagate': 'STX',
+    'nucor': 'NUE',
+    'nucor corporation': 'NUE',
+    'cleveland-cliffs': 'CLF',
+    'cleveland cliffs': 'CLF',
+    'levi strauss': 'LEVI',
+    "levi strauss & co": 'LEVI',
+
+    // Finance / Banking
+    'charles schwab': 'SCHW',
+    'fifth third bancorp': 'FITB',
+    'fifth third bank': 'FITB',
+    'fifth third': 'FITB',
+    'paychex': 'PAYX',
+
+    // Tech / Transport
+    'mgm resorts': 'MGM',
+    'mgm resorts international': 'MGM',
+    'epam systems': 'EPAM',
+    'advance auto parts': 'AAP',
+    'travelers': 'TRV',
+    'travelers companies': 'TRV',
+    'the travelers companies': 'TRV',
+    'amc entertainment': 'AMC',
+    'doordash': 'DASH',
+    'union pacific': 'UNP',
+    'union pacific corporation': 'UNP',
+    'abercrombie & fitch': 'ANF',
+    'abercrombie and fitch': 'ANF',
+    'abercrombie': 'ANF',
+
     // Telecoms / Media
     'novocure': 'NVCR',
     'premier inc': 'PINC',
