@@ -475,11 +475,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // ── Summary line ────────────────────────────────────────────────
             var summaryLine;
             if (ebitdaNegative) {
-                summaryLine = '<p><strong>' + data.name + '</strong> burned roughly <strong>$' + Math.abs(accountingSurplus).toLocaleString() + ' per worker</strong> more than they made this period (based on EBITDA).</p>';
+                summaryLine = '<p><strong>' + data.name + '</strong> burned roughly <strong>$' + Math.abs(accountingSurplus).toLocaleString() + ' per worker</strong> more than they made this period.</p>';
             } else if (accountingSurplus >= 0) {
-                summaryLine = '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor (based on EBITDA).</p>';
+                summaryLine = '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor.</p>';
             } else {
-                summaryLine = '<p><strong>' + data.name + '</strong> did not profit from your labor this period (based on EBITDA).</p>';
+                summaryLine = '<p><strong>' + data.name + '</strong> did not profit from your labor this period.</p>';
             }
 
             var yourEarningsBlock = isHourly
@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             summaryLine +
                             '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
-                            '<a href="how-it-works.html#federal-tax" target="_blank" style="font-size:0.78em; color:#1565c0;">How is this calculated?</a>' +
+                            '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
                         '</div>' +
                     '</div>';
                 resultsArea.classList.remove('hidden');
