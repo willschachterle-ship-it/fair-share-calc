@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works — Your Fair Share</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container { max-width: 680px; }
+        .back-link { display: inline-block; margin-bottom: 24px; color: #0070f3; text-decoration: none; font-size: 0.9em; }
+        .back-link:hover { text-decoration: underline; }
+        .section {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            scroll-margin-top: 24px;
+        }
+        .section h2 { margin: 0 0 14px; color: #1a1a1a; font-size: 1.2em; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .section p { color: #444; line-height: 1.7; margin: 0 0 12px; }
+        .section p:last-child { margin-bottom: 0; }
+        .formula {
+            background: #f5f7f9;
+            border-left: 3px solid #0070f3;
+            border-radius: 4px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #333;
+            margin: 14px 0;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.9em; }
+        th { text-align: left; padding: 6px 10px; color: #666; font-weight: 600; border-bottom: 1px solid #eee; }
+        td { padding: 6px 10px; border-bottom: 1px solid #f5f5f5; }
+        .learn-more { font-size: 0.85em; color: #0070f3; }
+        .note { font-size: 0.85em; color: #777; background: #fafafa; border-radius: 6px; padding: 10px 14px; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>How It Works</h1>
+            <p>What the numbers mean and how they're calculated</p>
+        </header>
+
+        <a href="/" class="back-link">← Back to calculator</a>
+
+        <!-- NET INCOME -->
+        <div class="section" id="net-income">
+            <h2>Net Income — "What the company said they made"</h2>
+            <p><strong>Net income</strong> is a company's official profit after paying all expenses, interest, and taxes — the bottom line on their income statement. It's the number reported to shareholders and filed with the SEC.</p>
+            <p>Your "fair share" is calculated by dividing total net income evenly across all employees, then scaling to your hours worked:</p>
+            <div class="formula">
+                fair share = (net income ÷ total employees) × (your hours ÷ 2,080)
+            </div>
+            <p>That amount is added to your actual salary to show what you would have earned if the company's profit had been shared equally with every worker.</p>
+            <p><strong>Why net income can be misleading:</strong> It can be heavily influenced by one-time charges (like writing down an acquisition), tax strategies, or interest on debt. A company can report low net income while generating substantial cash from its core operations. That's why we also show EBITDA.</p>
+            <p class="learn-more"><a href="https://en.wikipedia.org/wiki/Net_income" target="_blank">Net income on Wikipedia →</a></p>
+        </div>
+
+        <!-- EBITDA -->
+        <div class="section" id="ebitda">
+            <h2>EBITDA — "What the company actually made"</h2>
+            <p><strong>EBITDA</strong> stands for <em>Earnings Before Interest, Taxes, Depreciation, and Amortization</em>. It strips out accounting adjustments and financing costs to show how much cash the core business generates — often the figure executives and investors focus on.</p>
+            <p>The same fair-share formula applies:</p>
+            <div class="formula">
+                fair share = (EBITDA ÷ total employees) × (your hours ÷ 2,080)
+            </div>
+            <p><strong>Why we show both:</strong> Net income is the legally reported profit figure — directly comparable to worker wages. EBITDA shows operational cash generation stripped of financing choices and non-cash accounting. For capital-intensive industries (airlines, utilities, manufacturing), EBITDA can be 2–5× higher than net income. Showing both lets you see the full range.</p>
+            <p><strong>When they diverge:</strong> A company with heavy debt will show low net income (due to interest payments) but healthy EBITDA. A company that just wrote off a failed acquisition will show a net loss but positive EBITDA. Neither number alone tells the whole story.</p>
+            <p class="learn-more"><a href="https://en.wikipedia.org/wiki/EBITDA" target="_blank">EBITDA on Wikipedia →</a></p>
+        </div>
+
+        <!-- FEDERAL TAX -->
+        <div class="section" id="federal-tax">
+            <h2>Federal Income Tax Estimate</h2>
+            <p>The federal tax figure is an estimate of what a <strong>single filer</strong> would owe in U.S. federal income tax on the displayed salary, using <strong>2024 tax brackets</strong> and the standard deduction.</p>
+            <div class="formula">
+                taxable income = salary − $14,600 (standard deduction)
+            </div>
+            <p>Tax is then calculated at progressive rates:</p>
+            <table>
+                <tr><th>Taxable income</th><th>Rate</th></tr>
+                <tr><td>$0 – $11,600</td><td>10%</td></tr>
+                <tr><td>$11,601 – $47,150</td><td>12%</td></tr>
+                <tr><td>$47,151 – $100,525</td><td>22%</td></tr>
+                <tr><td>$100,526 – $191,950</td><td>24%</td></tr>
+                <tr><td>$191,951 – $243,725</td><td>32%</td></tr>
+                <tr><td>$243,726 – $609,350</td><td>35%</td></tr>
+                <tr><td>Over $609,350</td><td>37%</td></tr>
+            </table>
+            <div class="note">
+                <strong>Not included:</strong> state and local taxes, FICA (Social Security + Medicare, ~7.65%), capital gains rates, filing status differences (married, head of household), tax credits, or deductions beyond the standard deduction. This is a rough illustration — not a tax filing tool.
+            </div>
+        </div>
+
+        <!-- DATA SOURCES -->
+        <div class="section" id="data-sources">
+            <h2>Where the data comes from</h2>
+            <p>Financial data is fetched live from multiple sources and cross-validated:</p>
+            <ul style="color:#444; line-height:1.9; padding-left:20px; margin:0 0 12px;">
+                <li><strong>SEC EDGAR</strong> — official XBRL filings (10-K annual reports)</li>
+                <li><strong>Financial Modeling Prep (FMP)</strong> — income and cash flow statements</li>
+                <li><strong>Finnhub</strong> — company profiles and financial metrics</li>
+                <li><strong>Wikipedia</strong> — employee counts from company infoboxes</li>
+                <li><strong>Alpha Vantage</strong> — supplemental financials for international companies</li>
+            </ul>
+            <p>When sources disagree, the tool cross-validates values and picks the most consistent result. Employee counts and financials reflect the most recently available annual report.</p>
+        </div>
+
+        <a href="/" class="back-link">← Back to calculator</a>
+    </div>
+</body>
+</html>

@@ -453,14 +453,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 netIncomeSection =
-                    '<p style="margin-bottom:6px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made <strong>' + fmtBig(effectiveProfit) + '</strong>,</p>' +
-                    '<p style="margin-bottom:4px;">your salary would be</p>' +
+                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made <strong>' + fmtBig(effectiveProfit) + '</strong>, your salary would be</p>' +
                     '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
-                    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:0.78em; color:#1565c0; list-style:none;">What is net income?</summary>' +
-                    '<p style="margin:6px 0 0; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
-                    '<strong>Net income</strong> is what a company officially "made" after paying all expenses, interest, and taxes — the bottom line on their income statement. It can be heavily influenced by one-time charges, tax strategies, or debt structure. ' +
-                    '<a href="https://en.wikipedia.org/wiki/Net_income" target="_blank" style="color:#1565c0;">Learn more →</a></p></details>' +
-                    '<p style="margin-top:8px;">That is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>';
+                    '<p style="margin-top:6px; margin-bottom:2px;">That is <strong>' + fmtSurplus(distributedSurplus) + '</strong> than what you made.</p>' +
+                    '<a href="how-it-works.html#net-income" target="_blank" style="font-size:0.78em; color:#1565c0;">How was this calculated?</a>';
             }
 
             // ── EBITDA section ──────────────────────────────────────────────
@@ -472,14 +468,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 ebitdaSection =
-                    '<p style="margin-bottom:6px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made <strong>' + fmtBig(data.ebitda) + '</strong>,</p>' +
-                    '<p style="margin-bottom:4px;">your salary would be</p>' +
+                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made <strong>' + fmtBig(data.ebitda) + '</strong>, your salary would be</p>' +
                     '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
-                    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:0.78em; color:#1565c0; list-style:none;">What is EBITDA?</summary>' +
-                    '<p style="margin:6px 0 0; padding:10px 12px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
-                    '<strong>EBITDA</strong> stands for <em>Earnings Before Interest, Taxes, Depreciation, and Amortization</em>. It strips out accounting adjustments and financing costs to show how much cash the core business generates — often a cleaner picture of ongoing performance than net income. For capital-intensive industries it can be 2–5× higher than net income. ' +
-                    '<a href="https://en.wikipedia.org/wiki/EBITDA" target="_blank" style="color:#1565c0;">Learn more →</a></p></details>' +
-                    '<p style="margin-top:8px;">That is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>';
+                    '<p style="margin-top:6px; margin-bottom:2px;">That is <strong>' + fmtSurplus(accountingSurplus) + '</strong> than what you made.</p>' +
+                    '<a href="how-it-works.html#ebitda" target="_blank" style="font-size:0.78em; color:#1565c0;">How was this calculated?</a>';
             }
 
             // ── Summary line ────────────────────────────────────────────────
@@ -519,25 +511,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             summaryLine +
-                            '<p style="margin:0 0 4px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
-                            '<details style="margin-top:2px;">' +
-                                '<summary style="cursor:pointer; list-style:none; font-size:0.78em; color:#1565c0; text-decoration:underline; text-underline-offset:2px;">How is this calculated?</summary>' +
-                                '<div style="margin-top:10px; padding:12px 14px; background:#f5f5f5; border-radius:6px; font-size:0.82em; color:#444; line-height:1.6;">' +
-                                    '<p style="margin:0 0 6px;"><strong>2024 U.S. federal income tax estimate</strong> — single filer, standard deduction ($14,600) applied.</p>' +
-                                    '<p style="margin:0 0 6px;">Tax brackets used:</p>' +
-                                    '<table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.95em;">' +
-                                        '<tr style="color:#666;"><th style="text-align:left; padding:2px 6px;">Income</th><th style="text-align:left; padding:2px 6px;">Rate</th></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$0 – $11,600</td><td style="padding:2px 6px;">10%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$11,601 – $47,150</td><td style="padding:2px 6px;">12%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$47,151 – $100,525</td><td style="padding:2px 6px;">22%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$100,526 – $191,950</td><td style="padding:2px 6px;">24%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$191,951 – $243,725</td><td style="padding:2px 6px;">32%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">$243,726 – $609,350</td><td style="padding:2px 6px;">35%</td></tr>' +
-                                        '<tr><td style="padding:2px 6px;">Over $609,350</td><td style="padding:2px 6px;">37%</td></tr>' +
-                                    '</table>' +
-                                    '<p style="margin:0; color:#777;"><strong>Not included:</strong> state/local taxes, FICA (Social Security + Medicare ~7.65%), capital gains rates, filing status (married, head of household), or any tax credits or deductions beyond the standard deduction. This is a rough illustration — not a tax filing tool.</p>' +
-                                '</div>' +
-                            '</details>' +
+                            '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
+                            '<a href="how-it-works.html#federal-tax" target="_blank" style="font-size:0.78em; color:#1565c0;">How is this calculated?</a>' +
                         '</div>' +
                     '</div>';
                 resultsArea.classList.remove('hidden');
