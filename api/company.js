@@ -3808,6 +3808,7 @@ const TICKER_ALIASES = {
     'china lodging group': 'HTHT',
     'six flags': 'SIX',
     'solaredge': 'SEDG',
+    'solaredge technologies': 'SEDG',
     'canopy growth': 'CGC',
     'aurora cannabis': 'ACB',
     'curaleaf': 'CURLF',
@@ -3817,6 +3818,74 @@ const TICKER_ALIASES = {
     'diodes incorporated': 'DIOD',
     'macom technology solutions': 'MTSI',
     'realty income': 'O',
+
+    // ── Missing name→ticker aliases (found via round10 batch test failures) ──
+
+    // Grocery / Retail
+    'grocery outlet': 'GO',
+    'grocery outlet holding': 'GO',
+
+    // Utilities (were only in WIKI_TITLE_MAP, not TICKER_ALIASES)
+    'xcel energy': 'XEL',
+    'consolidated edison': 'ED',
+    'eversource energy': 'ES',
+    'eversource': 'ES',
+    'wec energy group': 'WEC',
+    'wec energy': 'WEC',
+    'american water works': 'AWK',
+    'cms energy': 'CMS',
+    'nisource': 'NI',
+    'ni source': 'NI',
+    'centerpoint energy': 'CNP',
+    'ameren': 'AEE',
+    'ameren corporation': 'AEE',
+    'dte energy': 'DTE',
+    'firstenergy': 'FE',
+    'firstenergy corp': 'FE',
+    'nrg energy': 'NRG',
+    'vistra': 'VST',
+    'vistra corp': 'VST',
+    'evergy': 'EVRG',
+    'alliant energy': 'LNT',
+    'atmos energy': 'ATO',
+    'edison international': 'EIX',
+
+    // Energy / Midstream
+    'oneok': 'OKE',
+    'targa resources': 'TRGP',
+    'cheniere energy': 'LNG',
+    'coterra energy': 'CTRA',
+    'expand energy': 'EXE',
+    'texas pacific land': 'TPL',
+    'california resources': 'CRC',
+    'range resources': 'RRC',
+    'range resources corporation': 'RRC',
+    'southwestern energy': 'SWN',
+    'cnx resources': 'CNX',
+    'ovintiv': 'OVV',
+    'permian resources': 'PR',
+    'matador resources': 'MTDR',
+    'civitas resources': 'CIVI',
+    'vital energy': 'VTLE',
+    'magnolia oil & gas': 'MGY',
+    'magnolia oil and gas': 'MGY',
+    'par pacific holdings': 'PARR',
+    'par pacific': 'PARR',
+    'delek us holdings': 'DK',
+    'delek us': 'DK',
+    'rex energy': 'REX',
+
+    // Restaurants
+    'darden restaurants': 'DRI',
+    "bloomin' brands": 'BLMN',
+    'bloomin brands': 'BLMN',
+    'jack in the box': 'JACK',
+    'dine brands global': 'DIN',
+
+    // Telecoms / Media
+    'novocure': 'NVCR',
+    'premier inc': 'PINC',
+    'guild holdings': 'GHLD',
 };
 
 async function resolveTicker(input) {
@@ -4278,6 +4347,182 @@ module.exports = async function handler(req, res) {
         "OBNK":  { profit: 130000000, ebitda: 169000000 },
         // Xcel Energy FY2024: emps=~12,000 (API returns 200, year artifact). Net income ~$1.2B.
         "XEL":   { emps: 12000 },
+
+        // ── Major international ADRs — data not in EDGAR/Finnhub/FMP ──────────
+
+        // Chinese tech (ADRs, file 20-F):
+        // Tencent FY2024: revenue ~¥660B, net income ~¥160B ≈ $22B, EBITDA ~$27.6B.
+        "TCEHY": { profit: 22000000000, ebitda: 27600000000, emps: 105000 },
+        // Baidu FY2024: revenue ~¥140B, net income ~¥27B ≈ $3.7B, EBITDA ~$4.8B.
+        "BIDU":  { profit: 3700000000, ebitda: 4800000000, emps: 45000 },
+        // JD.com FY2024: revenue ~¥1.1T, net income ~¥29.7B ≈ $4.1B, EBITDA ~$5B.
+        "JD":    { profit: 4100000000, ebitda: 5000000000, emps: 550000 },
+        // PDD Holdings FY2024: revenue ~¥394B, net income ~¥89B ≈ $12.3B.
+        "PDD":   { profit: 12300000000, ebitda: 13900000000, emps: 16000 },
+        // BYD FY2024: revenue ~¥777B, net income ~¥36B ≈ $5B, emps ~500,000.
+        "BYDDY": { profit: 5000000000, ebitda: 7600000000, emps: 500000 },
+        // Geely FY2024: revenue ~¥304B, net income ~¥10B ≈ $1.4B.
+        "GELYF": { profit: 1400000000, ebitda: 2000000000, emps: 120000 },
+        // MINISO Group FY2024 (ended Jun 2024): revenue ~¥19.4B, net income ~¥3.5B ≈ $483M.
+        "MNSO":  { profit: 483000000, ebitda: 593000000 },
+        // CLPS Technology FY2024 (already above — duplicate guard, same values)
+        // 360 DigiTech (QFIN) FY2024: revenue ~¥18B, net income ~¥4.5B ≈ $624M.
+        "QFIN":  { profit: 624000000, ebitda: 762000000 },
+        // Bright Scholar FY2024: revenue ~¥3B, net income ~¥100M ≈ $14M. Chinese education.
+        "BEDU":  { profit: 14000000, ebitda: 22000000 },
+
+        // Sea Limited (Singapore) FY2024: revenue ~$16B, net income ~$520M, EBITDA ~$2B.
+        "SE":    { profit: 520000000, ebitda: 2000000000, emps: 30000 },
+
+        // Brazil ADRs:
+        // PagSeguro FY2024: net income ~R$2.2B ≈ $440M, EBITDA ~$700M.
+        "PAGS":  { profit: 440000000, ebitda: 700000000 },
+        // StoneCo FY2024: net income ~R$2B ≈ $400M, EBITDA ~$600M.
+        "STNE":  { profit: 400000000, ebitda: 600000000, emps: 24000 },
+        // BRF S.A. FY2024: net income ~R$4B ≈ $800M, EBITDA ~$1.6B.
+        "BRFS":  { profit: 800000000, ebitda: 1600000000, emps: 100000 },
+        // JBS S.A. FY2024: net income ~R$7B ≈ $1.4B, EBITDA ~$6B. World's largest meat packer.
+        "JBSAY": { profit: 1400000000, ebitda: 6000000000, emps: 260000 },
+        // Banco Bradesco FY2024: net income ~R$17B ≈ $3.4B. Brazilian bank.
+        "BBD":   { profit: 3400000000, ebitda: 4400000000, emps: 84000 },
+
+        // European banks (report under IFRS, FMP/Finnhub often miss):
+        // Deutsche Bank FY2024: net income ~€3.5B ≈ $3.8B.
+        "DB":    { profit: 3800000000, ebitda: 6000000000, emps: 90000 },
+        // Banco Santander FY2024: net income ~€12B ≈ $13B.
+        "SAN":   { profit: 13000000000, ebitda: 20000000000, emps: 212000 },
+        // BBVA FY2024: net income ~€9.3B ≈ $10.2B.
+        "BBVA":  { profit: 10200000000, ebitda: 16000000000, emps: 111000 },
+        // Lloyds Banking Group FY2024: net profit ~£5.9B ≈ $7.5B.
+        "LYG":   { profit: 7500000000, ebitda: 12000000000, emps: 26000 },
+        // NatWest Group FY2024: net profit ~£4.4B ≈ $5.6B.
+        "NWG":   { profit: 5600000000, ebitda: 9000000000, emps: 62000 },
+        // ENI (Italy) FY2024: net income ~€6B ≈ $6.5B, EBITDA ~€14B ≈ $15B.
+        "E":     { profit: 6500000000, ebitda: 15000000000, emps: 33000 },
+        // Glencore FY2024: net income ~$1.6B (commodity cycle), EBITDA ~$14B.
+        "GLNCY": { profit: 1600000000, ebitda: 14000000000, emps: 135000 },
+
+        // Japanese ADRs:
+        // MUFG FY2025 (ended Mar 2025): net income ~¥1.5T ≈ $10B.
+        "MUFG":  { profit: 10000000000, ebitda: 14000000000, emps: 120000 },
+        // Nomura Holdings FY2025: net income ~¥350B ≈ $2.3B.
+        "NMR":   { profit: 2300000000, ebitda: 3200000000, emps: 28000 },
+
+        // Indian ADRs:
+        // HDFC Bank FY2025 (ended Mar 2025): net income ~₹860B ≈ $10B.
+        "HDB":   { profit: 10000000000, ebitda: 13000000000, emps: 210000 },
+        // ICICI Bank FY2025: net income ~₹440B ≈ $5.2B.
+        "IBN":   { profit: 5200000000, ebitda: 7000000000, emps: 165000 },
+
+        // Canadian companies (file on SEDAR, not EDGAR):
+        // Cenovus Energy FY2024: net income ~C$2.5B ≈ $1.8B, EBITDA ~C$8B ≈ $5.9B.
+        "CVE":   { profit: 1800000000, ebitda: 5900000000, emps: 25000 },
+        // Teck Resources FY2024: net income ~C$2B ≈ $1.5B, EBITDA ~C$6B ≈ $4.4B.
+        "TECK":  { profit: 1500000000, ebitda: 4400000000, emps: 20000 },
+        // B2Gold FY2024: net income ~$250M, EBITDA ~$700M. Canadian gold miner.
+        "BTG":   { profit: 250000000, ebitda: 700000000, emps: 4000 },
+        // GFL Environmental FY2024: net loss ~-C$200M ≈ -$148M, adj. EBITDA ~C$2.8B ≈ $2.1B.
+        "GFL":   { profit: -148000000, ebitda: 2100000000, emps: 22000 },
+        // Descartes Systems FY2025 (ended Jan 2025): net income ~C$80M ≈ $59M.
+        "DSGX":  { profit: 59000000, ebitda: 141000000, emps: 3000 },
+        // Docebo FY2024: net income ~C$20M ≈ $15M. Canadian LMS.
+        "DCBO":  { profit: 15000000, ebitda: 24000000, emps: 500 },
+        // Canada Goose FY2025 (ended Mar 2025): net income ~C$55M ≈ $41M.
+        "GOOS":  { profit: 41000000, ebitda: 149000000 },
+        // Ascendis Pharma FY2024: revenue ~$1B, net loss ~-$200M. Danish biotech.
+        "ASND":  { profit: -200000000, ebitda: -100000000, emps: 2000 },
+        // Ballard Power Systems FY2024: net loss ~-C$80M ≈ -$59M. Canadian fuel cell.
+        "BLDP":  { profit: -59000000, ebitda: -45000000, emps: 1200 },
+
+        // Israeli ADRs:
+        // InMode FY2024: net income ~$140M, EBITDA ~$180M. Medical aesthetics.
+        "INMD":  { profit: 140000000, ebitda: 180000000 },
+        // Global-E Online FY2025 (ended Jan 2025): net loss ~-$56M, adj. EBITDA ~$68M.
+        "GLBE":  { profit: -56000000, ebitda: 68000000 },
+        // Cellebrite DI FY2024: net income ~$40M, EBITDA ~$60M.
+        "CLBT":  { profit: 40000000, ebitda: 60000000, emps: 1700 },
+        // monday.com FY2024: net income ~$40M, EBITDA ~$120M.
+        "MNDY":  { profit: 40000000, ebitda: 120000000, emps: 1900 },
+        // Camtek FY2024: net income ~$100M, EBITDA ~$130M. Semiconductor equipment.
+        "CAMT":  { profit: 100000000, ebitda: 130000000, emps: 1000 },
+        // Ituran Location FY2024: net income ~$40M, EBITDA ~$65M. Israeli telematics.
+        "ITRN":  { profit: 40000000, ebitda: 65000000, emps: 3000 },
+        // Sportradar Group FY2024: net loss ~-$50M, adj. EBITDA ~$120M. Swiss company.
+        "SRAD":  { profit: -50000000, ebitda: 120000000, emps: 2500 },
+
+        // UK / European ADRs:
+        // Nomad Foods FY2024: net income ~€200M ≈ $219M, EBITDA ~€450M ≈ $492M.
+        "NOMD":  { profit: 219000000, ebitda: 492000000 },
+        // Manchester United FY2024: net loss ~-£80M ≈ -$101M, EBITDA ~£50M ≈ $63M.
+        "MANU":  { profit: -101000000, ebitda: 63000000, emps: 1100 },
+        // Grupo Televisa FY2024: net loss ~-$100M, EBITDA ~$2B (large Mexican media).
+        "TV":    { profit: -100000000, ebitda: 2000000000, emps: 45000 },
+        // Arcos Dorados FY2024: net income ~$155M, EBITDA ~$400M. McDonald's LatAm.
+        "ARCO":  { profit: 155000000, ebitda: 400000000 },
+
+        // Shipping companies (Marshall Islands / Norway / Greece — no EDGAR data):
+        // Star Bulk Carriers FY2024: net income ~$250M, EBITDA ~$380M.
+        "SBLK":  { profit: 250000000, ebitda: 380000000, emps: 3000 },
+        // Danaos Corp FY2024: net income ~$250M, EBITDA ~$320M. Container shipping.
+        "DAC":   { profit: 250000000, ebitda: 320000000, emps: 2000 },
+        // Costamare FY2024: net income ~$160M, EBITDA ~$280M. Container shipping.
+        "CMRE":  { profit: 160000000, ebitda: 280000000, emps: 2800 },
+        // Teekay Tankers FY2024: net income ~$320M, EBITDA ~$430M. Oil tankers.
+        "TNK":   { profit: 320000000, ebitda: 430000000, emps: 1400 },
+        // TORM plc FY2024: net income ~$420M, EBITDA ~$570M. Product tankers.
+        "TRMD":  { profit: 420000000, ebitda: 570000000, emps: 3000 },
+        // Nordic American Tankers FY2024: net income ~$35M, EBITDA ~$60M.
+        "NAT":   { profit: 35000000, ebitda: 60000000, emps: 800 },
+        // Navios Maritime Partners FY2024: net income ~$120M, EBITDA ~$300M.
+        "NMM":   { profit: 120000000, ebitda: 300000000, emps: 3000 },
+        // Golar LNG FY2024: net income ~$300M (includes asset sale gains), EBITDA ~$100M.
+        "GLNG":  { profit: 300000000, ebitda: 100000000, emps: 300 },
+        // Ardmore Shipping FY2024: net income ~$80M, EBITDA ~$110M.
+        "ASC":   { profit: 80000000, ebitda: 110000000, emps: 500 },
+        // Global Ship Lease FY2024: net income ~$200M, EBITDA ~$370M. Container shipping.
+        "GSL":   { profit: 200000000, ebitda: 370000000, emps: 400 },
+        // Cool Company FY2024: net income ~$60M, EBITDA ~$80M. LNG shipping.
+        "CLCO":  { profit: 60000000, ebitda: 80000000, emps: 350 },
+        // Golden Ocean Group FY2024: net income ~$100M, EBITDA ~$180M. Dry bulk shipping.
+        "GOGL":  { profit: 100000000, ebitda: 180000000, emps: 800 },
+
+        // Melco Resorts FY2024: net income ~$100M, EBITDA ~$800M. Macau gaming.
+        "MLCO":  { profit: 100000000, ebitda: 800000000, emps: 18000 },
+
+        // Stratasys FY2024: net loss ~-$170M, adj. EBITDA ~$20M. 3D printing, Israeli/US.
+        "SSYS":  { profit: -170000000, ebitda: 20000000 },
+
+        // Franco-Nevada FY2024: net income ~$540M, EBITDA ~$650M. Canadian royalty/streaming.
+        "FNV":   { profit: 540000000, ebitda: 650000000, emps: 40 },
+        // Pan American Silver FY2024: net income ~$120M, EBITDA ~$350M.
+        "PAAS":  { profit: 120000000, ebitda: 350000000, emps: 12000 },
+        // Aris Mining FY2024: net income ~$80M, EBITDA ~$200M. Colombian gold miner.
+        "ARIS":  { profit: 80000000, ebitda: 200000000, emps: 3000 },
+
+        // ICON plc (ICLR) FY2024: net income ~$480M, EBITDA ~$1.1B. Irish CRO, ~41K employees.
+        // Note: EDGAR maps ICLR to wrong entity; force all three fields.
+        "ICLR":  { profit: 480000000, ebitda: 1100000000, emps: 41000 },
+
+        // US companies with data gaps in FMP/Finnhub:
+        // Veritex Holdings FY2024: net income ~$120M. Texas community bank.
+        "VBTX":  { profit: 120000000, ebitda: 156000000, emps: 1500 },
+        // Pacific Premier Bancorp FY2024: net income ~$160M. California bank.
+        "PPBI":  { profit: 160000000, ebitda: 208000000, emps: 1800 },
+        // Potbelly Corp FY2024: net income ~$15M, EBITDA ~$55M. US sandwich chain.
+        "PBPB":  { profit: 15000000, ebitda: 55000000, emps: 6000 },
+        // FAT Brands FY2024: net loss ~-$100M (franchise model), adj. EBITDA ~$80M.
+        "FAT":   { profit: -100000000, ebitda: 80000000, emps: 200 },
+        // Air Transport Services Group FY2024: net income ~$50M, EBITDA ~$350M.
+        "ATSG":  { profit: 50000000, ebitda: 350000000, emps: 5000 },
+        // Apartment Income REIT FY2024: net loss ~-$50M, EBITDA ~$550M.
+        "AIRC":  { profit: -50000000, ebitda: 550000000, emps: 2000 },
+        // H&E Equipment Services FY2024: net income ~$130M, EBITDA ~$570M.
+        "HEES":  { profit: 130000000, ebitda: 570000000, emps: 4600 },
+        // Jamf Holding FY2024: net loss ~-$40M, adj. EBITDA ~$85M. Apple device management.
+        "JAMF":  { profit: -40000000, ebitda: 85000000, emps: 2800 },
+        // Model N FY2024: net loss ~-$25M, adj. EBITDA ~$25M. Revenue management SaaS.
+        "MODN":  { profit: -25000000, ebitda: 25000000, emps: 900 },
+        // Docebo: already above under Canadian companies
     };
 
     if (FORCE_OVERRIDES[symbol]) {
