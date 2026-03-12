@@ -1,6 +1,6 @@
-const FINNHUB_KEY = 'd6j3rvhr01ql467i5e0gd6j3rvhr01ql467i5e10';
-const FMP_KEY = '3gPWbjHBHWaeswUkIvjGjN6Ei3SxifLL';
-const AV_KEY = '17JNK5S9J44QAXTV';
+const FINNHUB_KEY = process.env.FINNHUB_KEY;
+const FMP_KEY = process.env.FMP_KEY;
+const AV_KEY = process.env.AV_KEY;
 
 const SERVER_FALLBACK_DB = {
   "CAE":{"name":"CAE Inc.","emps":13000,"profit":288600000,"ebitda":980800000,"logo":"https://logo.clearbit.com/cae.com"},
@@ -4081,6 +4081,10 @@ function smartMerge(results) {
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
+
+    if (!FINNHUB_KEY || !FMP_KEY || !AV_KEY) {
+        return res.status(503).json({ error: 'API keys not configured. Set FINNHUB_KEY, FMP_KEY, and AV_KEY environment variables.' });
+    }
 
     const { symbol: rawSymbol, resolve } = req.query;
     if (!rawSymbol) return res.status(400).json({ error: 'Missing symbol parameter' });
