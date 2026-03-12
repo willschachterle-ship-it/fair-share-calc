@@ -992,9 +992,9 @@ async function fetchEmployeeCountFromCMC(symbol, companyName) {
 async function fetchFromFMP(symbol) {
     // Fetch profile + income + cash-flow in parallel to minimize latency
     const [profileRes, incomeRes, cfRes] = await Promise.all([
-        fetch(`https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_KEY}`),
-        fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
-        fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
+        fetch(`https://financialmodelingprep.com/stable/profile?symbol=${symbol}&apikey=${FMP_KEY}`),
+        fetch(`https://financialmodelingprep.com/stable/income-statement?symbol=${symbol}&limit=1&period=annual&apikey=${FMP_KEY}`),
+        fetch(`https://financialmodelingprep.com/stable/cash-flow-statement?symbol=${symbol}&limit=1&period=annual&apikey=${FMP_KEY}`)
     ]);
     if (!profileRes.ok) throw new Error(`FMP profile HTTP ${profileRes.status}`);
     const profileArr = await profileRes.json();
@@ -1019,7 +1019,7 @@ async function fetchFromFMP(symbol) {
     // Key-metrics fallback for EBITDA via EV/EBITDA ratio
     if (ebitda === null) {
         try {
-            const kmRes = await fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${symbol}?limit=1&apikey=${FMP_KEY}`);
+            const kmRes = await fetch(`https://financialmodelingprep.com/stable/key-metrics?symbol=${symbol}&limit=1&apikey=${FMP_KEY}`);
             if (kmRes.ok) {
                 const kmArr = await kmRes.json();
                 const km = kmArr?.[0] || {};
@@ -1114,8 +1114,8 @@ async function fetchFromYahooFinance(symbol) {
     // Attempt 1: FMP annual income + cash-flow statements
     try {
         const [incRes, cfRes] = await Promise.all([
-            fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`),
-            fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=1&period=annual&apikey=${FMP_KEY}`)
+            fetch(`https://financialmodelingprep.com/stable/income-statement?symbol=${symbol}&limit=1&period=annual&apikey=${FMP_KEY}`),
+            fetch(`https://financialmodelingprep.com/stable/cash-flow-statement?symbol=${symbol}&limit=1&period=annual&apikey=${FMP_KEY}`)
         ]);
         const incArr = incRes.ok ? await incRes.json() : [];
         const cfArr  = cfRes.ok  ? await cfRes.json()  : [];
@@ -1145,8 +1145,8 @@ async function fetchFromYahooFinance(symbol) {
     // Attempt 2: TTM from quarterly data (covers companies without a full annual filing in FMP)
     try {
         const [incQRes, cfQRes] = await Promise.all([
-            fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?limit=4&period=quarter&apikey=${FMP_KEY}`),
-            fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${symbol}?limit=4&period=quarter&apikey=${FMP_KEY}`)
+            fetch(`https://financialmodelingprep.com/stable/income-statement?symbol=${symbol}&limit=4&period=quarter&apikey=${FMP_KEY}`),
+            fetch(`https://financialmodelingprep.com/stable/cash-flow-statement?symbol=${symbol}&limit=4&period=quarter&apikey=${FMP_KEY}`)
         ]);
         const incQArr = incQRes.ok ? await incQRes.json() : [];
         const cfQArr  = cfQRes.ok  ? await cfQRes.json()  : [];
@@ -3843,10 +3843,11 @@ async function resolveTicker(input) {
     // FMP search fallback (more reliable when Finnhub is rate-limited)
     if (!symbol) {
         try {
-            const res = await fetch(`https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(input)}&limit=5&apikey=${FMP_KEY}`);
+            const res = await fetch(`https://financialmodelingprep.com/stable/search-name?query=${encodeURIComponent(input)}&limit=5&apikey=${FMP_KEY}`);
             if (res.ok) {
                 const results = await res.json();
-                const match = results.find(r => r.symbol && !r.symbol.includes('.') && (r.exchangeShortName === 'NASDAQ' || r.exchangeShortName === 'NYSE' || r.exchangeShortName === 'NYSE ARCA'))
+                const isMainExchange = r => r.exchange === 'NASDAQ' || r.exchange === 'NYSE' || r.exchange === 'NYSE ARCA' || r.exchangeShortName === 'NASDAQ' || r.exchangeShortName === 'NYSE';
+                const match = results.find(r => r.symbol && !r.symbol.includes('-') && isMainExchange(r))
                            || results.find(r => r.symbol && !r.symbol.includes('.'))
                            || results[0];
                 if (match) symbol = match.symbol;
