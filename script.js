@@ -524,9 +524,12 @@ document.addEventListener('DOMContentLoaded', function() {
         var dropdown = document.getElementById('ac-dropdown');
         if (!companyInput || !dropdown) return;
 
-        // Build suggestion list from FALLBACK_DB (loaded via fallback.js)
+        // Build suggestion list: prefer AC_COMPANIES (viral500 + FALLBACK_DB, pre-sorted)
+        // Fall back to FALLBACK_DB alone if ac_list.js didn't load
         var suggestions = [];
-        if (typeof FALLBACK_DB !== 'undefined') {
+        if (typeof AC_COMPANIES !== 'undefined') {
+            suggestions = AC_COMPANIES.map(function(c) { return { name: c.n, ticker: c.t }; });
+        } else if (typeof FALLBACK_DB !== 'undefined') {
             Object.keys(FALLBACK_DB).forEach(function(ticker) {
                 var e = FALLBACK_DB[ticker];
                 if (e && e.name) suggestions.push({ name: e.name, ticker: ticker });
