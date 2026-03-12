@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var parts = [];
                 if (s.emps)   parts.push('employees: ' + (SRC_LABELS[s.emps]   || s.emps));
                 if (s.profit) parts.push('profit: '    + (SRC_LABELS[s.profit] || s.profit));
-                if (s.ebitda && s.ebitda !== s.profit) parts.push('EBITDA: ' + (SRC_LABELS[s.ebitda] || s.ebitda));
+                if (s.ebitda) parts.push('EBITDA: '    + (SRC_LABELS[s.ebitda] || s.ebitda));
                 if (parts.length) sourcesLine = '<p style="margin:8px 0 0; font-size:0.72em; color:#999;">Sources: ' + parts.join(' · ') + '</p>';
             }
 
