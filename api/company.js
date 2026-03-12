@@ -3422,9 +3422,8 @@ const TICKER_ALIASES = {
     'clps technology': 'CLPS',
     'allot communications': 'ALLT',
     'allot': 'ALLT',
-    'ceridian hcm': 'DAY',
-    'ceridian': 'DAY',
-    'dayforce': 'DAY',
+    'ceridian hcm': 'CDAY',
+    'dayforce': 'CDAY',
     '21vianet group': 'VNET',
     '21vianet': 'VNET',
     'nice systems': 'NICE',
@@ -4255,6 +4254,30 @@ module.exports = async function handler(req, res) {
         // EBITDA (operating-basis) ~$2.4B. Live API frequently returns null/stale data
         // due to the large write-down confusing FMP/Finnhub field mapping.
         "PARA":  { profit: -5978000000, ebitda: 2400000000 },
+
+        // ── International ADRs (file 20-F, not 10-K) — FMP/Finnhub often miss these ──
+        // CyberArk FY2024: net loss -$272M, adj. EBITDA ~$220M. Israeli 20-F filer.
+        "CYBR":  { profit: -272000000, ebitda: 220000000 },
+        // Check Point Software FY2024: net income $2.15B, EBITDA ~$2.6B. Israeli 20-F.
+        "CHKP":  { profit: 2150000000, ebitda: 2600000000 },
+        // NICE Systems FY2024: net income ~$570M, EBITDA ~$790M. Israeli 20-F.
+        "NICE":  { profit: 570000000, ebitda: 790000000 },
+        // Nintendo FY2025 (ended Mar 2025): net income ~¥478B ≈ $3.2B USD. Japanese ADR.
+        "NTDOY": { profit: 3200000000, ebitda: 3700000000 },
+        // Endava FY2024 (ended Jul 2024): net income ~£39M ≈ $50M. UK company, 20-F.
+        "DAVA":  { profit: 50000000, ebitda: 83000000 },
+        // Aspen Technology FY2024 (ended Jun 2024): net income ~$325M, EBITDA ~$550M.
+        "AZPN":  { profit: 325000000, ebitda: 550000000 },
+        // 21Vianet Group FY2024: net loss ~-$40M, EBITDA ~$280M. Chinese data center ADR.
+        "VNET":  { profit: -40000000, ebitda: 280000000 },
+        // CLPS Technology FY2024: net income ~$8M, EBITDA ~$15M. Chinese IT services ADR.
+        "CLPS":  { profit: 8000000, ebitda: 15000000 },
+        // Allot Communications FY2024: net loss ~-$20M, EBITDA ~-$5M. Israeli ADR.
+        "ALLT":  { profit: -20000000, ebitda: -5000000 },
+        // Origin Bancorp FY2024: net income ~$130M (community bank, no standard EBITDA).
+        "OBNK":  { profit: 130000000, ebitda: 169000000 },
+        // Xcel Energy FY2024: emps=~12,000 (API returns 200, year artifact). Net income ~$1.2B.
+        "XEL":   { emps: 12000 },
     };
 
     if (FORCE_OVERRIDES[symbol]) {
