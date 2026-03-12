@@ -482,6 +482,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 summaryLine = '<p><strong>' + data.name + '</strong> did not profit from your labor this period.</p>';
             }
 
+            // ── Data sources line ───────────────────────────────────────────
+            var sourcesLine = '';
+            if (data._sources) {
+                var SRC_LABELS = {
+                    edgar: 'SEC EDGAR', fmp: 'Financial Modeling Prep',
+                    finnhub: 'Finnhub', alphavantage: 'Alpha Vantage',
+                    wikipedia: 'Wikipedia', '10k': 'SEC 10-K',
+                    stockanalysis: 'Stock Analysis', cmc: 'CompaniesMarketCap',
+                    yahoo: 'Yahoo Finance', fallback: 'Cached data',
+                    verified: 'Verified', estimated: 'Estimated', yahoo: 'Yahoo Finance'
+                };
+                var s = data._sources;
+                var parts = [];
+                if (s.emps)   parts.push('employees: ' + (SRC_LABELS[s.emps]   || s.emps));
+                if (s.profit) parts.push('profit: '    + (SRC_LABELS[s.profit] || s.profit));
+                if (s.ebitda && s.ebitda !== s.profit) parts.push('EBITDA: ' + (SRC_LABELS[s.ebitda] || s.ebitda));
+                if (parts.length) sourcesLine = '<p style="margin:8px 0 0; font-size:0.72em; color:#999;">Sources: ' + parts.join(' · ') + '</p>';
+            }
+
             var yourEarningsBlock = isHourly
                 ? '<div style="margin-bottom:20px; padding:15px; background:#f0f4ff; border-radius:8px;">' +
                     '<p style="margin:0 0 4px 0; font-size:0.85em; color:#555;">Your annual earnings</p>' +
@@ -511,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             summaryLine +
                             '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
                             '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
+                            sourcesLine +
                         '</div>' +
                     '</div>' +
                     '<div style="margin-top:16px; padding:18px 20px; background:#f0f7f0; border:1px solid #c8e6c9; border-radius:12px; font-size:0.85em; color:#2e7d32; line-height:1.6;">' +

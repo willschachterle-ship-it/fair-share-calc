@@ -3999,36 +3999,34 @@ function rejectOutliers(values) {
 
 function bestFinancial(values) {
     // values is array of {val, source} objects
-    // Filter out exact zeros — a profit/ebitda of $0 is almost always a failed
-    // XBRL lookup, not real data. A company truly reporting $0 is astronomically
-    // rare and would appear in other sources too.
+    // Returns {val, source} — null val if no data found
     const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v) && v !== 0);
-    if (!nums.length) return null;
+    if (!nums.length) return { val: null, source: null };
     const clean = rejectOutliers(nums);
-    if (!clean.length) return Math.round(median(nums));
+    if (!clean.length) return { val: Math.round(median(nums)), source: 'estimated' };
     // Priority: FMP > Finnhub > EDGAR > AV
-    // EDGAR wins on emps but can have wrong-period or malformed financial data.
     const priority = ['fmp', 'finnhub', 'edgar', 'alphavantage'];
     for (const src of priority) {
         const match = values.find(v => v.source === src && clean.includes(v.val));
-        if (match) return match.val;
+        if (match) return { val: match.val, source: src };
     }
-    return Math.round(median(clean));
+    return { val: Math.round(median(clean)), source: 'estimated' };
 }
 
 function bestEmps(values) {
     // values is array of {val, source} objects
+    // Returns {val, source} — null val if no data found
     const nums = values.map(v => v.val).filter(v => v !== null && !isNaN(v) && v >= 100);
-    if (!nums.length) return null;
+    if (!nums.length) return { val: null, source: null };
     const clean = rejectOutliers(nums);
-    if (!clean.length) return Math.round(median(nums));
+    if (!clean.length) return { val: Math.round(median(nums)), source: 'estimated' };
     // Prefer Wikipedia (most up to date) > Finnhub > EDGAR > AV
     const priority = ['wikipedia', 'cmc', 'finnhub', 'edgar', 'alphavantage', 'fmp'];
     for (const src of priority) {
         const match = values.find(v => v.source === src && clean.includes(v.val));
-        if (match) return match.val;
+        if (match) return { val: match.val, source: src };
     }
-    return Math.round(median(clean));
+    return { val: Math.round(median(clean)), source: 'estimated' };
 }
 
 function detectOneTimeItem(profit, ebitda) {
@@ -4048,23 +4046,21 @@ function smartMerge(results) {
     const ebitdaVals = results.filter(r => r.ebitda !== null && r.ebitda !== undefined)
                               .map(r => ({ val: r.ebitda, source: r.source }));
 
-    const emps   = bestEmps(empsVals);
-    let profit   = bestFinancial(profitVals);
-    let ebitda   = bestFinancial(ebitdaVals);
+    const empsResult   = bestEmps(empsVals);
+    const profitResult = bestFinancial(profitVals);
+    let   ebitdaResult = bestFinancial(ebitdaVals);
+
+    let emps   = empsResult.val;
+    let profit = profitResult.val;
+    let ebitda = ebitdaResult.val;
 
     // If profit looks like it contains a one-time item vs ebitda, note it
-    // and use an ebitda-derived estimate as a cross-check
     const hasOneTimeItem = detectOneTimeItem(profit, ebitda);
-    if (hasOneTimeItem && ebitda !== null) {
-        // Don't discard profit - but flag it in the response so the UI can handle it
-        profit = profit; // keep as-is, flagged below
-    }
 
     // If ebitda missing but profit exists, estimate it
-    // For positive profit: EBITDA is typically ~30% higher (D&A + interest add-back)
-    // For negative profit: EBITDA is typically less negative (D&A and interest reduce net income)
     if (ebitda === null && profit !== null) {
         ebitda = profit > 0 ? Math.round(profit * 1.3) : Math.round(profit * 0.85);
+        ebitdaResult = { val: ebitda, source: 'estimated' };
     }
 
     return {
@@ -4073,7 +4069,12 @@ function smartMerge(results) {
         emps,
         profit,
         ebitda,
-        hasOneTimeItem // flag for UI to optionally show a note
+        hasOneTimeItem,
+        _sources: {
+            emps:   empsResult.source,
+            profit: profitResult.source,
+            ebitda: ebitdaResult.source,
+        }
     };
 }
 
@@ -4114,6 +4115,8 @@ module.exports = async function handler(req, res) {
     else errors.push('Finnhub: ' + finnhubR.reason.message);
 
     const merged = smartMerge(round1);
+    const sources = { ...merged._sources };
+    delete merged._sources;
 
     // Only call AV if we're still missing employee count (preserve 25/day limit)
     if (merged.name && !merged.emps) {
@@ -4122,6 +4125,8 @@ module.exports = async function handler(req, res) {
             round1.push(avResult);
             const remerged = smartMerge(round1);
             Object.assign(merged, remerged);
+            if (remerged._sources) Object.assign(sources, remerged._sources);
+            delete merged._sources;
         } catch(e) {
             errors.push('AV: ' + e.message);
         }
@@ -4134,9 +4139,9 @@ module.exports = async function handler(req, res) {
         try {
             const yfResult = await fetchFromYahooFinance(symbol);
             // Merge: only fill in what's missing
-            if (yfResult.emps   && !merged.emps)   merged.emps   = yfResult.emps;
-            if (yfResult.profit !== null && merged.profit === null) merged.profit = yfResult.profit;
-            if (yfResult.ebitda !== null && merged.ebitda === null) merged.ebitda = yfResult.ebitda;
+            if (yfResult.emps   && !merged.emps)   { merged.emps   = yfResult.emps;   sources.emps   = 'yahoo'; }
+            if (yfResult.profit !== null && merged.profit === null) { merged.profit = yfResult.profit; sources.profit = 'yahoo'; }
+            if (yfResult.ebitda !== null && merged.ebitda === null) { merged.ebitda = yfResult.ebitda; sources.ebitda = 'yahoo'; }
         } catch(e) {
             errors.push('Yahoo: ' + e.message);
         }
@@ -4162,7 +4167,7 @@ module.exports = async function handler(req, res) {
                 .replace(/,\s*$/, '')
                 .trim();
             const wikiEmps = await fetchEmployeeCountFromWikipedia(finnhubName, wikiTitle, symbol);
-            if (wikiEmps) merged.emps = wikiEmps;
+            if (wikiEmps) { merged.emps = wikiEmps; sources.emps = 'wikipedia'; }
         } catch(e) {
             errors.push('Wikipedia: ' + e.message);
         }
@@ -4185,7 +4190,7 @@ module.exports = async function handler(req, res) {
                 }
                 if (cik10k) {
                     const tenKEmps = await fetchEmployeeCountFrom10K(cik10k);
-                    if (tenKEmps) merged.emps = tenKEmps;
+                    if (tenKEmps) { merged.emps = tenKEmps; sources.emps = '10k'; }
                 }
             }
         } catch(e) {
@@ -4197,7 +4202,7 @@ module.exports = async function handler(req, res) {
     if (!merged.emps) {
         try {
             const saEmps = await fetchEmployeeCountFromStockAnalysis(symbol);
-            if (saEmps) merged.emps = saEmps;
+            if (saEmps) { merged.emps = saEmps; sources.emps = 'stockanalysis'; }
         } catch(e) {
             errors.push('StockAnalysis: ' + e.message);
         }
@@ -4207,7 +4212,7 @@ module.exports = async function handler(req, res) {
     if (!merged.emps && merged.name) {
         try {
             const cmcEmps = await fetchEmployeeCountFromCMC(symbol, merged.name);
-            if (cmcEmps) merged.emps = cmcEmps;
+            if (cmcEmps) { merged.emps = cmcEmps; sources.emps = 'cmc'; }
         } catch(e) {
             errors.push('CMC: ' + e.message);
         }
@@ -4219,7 +4224,7 @@ module.exports = async function handler(req, res) {
         merged.name = WIKI_TITLE_MAP[symbol];
         try {
             const wikiEmps = await fetchEmployeeCountFromWikipedia(merged.name, WIKI_TITLE_MAP[symbol], symbol);
-            if (wikiEmps) merged.emps = wikiEmps;
+            if (wikiEmps) { merged.emps = wikiEmps; sources.emps = 'wikipedia'; }
         } catch(e) {
             errors.push('Wikipedia (fallback name): ' + e.message);
         }
@@ -4229,9 +4234,9 @@ module.exports = async function handler(req, res) {
     if (!merged.name && SERVER_FALLBACK_DB[symbol]) {
         const fb = SERVER_FALLBACK_DB[symbol];
         merged.name = fb.name;
-        if (fb.emps != null && merged.emps == null)   merged.emps   = fb.emps;
-        if (fb.profit != null && merged.profit == null) merged.profit = fb.profit;
-        if (fb.ebitda != null && merged.ebitda == null) merged.ebitda = fb.ebitda;
+        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = 'fallback'; }
+        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = 'fallback'; }
+        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = 'fallback'; }
         if (fb.logo && !merged.logo) merged.logo = fb.logo;
     }
     if (!merged.name) {
@@ -4241,9 +4246,9 @@ module.exports = async function handler(req, res) {
     // Fill any remaining null fields from SERVER_FALLBACK_DB (even when name resolved via API)
     if (SERVER_FALLBACK_DB[symbol]) {
         const fb = SERVER_FALLBACK_DB[symbol];
-        if (fb.emps != null && merged.emps == null)     merged.emps   = fb.emps;
-        if (fb.profit != null && merged.profit == null) merged.profit = fb.profit;
-        if (fb.ebitda != null && merged.ebitda == null) merged.ebitda = fb.ebitda;
+        if (fb.emps != null && merged.emps == null)     { merged.emps   = fb.emps;   sources.emps   = 'fallback'; }
+        if (fb.profit != null && merged.profit == null) { merged.profit = fb.profit; sources.profit = 'fallback'; }
+        if (fb.ebitda != null && merged.ebitda == null) { merged.ebitda = fb.ebitda; sources.ebitda = 'fallback'; }
         if (fb.logo && !merged.logo)                    merged.logo   = fb.logo;
     }
 
@@ -4583,9 +4588,9 @@ module.exports = async function handler(req, res) {
 
     if (FORCE_OVERRIDES[symbol]) {
         const fo = FORCE_OVERRIDES[symbol];
-        if (fo.emps   != null) merged.emps   = fo.emps;
-        if (fo.profit != null) merged.profit = fo.profit;
-        if (fo.ebitda != null) merged.ebitda = fo.ebitda;
+        if (fo.emps   != null) { merged.emps   = fo.emps;   sources.emps   = 'verified'; }
+        if (fo.profit != null) { merged.profit = fo.profit; sources.profit = 'verified'; }
+        if (fo.ebitda != null) { merged.ebitda = fo.ebitda; sources.ebitda = 'verified'; }
     }
 
     // Re-run one-time item detection after force overrides, then hard-force flag
@@ -4596,5 +4601,5 @@ module.exports = async function handler(req, res) {
     if (FORCE_ONE_TIME.has(symbol)) merged.hasOneTimeItem = true;
 
     // If still no employee count, return what we have and let the client use fallback DB
-    return res.status(200).json({ ...merged, resolvedSymbol: symbol, _errors: errors });
+    return res.status(200).json({ ...merged, resolvedSymbol: symbol, _errors: errors, _sources: sources });
 };
