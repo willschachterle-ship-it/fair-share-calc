@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 netIncomeSection =
-                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made <strong>' + fmtBig(effectiveProfit) + '</strong>, your salary would be</p>' +
+                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made, <strong>' + fmtBig(effectiveProfit) + '</strong>, your salary would be</p>' +
                     '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
                     '<a href="how-it-works.html#net-income" target="_blank" style="font-size:0.78em; color:#1565c0; display:block; margin-top:6px;">How was this calculated?</a>';
             }
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 ebitdaSection =
-                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made <strong>' + fmtBig(data.ebitda) + '</strong>, your salary would be</p>' +
+                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> actually made, <strong>' + fmtBig(data.ebitda) + '</strong>, your salary would be</p>' +
                     '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + ebitdaTotal.toLocaleString() + '</div>' +
                     '<a href="how-it-works.html#ebitda" target="_blank" style="font-size:0.78em; color:#1565c0; display:block; margin-top:6px;">How was this calculated?</a>';
             }
