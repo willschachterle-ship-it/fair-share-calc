@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 '<span class="ac-item-ticker">' + esc(item.ticker) + '</span>';
                 div.addEventListener('mousedown', function(e) {
                     e.preventDefault();
-                    companyInput.value = item.name;
+                    companyInput.value = item.ticker;
                     hide();
                 });
                 div.addEventListener('mouseover', function() { setActive(idx); });
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 setActive(Math.max(activeIdx - 1, 0));
             } else if (e.key === 'Enter' && activeIdx >= 0) {
                 e.preventDefault();
-                companyInput.value = currentItems[activeIdx].name;
+                companyInput.value = currentItems[activeIdx].ticker;
                 hide();
             } else if (e.key === 'Escape') {
                 hide();
