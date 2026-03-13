@@ -662,7 +662,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
                             '<span style="font-size:0.8em; color:#888; width:100%; margin-bottom:2px;">Share your result:</span>' +
                             '<a href="' + tweetUrl  + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#000;color:#fff;">𝕏 Post</a>' +
-                            '<a href="' + bskyUrl   + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0085ff;color:#fff;">☁ Bluesky</a>' +
                             '<a href="' + fbUrl     + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#1877f2;color:#fff;">f Facebook</a>' +
                             '<a href="' + waUrl     + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#25d366;color:#fff;">💬 WhatsApp</a>' +
                             '<a href="' + redditUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#ff4500;color:#fff;">👾 Reddit</a>' +
