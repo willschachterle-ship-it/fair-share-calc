@@ -1,0 +1,129 @@
+════════════════════════════════════════════════════════════════
+Fair Share Calculator — Session Update
+2026-03-13 · evening session
+════════════════════════════════════════════════════════════════
+
+WHAT WE DID THIS SESSION
+─────────────────────────
+
+✅ Tax bracket explainer made concrete
+   - Now shows actual dollars in the progressive bracket note
+   - "only the $43,450 above $206,550 is taxed at 32%"
+
+✅ US flag (#10) — marked done
+
+✅ Animated progress bar during API loading
+   - Blue gradient bar fills over ~8s with easing
+   - Label cycles through 4 status messages
+
+✅ Social share buttons (#12)
+   - Live: 𝕏 Post · f Facebook · 💬 WhatsApp · 👾 Reddit · ✉ Text
+   - Removed: LinkedIn, Bluesky, Instagram (tabled)
+   - Share text: "[Company] kept $X per worker. If you work there,
+     you worked for that money — but they kept it or decided to give
+     it to someone else. See what YOUR employer did with the money
+     you worked for: [url]"
+
+✅ Design exploration (#14)
+   - 3 options mocked up: A (Bold/Editorial), B (Clean/Refined),
+     C (Warm/Populist)
+   - User chose B — applied to main site via style.css tweaks
+   - Preview live at: fair-share-calc.vercel.app/design-preview.html
+
+✅ How-it-works.html improvements
+   - Added jump nav (pill links to all 5 sections)
+   - Removed duplicate tax section from "The Bottom Line"
+   - Removed Wikipedia links from Net Income + EBITDA sections
+   - Added full worked tax example for $100K salary
+   - Tax bracket table now shows "Tax on this slice" column
+
+✅ Effective rate removed from results tax line
+   - Was: "kept $X in income tax (32.3% effective rate)"
+   - Now: "kept $X in income tax"
+
+✅ Reddit strategy
+   - Analyzed 6 subreddits for fit/risk
+   - r/AmazonFC flagged as risky (mods banned "union")
+   - Best targets: r/WorkReform, r/antiwork, r/Walmart, r/Nurses
+   - Draft posts saved to: reddit-posts.md
+   - No script needed — just ask Claude "any good Reddit posts
+     right now?" and it will scan live + suggest best opportunity
+     with the right comment version
+
+✅ FINAL_FIXES cleanup
+   - #10, #14 marked done
+   - #15 (equal distribution explainer) removed per user request
+
+CURRENT STATE OF FINAL_FIXES
+──────────────────────────────
+
+All original items (1-13) DONE ✅
+
+Open items:
+  #16a  Count-up animation on result numbers
+  #16b  Pre-written share captions (3 tap-to-copy options)
+  #16c  "Where did the money go?" — buybacks/dividends per worker
+  #16d  Worker-owned alternative panel by industry
+  #16e  Industry wage context (BLS median pay)
+  #16f  Company-specific landing pages (SEO)
+  #16g  Anonymous search analytics
+  #16h  Email capture
+
+  #12   Instagram sharing — TABLED (clunky on desktop)
+
+Recommended next: #16a (count-up animation) or #16c ("where did
+the money go") — highest emotional impact, relatively quick to build
+
+CURRENT STATE OF DEPLOYED SITE
+────────────────────────────────
+  Live URL: https://fair-share-calc.vercel.app
+  Design preview: https://fair-share-calc.vercel.app/design-preview.html
+  Last push: Design B styling applied (96a6e5e → 02886a1)
+  GitHub: willschachterle-ship-it/fair-share-calc
+  Vercel: auto-deploys from main on push
+
+  Features live:
+  - 🇺🇸 flag in header
+  - Autocomplete (837 companies)
+  - Animated progress bar with cycling labels
+  - Share buttons: 𝕏 · Facebook · WhatsApp · Reddit · Text
+  - Source attribution (SEC EDGAR labels)
+  - Worker co-op callout
+  - Tax display: effective rate removed, progressive bracket note
+    with concrete dollar amounts
+  - Money-losing + one-time item handling
+  - Design B styling applied
+
+KEY FILES
+──────────
+  index.html           — main page
+  script.js            — all frontend logic
+  style.css            — Design B styling
+  api/company.js       — Vercel serverless function
+  FINAL_FIXES.md       — full task list with viral strategy (#16)
+  reddit-posts.md      — comment/post templates per subreddit
+  design-preview.html  — 3 design options (deployed, shareable)
+  data_analysis.js     — batch analysis script (local only)
+  YourFairShare_ViralStrategy.docx — full strategy doc
+
+REDDIT QUICK REFERENCE
+───────────────────────
+  Ask Claude: "any good Reddit posts right now?"
+  It will scan live and return top 2-3 opportunities with
+  suggested comments tailored to each community.
+
+  Templates in reddit-posts.md:
+  - r/Walmart    → 3 comment versions, $19,060 Walmart number
+  - r/AmazonFC   → 3 comment versions, $33,333 Amazon number
+  - r/antiwork   → standalone post + 2 comments
+  - r/WorkReform → standalone post + comment
+  - r/Nurses     → HCA $22,000 angle
+  - r/Teachers   → limited, only for-profit ed companies
+
+  Key rules:
+  - Comment in threads <6h old
+  - Add one genuine sentence before dropping the link
+  - No union language in r/AmazonFC
+  - Don't post same link in more than 2-3 threads/day
+
+════════════════════════════════════════════════════════════════
