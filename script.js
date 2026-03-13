@@ -477,9 +477,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (ebitdaNegative) {
                 summaryLine = '<p><strong>' + data.name + '</strong> burned roughly <strong>$' + Math.abs(accountingSurplus).toLocaleString() + ' per worker</strong> more than they made this period.</p>';
             } else if (accountingSurplus >= 0) {
-                summaryLine = '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from your labor.</p>';
+                summaryLine = '<p><strong>' + data.name + '</strong> kept <strong>$' + accountingSurplus.toLocaleString() + '</strong> from you.</p>';
             } else {
-                summaryLine = '<p><strong>' + data.name + '</strong> did not profit from your labor this period.</p>';
+                summaryLine = '<p><strong>' + data.name + '</strong> did not profit this period.</p>';
             }
 
             // ── Data sources line ───────────────────────────────────────────
