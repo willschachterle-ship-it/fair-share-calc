@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             summaryLine +
                             (income <= 14600
                                 ? '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$0</strong> in income tax — your income is below the $14,600 standard deduction.</p>'
-                                : '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax (<strong>' + effectiveRate + '% effective rate</strong>).</p>' +
+                                : '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
                                   (marginalRate >= 24 ? '<p style="margin:2px 0 4px; font-size:0.78em; color:#888;">Tax brackets are progressive — only the $' + amountInTopBracket.toLocaleString() + ' above $' + topBracketGrossThreshold.toLocaleString() + ' is taxed at ' + marginalRate + '%. The rest is taxed at lower rates.</p>' : '')
                             ) +
                             '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
