@@ -654,11 +654,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         var tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
                         var bskyUrl  = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
+                        var fbUrl    = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('https://fair-share-calc.vercel.app') + '&quote=' + encodeURIComponent(shareText);
                         var btnStyle = 'display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;text-decoration:none;cursor:pointer;border:none;';
                         return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
                             '<span style="font-size:0.8em; color:#888; width:100%; margin-bottom:2px;">Share your result:</span>' +
                             '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#000;color:#fff;">𝕏 Post</a>' +
                             '<a href="' + bskyUrl  + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0085ff;color:#fff;">☁ Bluesky</a>' +
+                            '<a href="' + fbUrl    + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#1877f2;color:#fff;">f Facebook</a>' +
                         '</div>';
                     })();
                 resultsArea.classList.remove('hidden');
