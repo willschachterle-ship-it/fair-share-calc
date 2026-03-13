@@ -428,6 +428,66 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 
 ---
 
+## 15. Explain Equal Distribution Methodology
+
+**Problem:** A user might reasonably ask: "Why split profits equally? Real companies use performance bonuses, seniority pay, role-based tiers — shouldn't different workers get different shares?"
+
+**Desired behavior:** Add a brief explanation (inline note or "How is this calculated?" expansion) that addresses this:
+- The equal distribution is a **floor, not a prescription** — it shows the minimum each worker would receive if profits were shared at all
+- It sidesteps impossible questions (who contributed more? the CEO or the warehouse worker?) by using the simplest defensible baseline
+- Even equal distribution would represent a dramatic improvement for most workers
+- The point isn't to design a compensation system — it's to show the gap between what workers receive and what the company captures
+
+**Where to add:** Likely near the EBITDA result line or in how-it-works.html. Keep it short — one or two sentences with a "why equal?" link expanding to a fuller explanation.
+
+---
+
+## 16. Viral Strategy — Product Roadmap (from YourFairShare_ViralStrategy.docx)
+
+Full strategy doc is at `YourFairShare_ViralStrategy.docx` in the project root. Key insight: **lead with math, never with politics.** The number is the Trojan horse.
+
+### Tier 1 — Core Virality (implement first)
+
+**16a. Count-Up Animation on the Result Number**
+Animate the fair share dollar figure counting up from 0 to final value over ~1.2 seconds using `requestAnimationFrame` with ease-out. Creates anticipation, makes the result more screenshot-worthy.
+
+**16b. Pre-Written Share Captions**
+Below share buttons, show 3 tappable caption options. Tapping copies to clipboard:
+- *Neutral:* "I looked up my company on this calculator. The number surprised me. fair-share-calc.vercel.app"
+- *Pointed:* "[Company] made $XB last year. Each employee's fair share would have been $Y."
+- *Call to action:* "Look up YOUR employer. Then look up whether they're unionized."
+
+### Tier 2 — Context & Retention (implement second)
+
+**16c. "Where Did the Money Go?" Section**
+After the result, show one factual sentence about where the profit went — stock buybacks, dividends. Example: *"Walmart spent $8.8B buying back its own stock last year — $4,190 per employee."* No editorializing. Source: SEC filings. Hardcode for top 200 companies.
+
+**16d. Worker-Owned Alternative Panel**
+Show 1–2 worker-owned or union companies in the same industry as the searched company. Title: "Companies Where Workers Own a Piece" — not advocacy, just facts. Collapsible, not auto-expanded. Static JSON lookup by industry.
+
+**16e. Industry Wage Context**
+Show BLS median annual wage for the user's industry next to their input salary. *"The median worker in grocery retail makes $X/year. You entered $Y."* Hardcoded from BLS data, updated annually.
+
+### Tier 3 — Growth Infrastructure (implement third)
+
+**16f. Company-Specific Landing Pages**
+Pre-rendered pages at `/company/walmart`, `/company/amazon`, etc. for top 100 most-searched companies. Pre-filled with company data, indexable by Google. Targets searches like "how much does Walmart make per employee."
+
+**16g. Anonymous Search Analytics**
+Log company searched + salary range (no PII). Answers: which companies drive most searches? Which salary inputs correlate with highest share rates? Use to prioritize data coverage.
+
+**16h. Email Capture (Low-Friction)**
+After result: *"Get an alert when [Company]'s annual profit figures update."* Single opt-in, no newsletter. Builds a direct contact list without feeling political.
+
+### Messaging rules (from strategy doc)
+- ✅ Use: "your fair share", "the money you helped create", "if profits were split equally"
+- ❌ Avoid: "exploitation", "capitalism" (as slur), "class war", "redistribution", "corporate greed"
+- Primary audience: **apolitical workers** who feel financially squeezed but don't connect it to systemic causes
+- Facebook is highest-ROI platform (older, working-class, less politically sorted than Twitter)
+- Seed into company-specific FB groups (e.g. "Walmart Employees"), not generic political groups
+
+---
+
 ## 14. Design Exploration
 
 **Goal:** Try a few different visual design directions for the app.
