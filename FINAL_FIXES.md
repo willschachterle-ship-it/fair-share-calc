@@ -386,11 +386,7 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 
 ---
 
-## 10. American Flag / US-Only Indicator
-
-**Problem:** The tool is US-only but there's no visual cue reinforcing that.
-
-**Desired behavior:** Add a 🇺🇸 flag somewhere tasteful — likely in the header next to the title or subtitle, or in the "how to use" guidance note at the bottom. Reinforces that this is a US-focused tool without requiring extra text.
+## 10. ✅ American Flag / US-Only Indicator — DONE 2026-03-13
 
 ---
 
@@ -428,19 +424,6 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 
 ---
 
-## 15. Explain Equal Distribution Methodology
-
-**Problem:** A user might reasonably ask: "Why split profits equally? Real companies use performance bonuses, seniority pay, role-based tiers — shouldn't different workers get different shares?"
-
-**Desired behavior:** Add a brief explanation (inline note or "How is this calculated?" expansion) that addresses this:
-- The equal distribution is a **floor, not a prescription** — it shows the minimum each worker would receive if profits were shared at all
-- It sidesteps impossible questions (who contributed more? the CEO or the warehouse worker?) by using the simplest defensible baseline
-- Even equal distribution would represent a dramatic improvement for most workers
-- The point isn't to design a compensation system — it's to show the gap between what workers receive and what the company captures
-
-**Where to add:** Likely near the EBITDA result line or in how-it-works.html. Keep it short — one or two sentences with a "why equal?" link expanding to a fuller explanation.
-
----
 
 ## 16. Viral Strategy — Product Roadmap (from YourFairShare_ViralStrategy.docx)
 
@@ -488,16 +471,9 @@ After result: *"Get an alert when [Company]'s annual profit figures update."* Si
 
 ---
 
-## 14. Design Exploration
+## 14. ✅ Design Exploration — DONE 2026-03-13
 
-**Goal:** Try a few different visual design directions for the app.
-
-**Ideas to explore:**
-- Overall color palette / theme (current blue-gray vs. something bolder)
-- Typography choices — size hierarchy, font weight
-- Results card layout — could be more dramatic / emotional
-- Header treatment — flag placement, title sizing
-- Mobile-first adjustments
+3 options mocked up (A: Bold/Editorial, B: Clean/Refined, C: Warm/Populist). User chose B. Applied to main site.
 
 ---
 
