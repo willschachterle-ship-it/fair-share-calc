@@ -648,9 +648,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     (function() {
                         var shareText, surplusAmt = accountingSurplus;
                         if (ebitdaNegative || surplusAmt <= 0) {
-                            shareText = data.name + ' didn\u2019t turn a profit this year \u2014 so there\u2019s nothing to share. I used Your Fair Share to check: https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
+                            shareText = data.name + ' didn\u2019t turn a profit this year \u2014 so there\u2019s nothing to share. What does YOUR employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         } else {
-                            shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' from me last year. My fair share of their profits would\u2019ve brought my salary from $' + income.toLocaleString() + ' to $' + ebitdaTotal.toLocaleString() + '. What does your employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
+                            shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' per worker last year. What does YOUR employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         }
                         var tweetUrl    = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
                         var bskyUrl     = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
