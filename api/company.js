@@ -70,7 +70,6 @@ const SERVER_FALLBACK_DB = {
   "CW":{"name":"Curtiss-Wright","emps":10000,"profit":320000000,"ebitda":520000000,"logo":"https://logo.clearbit.com/curtisswright.com"},
   "MRCY":{"name":"Mercury Systems","emps":2800,"profit":-180000000,"ebitda":20000000,"logo":"https://logo.clearbit.com/mrcy.com"},
   "SPR":{"name":"Spirit AeroSystems","emps":16000,"profit":-1100000000,"ebitda":-200000000,"logo":"https://logo.clearbit.com/spiritaero.com"},
-  "4503.T":{"name":"Astellas Pharma Inc.","emps":14000,"profit":1100000000,"ebitda":2200000000,"logo":"https://logo.clearbit.com/astellas.com"},
   "CACI":{"name":"CACI International","emps":23000,"profit":310000000,"ebitda":620000000,"logo":"https://logo.clearbit.com/caci.com"},
   "ASML":{"name":"ASML","emps":42000,"profit":7800000000,"ebitda":9800000000,"logo":"https://logo.clearbit.com/asml.com"},
   "SSNLF":{"name":"Samsung","emps":262647,"profit":14900000000,"ebitda":38000000000,"logo":"https://logo.clearbit.com/samsung.com"},
