@@ -652,15 +652,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else {
                             shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' from me last year. My fair share of their profits would\u2019ve brought my salary from $' + income.toLocaleString() + ' to $' + ebitdaTotal.toLocaleString() + '. What does your employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         }
-                        var tweetUrl  = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
-                        var bskyUrl   = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
-                        var linkedinUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://fair-share-calc.vercel.app');
-                        var btnStyle  = 'display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;text-decoration:none;cursor:pointer;border:none;';
+                        var tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
+                        var bskyUrl  = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
+                        var btnStyle = 'display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;text-decoration:none;cursor:pointer;border:none;';
                         return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
                             '<span style="font-size:0.8em; color:#888; width:100%; margin-bottom:2px;">Share your result:</span>' +
                             '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#000;color:#fff;">𝕏 Post</a>' +
                             '<a href="' + bskyUrl  + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0085ff;color:#fff;">☁ Bluesky</a>' +
-                            '<a href="' + linkedinUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0a66c2;color:#fff;">in Share</a>' +
                             '<button onclick="window._shareInstagram()" style="' + btnStyle + 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;">📷 Instagram</button>' +
                         '</div>';
                     })();
