@@ -377,10 +377,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (loadingMsg) loadingMsg.classList.remove('hidden');
             if (resultsArea) resultsArea.classList.add('hidden');
+            var loadingBar = document.getElementById('loadingBar');
+            var loadingLabel = document.getElementById('loadingLabel');
+            var loadingSteps = ['Querying SEC filings...','Checking financial databases...','Crunching the numbers...','Almost there...'];
+            var loadingStep = 0, loadingPct = 0;
+            var loadingTimer = setInterval(function() {
+                loadingPct = Math.min(loadingPct + (loadingPct < 70 ? 7 : loadingPct < 88 ? 2 : 0.5), 93);
+                if (loadingBar) loadingBar.style.width = loadingPct + '%';
+                loadingStep = Math.min(Math.floor(loadingPct / 25), loadingSteps.length - 1);
+                if (loadingLabel) loadingLabel.textContent = loadingSteps[loadingStep];
+            }, 400);
 
             var data = await fetchCompanyData(symbol);
 
-            if (loadingMsg) loadingMsg.classList.add('hidden');
+            clearInterval(loadingTimer);
+            if (loadingBar) { loadingBar.style.transition = 'width 0.2s ease'; loadingBar.style.width = '100%'; }
+            setTimeout(function() { if (loadingMsg) loadingMsg.classList.add('hidden'); if (loadingBar) loadingBar.style.width = '0%'; }, 200);
+            var _hideLoading = true;
             if (!data) return;
 
             var income = 0, timeFrac = 1;
@@ -408,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (ticker && ticker !== symbol.toUpperCase()) msg += ' (resolved to ticker: ' + ticker + ')';
                 msg += '\n\nThis usually means the company does not publicly disclose headcount. Try searching by ticker symbol: ' + ticker;
                 alert(msg);
-                if (loadingMsg) loadingMsg.classList.add('hidden');
+                if (loadingMsg) { loadingMsg.classList.add('hidden'); }
+                if (loadingBar) loadingBar.style.width = '0%';
                 return;
             }
 
