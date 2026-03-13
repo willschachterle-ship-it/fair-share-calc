@@ -659,7 +659,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             '<span style="font-size:0.8em; color:#888; width:100%; margin-bottom:2px;">Share your result:</span>' +
                             '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#000;color:#fff;">𝕏 Post</a>' +
                             '<a href="' + bskyUrl  + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0085ff;color:#fff;">☁ Bluesky</a>' +
-                            '<button onclick="window._shareInstagram()" style="' + btnStyle + 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;">📷 Instagram</button>' +
                         '</div>';
                     })();
                 resultsArea.classList.remove('hidden');
