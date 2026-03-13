@@ -398,19 +398,16 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 
 ---
 
-## 12. Social Sharing Buttons
+## 12. ✅ Social Sharing Buttons — DONE 2026-03-13
 
-**Problem:** No easy way for users to share their result.
+**Implemented:** X (Twitter), Bluesky, Instagram (canvas card + Web Share API)
 
-**Desired behavior:** After results load, show share buttons:
-- **Tweet / post to X:** Pre-filled text like *"I work at Walmart. If profits were shared equally, my salary would be $284,000. Instead I make $35,000. They kept $249,000 from me. yourfairshare.com"*
-- Optionally: Copy link / copy text button
+**Live buttons:** 𝕏 Post · ☁ Bluesky · 📷 Instagram
 
-**Implementation notes:**
-- X share URL: `https://twitter.com/intent/tweet?text=YOUR+TEXT+HERE`
-- Generate the tweet text dynamically from the result (company name, fair share salary, actual salary, delta)
-- Keep the share button subtle — below the results card, not intrusive
-- Don't add LinkedIn/Facebook unless there's a clear reason — X is where this will go viral
+**Instagram note — TABLED:** Instagram has no web share URL. Current implementation generates a 1080×1080 canvas card and uses Web Share API (shows native share sheet on iPhone; downloads image on desktop). This is clunky on desktop. Options to revisit:
+- Keep download-only and add label "Save for Instagram"
+- Remove Instagram button entirely until a better solution exists
+- Consider a "Copy image" button that puts it on clipboard for paste into Instagram web
 
 ---
 
@@ -428,6 +425,19 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 - Fix the low-income bug: if income ≤ standard deduction ($14,600), show $0 tax owed
 
 **Why this matters:** Users trust the tool more if the tax math feels right. A $2k/year worker being told they owe tax is an obvious red flag that undermines credibility.
+
+---
+
+## 14. Design Exploration
+
+**Goal:** Try a few different visual design directions for the app.
+
+**Ideas to explore:**
+- Overall color palette / theme (current blue-gray vs. something bolder)
+- Typography choices — size hierarchy, font weight
+- Results card layout — could be more dramatic / emotional
+- Header treatment — flag placement, title sizing
+- Mobile-first adjustments
 
 ---
 

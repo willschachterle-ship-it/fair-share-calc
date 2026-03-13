@@ -1,0 +1,83 @@
+════════════════════════════════════════════════════════════════
+Fair Share Calculator — Session Update
+2026-03-13 · morning session
+════════════════════════════════════════════════════════════════
+
+WHAT WE DID THIS SESSION
+─────────────────────────
+
+✅ Tax bracket explainer made concrete (#13 follow-up)
+   - Now shows actual dollars: "only the $43,450 above $206,550 is taxed at 32%"
+   - Previously just said "the X% rate only applies above the threshold" (vague)
+
+✅ US flag added to header (#10)
+   - 🇺🇸 emoji above the title in index.html
+   - Signals US-only tool + patriotic framing
+
+✅ Animated progress bar during loading
+   - Replaces static "Querying SEC Filings..." text
+   - Blue gradient bar fills over ~8s with easing
+   - Label cycles: "Querying SEC filings..." → "Checking financial databases..."
+     → "Crunching the numbers..." → "Almost there..."
+
+✅ Social share buttons (#12)
+   - X (Twitter): pre-filled tweet with company name, kept amount, salary comparison
+   - Bluesky: same text, bsky.app/intent/compose URL
+   - Instagram: canvas 1080×1080 card + Web Share API (downloads on desktop)
+   - LinkedIn: removed (user decision — wrong platform for this content)
+   - Tested: X/Bluesky require login to see compose (correct behavior)
+     Instagram Web Share API works — shows native share sheet on iPhone
+
+✅ Design preview page created (design-preview.html)
+   - 3 directions mocked up side by side with same example data:
+     A — Bold/Editorial (dark navy, red accent numbers)
+     B — Clean/Refined (white card, current blue palette, more polished)
+     C — Warm/Populist (cream background, amber accents, earthy)
+   - User is thinking about which direction to go — NOT deployed
+
+WHAT'S PENDING / NEXT
+──────────────────────
+
+#12 Instagram (TABLED)
+   - Current implementation is clunky on desktop (just downloads image)
+   - Options: label it "Save for Instagram", remove button, or clipboard copy
+   - Revisit when there's a clearer UX answer
+
+#14 Design Exploration
+   - design-preview.html has 3 options (A/B/C) — user hasn't decided yet
+   - Once direction chosen: apply to index.html + style.css
+
+Other items still open in FINAL_FIXES.md (lower priority):
+   - None blocking — all critical items shipped
+
+CURRENT STATE OF DEPLOYED SITE
+────────────────────────────────
+   Live URL: https://fair-share-calc.vercel.app
+   Last push: LinkedIn removal (1fc9ce9)
+   Vercel: auto-deploys from main branch on GitHub push
+
+   Features live:
+   - Autocomplete (837 companies including full viral500)
+   - Animated progress bar
+   - 🇺🇸 flag in header
+   - Share buttons: X · Bluesky · Instagram
+   - Source attribution (_sources field, SEC EDGAR labels)
+   - Worker co-op callout
+   - Tax display: effective rate + concrete bracket explainer
+   - Money-losing company handling
+   - One-time item flag + EBITDA fallback
+
+KEY FILES
+──────────
+   index.html          — main page (flag, input form, loading bar markup)
+   script.js           — all frontend logic (share buttons, canvas card, tax, results)
+   style.css           — styles
+   api/company.js      — Vercel serverless function (EDGAR, FMP, Finnhub, fallback DB)
+   fallback.js         — client-side fallback (legacy, mostly superseded by SERVER_FALLBACK_DB)
+   ac_list.js          — autocomplete company list
+   FINAL_FIXES.md      — running task list
+   design-preview.html — design mockups (local only, not deployed)
+   test-share.html     — share button test page (local only, not deployed)
+   data_analysis.js    — batch analysis script (run with: node data_analysis.js --list viral500)
+
+════════════════════════════════════════════════════════════════
