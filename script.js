@@ -353,6 +353,84 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
+    window._shareInstagram = function() {
+        var r = window._shareData;
+        if (!r) return;
+
+        var W = 1080, H = 1080;
+        var canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        var ctx = canvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = '#0d1b2e';
+        ctx.fillRect(0, 0, W, H);
+
+        // Top red stripe
+        ctx.fillStyle = '#B22234';
+        ctx.fillRect(0, 0, W, 18);
+
+        // Site name
+        ctx.fillStyle = '#4a7fa5';
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('yourfairshare.vercel.app', W/2, 80);
+
+        // Company name — truncate if long
+        var cname = r.name.length > 28 ? r.name.slice(0, 26) + '\u2026' : r.name;
+        ctx.fillStyle = '#8aa8c0';
+        ctx.font = '46px Arial';
+        ctx.fillText(cname, W/2, 160);
+
+        // "kept from you" line
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 54px Arial';
+        ctx.fillText('kept from you:', W/2, 310);
+
+        // Big kept number
+        ctx.fillStyle = '#e63946';
+        ctx.font = 'bold 148px Arial';
+        var keptStr = r.ebitdaNegative || r.accountingSurplus <= 0 ? '$0' : '$' + r.accountingSurplus.toLocaleString();
+        ctx.fillText(keptStr, W/2, 490);
+
+        // Divider
+        ctx.strokeStyle = '#1e3348';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(80, 550); ctx.lineTo(W-80, 550); ctx.stroke();
+
+        // Salary comparison
+        ctx.font = '42px Arial';
+        ctx.fillStyle = '#8aa8c0';
+        ctx.fillText('Your salary', W/2, 630);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 52px Arial';
+        ctx.fillText('$' + r.income.toLocaleString(), W/2, 700);
+
+        ctx.font = '42px Arial';
+        ctx.fillStyle = '#8aa8c0';
+        ctx.fillText('Your fair share would be', W/2, 790);
+        ctx.fillStyle = '#4caf50';
+        ctx.font = 'bold 52px Arial';
+        ctx.fillText('$' + r.ebitdaTotal.toLocaleString(), W/2, 860);
+
+        // Bottom flag strip
+        ctx.fillStyle = '#B22234';
+        ctx.fillRect(0, H-18, W, 18);
+
+        canvas.toBlob(function(blob) {
+            var file = new File([blob], 'fair-share.png', { type: 'image/png' });
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({ files: [file], title: 'Your Fair Share' }).catch(function() {});
+            } else {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = 'fair-share.png'; a.click();
+                setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+            }
+        }, 'image/png');
+    };
+
+
     function calculateTax(income) {
         var taxable = Math.max(0, income - 14600);
         var brackets = [
@@ -530,6 +608,8 @@ document.addEventListener('DOMContentLoaded', function() {
                   '</div>'
                 : '';
 
+            window._shareData = { name: data.name, income: income, ebitdaTotal: ebitdaTotal, accountingSurplus: accountingSurplus, ebitdaNegative: ebitdaNegative };
+
             if (resultsArea) {
                 resultsArea.innerHTML =
                     yourEarningsBlock +
@@ -572,12 +652,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else {
                             shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' from me last year. My fair share of their profits would\u2019ve brought my salary from $' + income.toLocaleString() + ' to $' + ebitdaTotal.toLocaleString() + '. What does your employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         }
-                        var tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
+                        var tweetUrl  = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
+                        var bskyUrl   = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
                         var linkedinUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://fair-share-calc.vercel.app');
-                        return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center;">' +
-                            '<span style="font-size:0.8em; color:#888;">Share your result:</span>' +
-                            '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:#000; color:#fff; border-radius:20px; font-size:0.8em; font-weight:600; text-decoration:none;">𝕏 Post</a>' +
-                            '<a href="' + linkedinUrl + '" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:#0a66c2; color:#fff; border-radius:20px; font-size:0.8em; font-weight:600; text-decoration:none;">in Share</a>' +
+                        var btnStyle  = 'display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;text-decoration:none;cursor:pointer;border:none;';
+                        return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
+                            '<span style="font-size:0.8em; color:#888; width:100%; margin-bottom:2px;">Share your result:</span>' +
+                            '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#000;color:#fff;">𝕏 Post</a>' +
+                            '<a href="' + bskyUrl  + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0085ff;color:#fff;">☁ Bluesky</a>' +
+                            '<a href="' + linkedinUrl + '" target="_blank" rel="noopener" style="' + btnStyle + 'background:#0a66c2;color:#fff;">in Share</a>' +
+                            '<button onclick="window._shareInstagram()" style="' + btnStyle + 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;">📷 Instagram</button>' +
                         '</div>';
                     })();
                 resultsArea.classList.remove('hidden');
