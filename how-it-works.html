@@ -46,6 +46,17 @@
 
         <a href="/" class="back-link">← Back to calculator</a>
 
+        <div style="background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05); padding:18px 24px; margin-bottom:24px; font-size:0.9em;">
+            <strong style="display:block; margin-bottom:10px; color:#444;">Jump to:</strong>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <a href="#net-income" style="color:#0070f3; text-decoration:none; padding:4px 12px; background:#f0f5ff; border-radius:20px;">Net Income</a>
+                <a href="#ebitda" style="color:#0070f3; text-decoration:none; padding:4px 12px; background:#f0f5ff; border-radius:20px;">EBITDA</a>
+                <a href="#summary" style="color:#0070f3; text-decoration:none; padding:4px 12px; background:#f0f5ff; border-radius:20px;">The Bottom Line</a>
+                <a href="#federal-tax" style="color:#0070f3; text-decoration:none; padding:4px 12px; background:#f0f5ff; border-radius:20px;">Federal Tax</a>
+                <a href="#data-sources" style="color:#0070f3; text-decoration:none; padding:4px 12px; background:#f0f5ff; border-radius:20px;">Data Sources</a>
+            </div>
+        </div>
+
         <!-- NET INCOME -->
         <div class="section" id="net-income">
             <h2>Net Income — "What the company said they made"</h2>
@@ -56,7 +67,6 @@
             </div>
             <p>That amount is added to your actual salary to show what you would have earned if the company's profit had been shared equally with every worker.</p>
             <p><strong>Why net income can be misleading:</strong> It can be heavily influenced by one-time charges (like writing down an acquisition), tax strategies, or interest on debt. A company can report low net income while generating substantial cash from its core operations. That's why we also show EBITDA.</p>
-            <p class="learn-more"><a href="https://en.wikipedia.org/wiki/Net_income" target="_blank">Net income on Wikipedia →</a></p>
         </div>
 
         <!-- EBITDA -->
@@ -69,7 +79,6 @@
             </div>
             <p><strong>Why we show both:</strong> Net income is the legally reported profit figure — directly comparable to worker wages. EBITDA shows operational cash generation stripped of financing choices and non-cash accounting. For capital-intensive industries (airlines, utilities, manufacturing), EBITDA can be 2–5× higher than net income. Showing both lets you see the full range.</p>
             <p><strong>When they diverge:</strong> A company with heavy debt will show low net income (due to interest payments) but healthy EBITDA. A company that just wrote off a failed acquisition will show a net loss but positive EBITDA. Neither number alone tells the whole story.</p>
-            <p class="learn-more"><a href="https://en.wikipedia.org/wiki/EBITDA" target="_blank">EBITDA on Wikipedia →</a></p>
         </div>
 
         <!-- SUMMARY CALCULATIONS -->
@@ -82,14 +91,7 @@
                 per-worker share = (EBITDA ÷ total employees) × (your hours ÷ 2,080)
             </div>
             <p>This figure is not the same as the adjusted salaries shown above. It's the estimated share of the company's operational profit that was generated per employee — and kept as profit instead of being distributed to workers.</p>
-
-            <p><strong>The federal tax figure</strong> is an estimate of what a single filer would owe on the salary you entered, using 2024 tax brackets and the standard deduction ($14,600).</p>
-            <div class="formula">
-                taxable income = salary − $14,600 (standard deduction)
-            </div>
-            <div class="note">
-                <strong>Federal tax not included:</strong> state and local taxes, FICA (Social Security + Medicare, ~7.65%), capital gains rates, filing status differences (married, head of household), or any tax credits or additional deductions. This is a rough illustration — not a tax filing tool.
-            </div>
+            <p>For how the federal tax estimate is calculated — including a full bracket breakdown and worked example — see <a href="#federal-tax">Federal Income Tax Estimate</a> below.</p>
         </div>
 
         <!-- FEDERAL TAX -->
