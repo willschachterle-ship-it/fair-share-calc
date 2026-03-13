@@ -7,317 +7,226 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #e8edf2; padding: 40px 20px 60px; }
-        .page-header { text-align: center; margin-bottom: 8px; }
+        .page-header { text-align: center; margin-bottom: 32px; }
         .page-header h1 { font-size: 1.1em; color: #333; font-weight: 700; }
         .page-header p { font-size: 0.8em; color: #999; margin-top: 4px; }
-        .designs { display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; align-items: flex-start; margin-top: 32px; }
+        .designs { display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
         .design-col { width: 400px; }
         .design-label { text-align: center; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #999; margin-bottom: 10px; }
-
-        /* ─── Shared button style ─── */
-        .share-btn { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 20px; font-size: 0.74em; font-weight: 600; text-decoration: none; margin-bottom: 4px; border: none; cursor: pointer; }
-
-        /* ══════════════════════════════════════════════
-           DESIGN A — Bold / Editorial
-        ══════════════════════════════════════════════ */
-        .a body-bg { background: #0a1628; }
-        .a-page { background: #0a1628; border-radius: 16px; overflow: hidden; }
-
-        .a-header { background: #0a1628; padding: 26px 28px 22px; text-align: center; border-bottom: 1px solid #1a2e45; }
-        .a-flag { font-size: 2.2em; line-height: 1; margin-bottom: 8px; }
-        .a-title { color: #fff; font-size: 1.65em; font-weight: 900; letter-spacing: -0.03em; }
-        .a-sub { color: #4a7fa5; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 5px; }
-
-        .a-input-card { background: #111f33; margin: 16px; border-radius: 12px; padding: 20px; }
-        .a-label { color: #4a7fa5; font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
-        .a-input { width: 100%; background: #0a1628; border: 1px solid #1e3448; border-radius: 6px; padding: 10px 12px; color: #fff; font-size: 0.95em; margin-bottom: 14px; }
-        .a-btn-calc { width: 100%; padding: 13px; background: #0070f3; color: #fff; border: none; border-radius: 6px; font-size: 1em; font-weight: 700; cursor: pointer; }
-
-        .a-results { background: #111f33; margin: 0 16px; border-radius: 12px; overflow: hidden; }
-        .a-results-header { padding: 18px 20px 14px; border-bottom: 1px solid #1a2e45; display: flex; align-items: center; gap: 12px; }
-        .a-company-name { color: #fff; font-size: 1.1em; font-weight: 800; }
-        .a-emps { color: #4a7fa5; font-size: 0.7em; margin-top: 2px; }
-
-        .a-kept { padding: 20px; border-bottom: 1px solid #1a2e45; }
-        .a-kept-label { color: #8aa8c0; font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-        .a-kept-amt { color: #e63946; font-size: 2.6em; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
-        .a-kept-sub { color: #4a7fa5; font-size: 0.75em; margin-top: 5px; }
-
-        .a-fair { padding: 16px 20px; border-bottom: 1px solid #1a2e45; }
-        .a-fair-label { color: #8aa8c0; font-size: 0.78em; margin-bottom: 4px; }
-        .a-fair-amt { color: #4caf50; font-size: 1.9em; font-weight: 800; letter-spacing: -0.02em; }
-        .a-fair-sub { color: #4a7fa5; font-size: 0.72em; margin-top: 3px; }
-
-        .a-bottom { padding: 14px 20px; border-bottom: 1px solid #1a2e45; }
-        .a-bottom p { color: #8aa8c0; font-size: 0.8em; line-height: 1.6; margin-bottom: 4px; }
-        .a-bottom strong { color: #fff; }
-
-        .a-coop { padding: 14px 20px; background: #0c2218; border-bottom: 1px solid #1a2e45; font-size: 0.78em; color: #66bb6a; line-height: 1.6; }
-        .a-coop a { color: #81c784; }
-
-        .a-share { padding: 14px 20px 18px; }
-        .a-share-label { font-size: 0.72em; color: #4a7fa5; margin-bottom: 8px; }
-        .a-share-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-
-        /* ══════════════════════════════════════════════
-           DESIGN B — Clean / Refined  (current direction)
-        ══════════════════════════════════════════════ */
-        .b-page { background: #f5f7f9; border-radius: 16px; overflow: hidden; padding: 24px; }
-
-        .b-header { text-align: center; margin-bottom: 22px; }
-        .b-flag { font-size: 2em; line-height: 1; margin-bottom: 8px; }
-        .b-title { color: #1a1a1a; font-size: 1.55em; font-weight: 800; letter-spacing: -0.02em; }
-        .b-sub { color: #888; font-size: 0.78em; margin-top: 4px; }
-
-        .b-input-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 22px; margin-bottom: 20px; }
-        .b-label { display: block; font-size: 0.82em; font-weight: 600; color: #444; margin-bottom: 7px; }
-        .b-input { width: 100%; padding: 11px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; margin-bottom: 14px; }
-        .b-btn-calc { width: 100%; padding: 14px; background: #0070f3; color: #fff; border: none; border-radius: 6px; font-size: 1.05em; font-weight: 700; cursor: pointer; }
-
-        .b-results { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); overflow: hidden; }
-        .b-results-header { padding: 18px 22px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
-        .b-logo { width: 42px; height: 42px; background: #f5f5f5; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-size:1.3em; flex-shrink:0; border:1px solid #eee; }
-        .b-company-name { color: #1a1a1a; font-size: 1.1em; font-weight: 700; }
-        .b-emps { color: #aaa; font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
-
-        .b-section { padding: 18px 22px; border-bottom: 1px solid #f5f5f5; }
-        .b-fair-label { font-size: 0.78em; color: #555; margin-bottom: 4px; }
-        .b-fair-amt { font-size: 1.9em; font-weight: 800; color: #1b5e20; letter-spacing: -0.02em; }
-        .b-fair-sub { font-size: 0.75em; color: #999; margin-top: 3px; }
-
-        .b-kept { padding: 16px 22px; border-bottom: 1px solid #f5f5f5; }
-        .b-kept-label { font-size: 0.78em; color: #555; margin-bottom: 4px; }
-        .b-kept-main { font-size: 1.5em; font-weight: 800; color: #1a1a1a; }
-        .b-kept-sub { font-size: 0.75em; color: #999; margin-top: 3px; }
-
-        .b-bottom { padding: 14px 22px; border-bottom: 1px solid #f5f5f5; font-size: 0.82em; color: #444; line-height: 1.7; }
-
-        .b-coop { padding: 14px 22px; background: #f0f7f0; border-bottom: 1px solid #f0f0f0; font-size: 0.78em; color: #2e7d32; line-height: 1.6; }
-        .b-coop a { color: #1b5e20; }
-
-        .b-share { padding: 14px 22px 18px; }
-        .b-share-label { font-size: 0.72em; color: #aaa; margin-bottom: 8px; }
-        .b-share-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-
-        /* ══════════════════════════════════════════════
-           DESIGN C — Warm / Populist
-        ══════════════════════════════════════════════ */
-        .c-page { background: #fffbf5; border-radius: 16px; overflow: hidden; border: 1px solid #ede0d0; }
-
-        .c-header { text-align: center; padding: 26px 24px 20px; background: #fff; border-bottom: 1px solid #ede0d0; }
-        .c-flag { font-size: 2em; line-height: 1; margin-bottom: 8px; }
-        .c-title { color: #1a0a00; font-size: 1.55em; font-weight: 900; letter-spacing: -0.02em; }
-        .c-sub { color: #a0785a; font-size: 0.78em; margin-top: 4px; }
-
-        .c-input-card { background: #fff; margin: 16px; border-radius: 12px; border: 1px solid #ede0d0; padding: 20px; }
-        .c-label { display: block; font-size: 0.82em; font-weight: 600; color: #7c4a00; margin-bottom: 7px; }
-        .c-input { width: 100%; padding: 11px 12px; border: 1px solid #e0c8b0; border-radius: 6px; font-size: 0.95em; margin-bottom: 14px; background: #fffbf5; }
-        .c-btn-calc { width: 100%; padding: 14px; background: #b45309; color: #fff; border: none; border-radius: 8px; font-size: 1.05em; font-weight: 700; cursor: pointer; }
-
-        .c-results { margin: 0 16px 16px; border-radius: 12px; border: 1px solid #ede0d0; overflow: hidden; background: #fff; }
-        .c-results-header { padding: 16px 18px; border-bottom: 1px solid #ede0d0; }
-        .c-company-name { color: #1a0a00; font-size: 1.15em; font-weight: 800; }
-        .c-emps { color: #a0785a; font-size: 0.72em; margin-top: 2px; }
-
-        .c-kept { padding: 18px; border-bottom: 1px solid #ede0d0; background: #fff8f0; border-left: 4px solid #d97706; }
-        .c-kept-top { font-size: 0.82em; color: #7c4a00; margin-bottom: 5px; }
-        .c-kept-amt { font-size: 2.4em; font-weight: 900; color: #b45309; letter-spacing: -0.03em; line-height: 1; }
-        .c-kept-sub { font-size: 0.75em; color: #a0785a; margin-top: 4px; }
-
-        .c-fair { padding: 16px 18px; border-bottom: 1px solid #ede0d0; border-left: 4px solid #16a34a; background: #f0faf0; }
-        .c-fair-label { font-size: 0.8em; color: #166534; margin-bottom: 4px; }
-        .c-fair-amt { font-size: 1.85em; font-weight: 800; color: #15803d; letter-spacing: -0.02em; }
-        .c-fair-sub { font-size: 0.75em; color: #6b9b7a; margin-top: 3px; }
-
-        .c-bottom { padding: 14px 18px; border-bottom: 1px solid #ede0d0; font-size: 0.82em; color: #5a3a1a; line-height: 1.7; }
-
-        .c-coop { padding: 14px 18px; background: #f0faf0; border-bottom: 1px solid #ede0d0; border-left: 4px solid #16a34a; font-size: 0.78em; color: #166534; line-height: 1.6; }
-        .c-coop a { color: #166534; }
-
-        .c-share { padding: 14px 18px 18px; }
-        .c-share-label { font-size: 0.72em; color: #a0785a; margin-bottom: 8px; }
-        .c-share-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .share-btn { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 20px; font-size: 0.75em; font-weight: 600; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
-    <div class="page-header">
-        <h1>Your Fair Share — Design Options</h1>
-        <p>Same content, 3 visual directions &nbsp;·&nbsp; Example: Amazon worker, $45,000/year</p>
+<div class="page-header">
+    <h1>Your Fair Share — Design Options</h1>
+    <p>3 visual directions, same content &nbsp;·&nbsp; Amazon worker, $45,000/year</p>
+</div>
+
+<div class="designs">
+
+<!-- ══ A: BOLD / EDITORIAL ══ -->
+<div class="design-col">
+    <p class="design-label">A — Bold / Editorial</p>
+    <div style="background:#0a1628; border-radius:16px; overflow:hidden;">
+
+        <!-- header -->
+        <div style="padding:26px 28px 20px; text-align:center; border-bottom:1px solid #1a2e45;">
+            <div style="font-size:2.2em; margin-bottom:8px;">🇺🇸</div>
+            <div style="color:#fff; font-size:1.6em; font-weight:900; letter-spacing:-0.03em;">Your Fair Share</div>
+            <div style="color:#4a7fa5; font-size:0.75em; text-transform:uppercase; letter-spacing:0.12em; margin-top:5px;">Live Corporate Wealth Analysis</div>
+        </div>
+
+        <!-- input -->
+        <div style="background:#111f33; margin:16px; border-radius:12px; padding:20px;">
+            <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px;">Company Name or Ticker</div>
+            <div style="background:#0a1628; border:1px solid #1e3448; border-radius:6px; padding:10px 12px; color:#fff; font-size:0.9em; margin-bottom:14px;">Amazon</div>
+            <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px;">Annual Salary ($)</div>
+            <div style="background:#0a1628; border:1px solid #1e3448; border-radius:6px; padding:10px 12px; color:#fff; font-size:0.9em; margin-bottom:14px;">45,000</div>
+            <div style="background:#0070f3; color:#fff; border-radius:6px; padding:13px; text-align:center; font-weight:700; font-size:1em;">Calculate Your Fair Share</div>
+        </div>
+
+        <!-- results -->
+        <div style="background:#111f33; margin:0 16px 16px; border-radius:12px; overflow:hidden;">
+            <!-- company -->
+            <div style="padding:16px 20px; border-bottom:1px solid #1a2e45;">
+                <div style="color:#fff; font-size:1.1em; font-weight:800;">Amazon</div>
+                <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;">1,500,000 employees</div>
+            </div>
+            <!-- net income -->
+            <div style="padding:18px 20px; border-bottom:1px solid #1a2e45;">
+                <p style="color:#8aa8c0; font-size:0.85em; margin-bottom:6px;">If you got to keep your fair share of what <strong style="color:#fff;">Amazon</strong> said they made, <strong style="color:#fff;">$50B</strong>, your salary would be</p>
+                <div style="font-size:1.9em; font-weight:900; color:#4caf50;">$78,333</div>
+                <a href="#" style="font-size:0.75em; color:#4a7fa5; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- ebitda -->
+            <div style="padding:18px 20px; border-bottom:1px solid #1a2e45;">
+                <p style="color:#8aa8c0; font-size:0.85em; margin-bottom:6px;">If you got to keep your fair share of what <strong style="color:#fff;">Amazon</strong> actually made, <strong style="color:#fff;">$75B</strong>, your salary would be</p>
+                <div style="font-size:1.9em; font-weight:900; color:#4a9eff;">$95,000</div>
+                <a href="#" style="font-size:0.75em; color:#4a7fa5; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- bottom -->
+            <div style="padding:16px 20px; border-bottom:1px solid #1a2e45;">
+                <p style="color:#8aa8c0; font-size:0.82em; margin-bottom:4px;"><strong style="color:#fff;">Amazon</strong> kept <strong style="color:#e63946;">$50,000</strong> from you.</p>
+                <p style="color:#8aa8c0; font-size:0.82em; margin-bottom:4px;"><strong style="color:#fff;">The federal government</strong> kept <strong style="color:#fff;">$4,320</strong> in income tax.</p>
+                <p style="color:#4a7fa5; font-size:0.75em; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
+                <a href="#" style="font-size:0.75em; color:#4a7fa5;">How are these calculated?</a>
+            </div>
+            <!-- coop -->
+            <div style="padding:14px 20px; background:#0c2218; border-bottom:1px solid #1a2e45; font-size:0.78em; color:#66bb6a; line-height:1.6;">
+                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#81c784;">Find a worker co-op near you</a> or <a href="#" style="color:#81c784;">learn about ESOPs</a>.
+            </div>
+            <!-- share -->
+            <div style="padding:14px 20px 18px;">
+                <div style="font-size:0.72em; color:#4a7fa5; margin-bottom:8px;">Share your result:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
+                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
+                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
+                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
+                    <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div class="designs">
+<!-- ══ B: CLEAN / REFINED ══ -->
+<div class="design-col">
+    <p class="design-label">B — Clean / Refined</p>
+    <div style="background:#f5f7f9; border-radius:16px; padding:24px;">
 
-        <!-- ══ DESIGN A ══ -->
-        <div class="design-col">
-            <p class="design-label">A — Bold / Editorial</p>
-            <div class="a-page">
-                <div class="a-header">
-                    <div class="a-flag">🇺🇸</div>
-                    <div class="a-title">Your Fair Share</div>
-                    <div class="a-sub">Live Corporate Wealth Analysis</div>
+        <!-- header -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:2em; margin-bottom:8px;">🇺🇸</div>
+            <div style="color:#1a1a1a; font-size:1.55em; font-weight:800; letter-spacing:-0.02em;">Your Fair Share</div>
+            <div style="color:#888; font-size:0.78em; margin-top:4px;">Live Corporate Wealth Analysis</div>
+        </div>
+
+        <!-- input -->
+        <div style="background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); padding:22px; margin-bottom:20px;">
+            <label style="display:block; font-size:0.82em; font-weight:600; color:#444; margin-bottom:7px;">Company Name or Ticker</label>
+            <div style="padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px;">Amazon</div>
+            <label style="display:block; font-size:0.82em; font-weight:600; color:#444; margin-bottom:7px;">Annual Salary ($)</label>
+            <div style="padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px;">45,000</div>
+            <div style="background:#0070f3; color:#fff; border-radius:6px; padding:14px; text-align:center; font-weight:700; font-size:1.05em;">Calculate Your Fair Share</div>
+        </div>
+
+        <!-- results -->
+        <div style="background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); overflow:hidden;">
+            <!-- company -->
+            <div style="padding:16px 22px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; gap:12px;">
+                <div style="width:42px; height:42px; background:#f5f5f5; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.3em; flex-shrink:0; border:1px solid #eee;">📦</div>
+                <div>
+                    <div style="color:#1a1a1a; font-size:1.1em; font-weight:700;">Amazon</div>
+                    <div style="color:#aaa; font-size:0.7em; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;">1,500,000 employees</div>
                 </div>
-                <div class="a-input-card">
-                    <label class="a-label">Company Name or Ticker</label>
-                    <input class="a-input" value="Amazon" readonly>
-                    <label class="a-label">Annual Salary ($)</label>
-                    <input class="a-input" value="45000" readonly>
-                    <button class="a-btn-calc">Calculate Your Fair Share</button>
-                </div>
-                <div class="a-results">
-                    <div class="a-results-header">
-                        <div>
-                            <div class="a-company-name">Amazon</div>
-                            <div class="a-emps">1,500,000 employees</div>
-                        </div>
-                    </div>
-                    <div class="a-kept">
-                        <div class="a-kept-label">If Amazon's profits were shared equally, your salary would be</div>
-                        <div class="a-kept-amt">$78,333</div>
-                        <div class="a-kept-sub">Based on $50B net income ÷ 1.5M workers</div>
-                    </div>
-                    <div class="a-fair">
-                        <div class="a-fair-label">If you got your fair share of what Amazon actually made ($75B EBITDA), your salary would be</div>
-                        <div class="a-fair-amt">$95,000</div>
-                        <div class="a-fair-sub">Based on EBITDA — operating cash before interest, taxes & depreciation</div>
-                    </div>
-                    <div class="a-bottom">
-                        <p><strong>Amazon</strong> kept <strong>$50,000</strong> from you.</p>
-                        <p><strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.</p>
-                        <p style="font-size:0.85em; color:#4a7fa5; margin-top:4px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
-                    </div>
-                    <div class="a-coop">
-                        <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#">Find a worker co-op near you</a> or <a href="#">learn about ESOPs</a>.
-                    </div>
-                    <div class="a-share">
-                        <div class="a-share-label">Share your result:</div>
-                        <div class="a-share-btns">
-                            <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
-                            <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                            <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                            <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                            <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
-                        </div>
-                    </div>
+            </div>
+            <!-- net income -->
+            <div style="padding:18px 22px; border-bottom:1px solid #f5f5f5;">
+                <p style="font-size:0.85em; color:#444; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> said they made, <strong>$50B</strong>, your salary would be</p>
+                <div style="font-size:1.85em; font-weight:800; color:#1b5e20;">$78,333</div>
+                <a href="#" style="font-size:0.75em; color:#1565c0; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- ebitda -->
+            <div style="padding:18px 22px; border-bottom:1px solid #f5f5f5;">
+                <p style="font-size:0.85em; color:#444; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> actually made, <strong>$75B</strong>, your salary would be</p>
+                <div style="font-size:1.85em; font-weight:800; color:#0d47a1;">$95,000</div>
+                <a href="#" style="font-size:0.75em; color:#1565c0; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- bottom -->
+            <div style="padding:16px 22px; border-bottom:1px solid #f5f5f5;">
+                <p style="font-size:0.85em; color:#333; margin-bottom:4px;"><strong>Amazon</strong> kept <strong>$50,000</strong> from you.</p>
+                <p style="font-size:0.85em; color:#333; margin-bottom:4px;"><strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.</p>
+                <p style="font-size:0.75em; color:#888; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
+                <a href="#" style="font-size:0.75em; color:#1565c0;">How are these calculated?</a>
+                <p style="font-size:0.72em; color:#bbb; margin-top:6px;">Sources: employees: Wikipedia · profit: SEC EDGAR · EBITDA: SEC EDGAR</p>
+            </div>
+            <!-- coop -->
+            <div style="padding:14px 22px; background:#f0f7f0; border-bottom:1px solid #f0f0f0; font-size:0.78em; color:#2e7d32; line-height:1.6;">
+                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#1b5e20;">Find a worker co-op near you</a> or <a href="#" style="color:#1b5e20;">learn about ESOPs</a>.
+            </div>
+            <!-- share -->
+            <div style="padding:14px 22px 18px;">
+                <div style="font-size:0.72em; color:#aaa; margin-bottom:8px;">Share your result:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
+                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
+                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
+                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
+                    <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
                 </div>
             </div>
         </div>
-
-        <!-- ══ DESIGN B ══ -->
-        <div class="design-col">
-            <p class="design-label">B — Clean / Refined</p>
-            <div class="b-page">
-                <div class="b-header">
-                    <div class="b-flag">🇺🇸</div>
-                    <div class="b-title">Your Fair Share</div>
-                    <div class="b-sub">Live Corporate Wealth Analysis</div>
-                </div>
-                <div class="b-input-card">
-                    <label class="b-label">Company Name or Ticker</label>
-                    <input class="b-input" value="Amazon" readonly>
-                    <label class="b-label">Annual Salary ($)</label>
-                    <input class="b-input" value="45000" readonly>
-                    <button class="b-btn-calc">Calculate Your Fair Share</button>
-                </div>
-                <div class="b-results">
-                    <div class="b-results-header">
-                        <div class="b-logo">📦</div>
-                        <div>
-                            <div class="b-company-name">Amazon</div>
-                            <div class="b-emps">1,500,000 employees</div>
-                        </div>
-                    </div>
-                    <div class="b-section">
-                        <div class="b-fair-label">If you got your fair share of what Amazon said they made ($50B net income), your salary would be</div>
-                        <div class="b-fair-amt">$78,333</div>
-                        <div class="b-fair-sub"><a href="#" style="color:#1565c0; font-size:0.9em;">How was this calculated?</a></div>
-                    </div>
-                    <div class="b-section">
-                        <div class="b-fair-label">If you got your fair share of what Amazon actually made ($75B EBITDA), your salary would be</div>
-                        <div class="b-fair-amt" style="color:#0d47a1;">$95,000</div>
-                        <div class="b-fair-sub"><a href="#" style="color:#1565c0; font-size:0.9em;">How was this calculated?</a></div>
-                    </div>
-                    <div class="b-kept">
-                        <div class="b-kept-label">Amazon kept from you</div>
-                        <div class="b-kept-main">$50,000</div>
-                    </div>
-                    <div class="b-bottom">
-                        <strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.<br>
-                        <span style="font-size:0.85em; color:#888;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate.</span>
-                        <br><a href="#" style="font-size:0.85em; color:#1565c0;">How are these calculated?</a>
-                        <p style="margin-top:6px; font-size:0.72em; color:#bbb;">Sources: employees: Wikipedia · profit: SEC EDGAR · EBITDA: SEC EDGAR</p>
-                    </div>
-                    <div class="b-coop">
-                        <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#">Find a worker co-op near you</a> or <a href="#">learn about ESOPs</a>.
-                    </div>
-                    <div class="b-share">
-                        <div class="b-share-label">Share your result:</div>
-                        <div class="b-share-btns">
-                            <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
-                            <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                            <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                            <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                            <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ══ DESIGN C ══ -->
-        <div class="design-col">
-            <p class="design-label">C — Warm / Populist</p>
-            <div class="c-page">
-                <div class="c-header">
-                    <div class="c-flag">🇺🇸</div>
-                    <div class="c-title">Your Fair Share</div>
-                    <div class="c-sub">Live Corporate Wealth Analysis</div>
-                </div>
-                <div class="c-input-card">
-                    <label class="c-label">Company Name or Ticker</label>
-                    <input class="c-input" value="Amazon" readonly>
-                    <label class="c-label">Annual Salary ($)</label>
-                    <input class="c-input" value="45000" readonly>
-                    <button class="c-btn-calc">Calculate Your Fair Share</button>
-                </div>
-                <div class="c-results">
-                    <div class="c-results-header">
-                        <div class="c-company-name">Amazon</div>
-                        <div class="c-emps">1,500,000 employees</div>
-                    </div>
-                    <div class="c-kept">
-                        <div class="c-kept-top">If Amazon's profits were shared equally, your salary would be</div>
-                        <div class="c-kept-amt">$78,333</div>
-                        <div class="c-kept-sub">Based on $50B net income ÷ 1.5M workers</div>
-                    </div>
-                    <div class="c-fair">
-                        <div class="c-fair-label">If you got your fair share of what Amazon actually made ($75B EBITDA), your salary would be</div>
-                        <div class="c-fair-amt">$95,000</div>
-                        <div class="c-fair-sub">instead of $45,000</div>
-                    </div>
-                    <div class="c-bottom">
-                        <strong>Amazon</strong> kept <strong>$50,000</strong> from you.<br>
-                        <strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.<br>
-                        <span style="font-size:0.85em; color:#a0785a;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate.</span>
-                        <br><a href="#" style="font-size:0.82em; color:#b45309;">How are these calculated?</a>
-                    </div>
-                    <div class="c-coop">
-                        <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#">Find a worker co-op near you</a> or <a href="#">learn about ESOPs</a>.
-                    </div>
-                    <div class="c-share">
-                        <div class="c-share-label">Share your result:</div>
-                        <div class="c-share-btns">
-                            <span class="share-btn" style="background:#1a0a00;color:#fff;">𝕏 Post</span>
-                            <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                            <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                            <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                            <span class="share-btn" style="background:#7c4a00;color:#fff;">✉ Text</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
+</div>
+
+<!-- ══ C: WARM / POPULIST ══ -->
+<div class="design-col">
+    <p class="design-label">C — Warm / Populist</p>
+    <div style="background:#fffbf5; border-radius:16px; overflow:hidden; border:1px solid #ede0d0;">
+
+        <!-- header -->
+        <div style="text-align:center; padding:26px 24px 20px; background:#fff; border-bottom:1px solid #ede0d0;">
+            <div style="font-size:2em; margin-bottom:8px;">🇺🇸</div>
+            <div style="color:#1a0a00; font-size:1.55em; font-weight:900; letter-spacing:-0.02em;">Your Fair Share</div>
+            <div style="color:#a0785a; font-size:0.78em; margin-top:4px;">Live Corporate Wealth Analysis</div>
+        </div>
+
+        <!-- input -->
+        <div style="background:#fff; margin:16px; border-radius:12px; border:1px solid #ede0d0; padding:20px;">
+            <label style="display:block; font-size:0.82em; font-weight:600; color:#7c4a00; margin-bottom:7px;">Company Name or Ticker</label>
+            <div style="padding:10px 12px; border:1px solid #e0c8b0; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px; background:#fffbf5;">Amazon</div>
+            <label style="display:block; font-size:0.82em; font-weight:600; color:#7c4a00; margin-bottom:7px;">Annual Salary ($)</label>
+            <div style="padding:10px 12px; border:1px solid #e0c8b0; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px; background:#fffbf5;">45,000</div>
+            <div style="background:#b45309; color:#fff; border-radius:8px; padding:14px; text-align:center; font-weight:700; font-size:1.05em;">Calculate Your Fair Share</div>
+        </div>
+
+        <!-- results -->
+        <div style="margin:0 16px 16px; border-radius:12px; border:1px solid #ede0d0; overflow:hidden; background:#fff;">
+            <!-- company -->
+            <div style="padding:16px 18px; border-bottom:1px solid #ede0d0;">
+                <div style="color:#1a0a00; font-size:1.15em; font-weight:800;">Amazon</div>
+                <div style="color:#a0785a; font-size:0.72em; margin-top:2px;">1,500,000 employees</div>
+            </div>
+            <!-- net income -->
+            <div style="padding:18px; border-bottom:1px solid #ede0d0;">
+                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> said they made, <strong>$50B</strong>, your salary would be</p>
+                <div style="font-size:1.85em; font-weight:900; color:#15803d;">$78,333</div>
+                <a href="#" style="font-size:0.75em; color:#b45309; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- ebitda -->
+            <div style="padding:18px; border-bottom:1px solid #ede0d0;">
+                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> actually made, <strong>$75B</strong>, your salary would be</p>
+                <div style="font-size:1.85em; font-weight:900; color:#b45309;">$95,000</div>
+                <a href="#" style="font-size:0.75em; color:#b45309; display:block; margin-top:5px;">How was this calculated?</a>
+            </div>
+            <!-- bottom -->
+            <div style="padding:16px 18px; border-bottom:1px solid #ede0d0;">
+                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:4px;"><strong>Amazon</strong> kept <strong>$50,000</strong> from you.</p>
+                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:4px;"><strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.</p>
+                <p style="font-size:0.75em; color:#a0785a; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
+                <a href="#" style="font-size:0.75em; color:#b45309;">How are these calculated?</a>
+            </div>
+            <!-- coop -->
+            <div style="padding:14px 18px; background:#f0faf0; border-bottom:1px solid #ede0d0; border-left:4px solid #16a34a; font-size:0.78em; color:#166534; line-height:1.6;">
+                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#166534;">Find a worker co-op near you</a> or <a href="#" style="color:#166534;">learn about ESOPs</a>.
+            </div>
+            <!-- share -->
+            <div style="padding:14px 18px 18px;">
+                <div style="font-size:0.72em; color:#a0785a; margin-bottom:8px;">Share your result:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <span class="share-btn" style="background:#1a0a00;color:#fff;">𝕏 Post</span>
+                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
+                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
+                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
+                    <span class="share-btn" style="background:#7c4a00;color:#fff;">✉ Text</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /designs -->
 </body>
 </html>
