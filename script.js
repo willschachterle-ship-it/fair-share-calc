@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (ebitdaNegative || surplusAmt <= 0) {
                             shareText = data.name + ' didn\u2019t turn a profit this year \u2014 so there\u2019s nothing to share. What does YOUR employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         } else {
-                            shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' per worker last year. If you work there, that could have been your money. What does YOUR employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
+                            shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' per worker last year. If you work there, you worked for that money \u2014 but they kept it or decided to give it to someone else. See what YOUR employer did with the money you worked for: https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
                         }
                         var tweetUrl    = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
                         var bskyUrl     = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText);
