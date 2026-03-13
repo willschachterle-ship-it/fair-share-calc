@@ -422,6 +422,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var distributedSurplus = Math.round((effectiveProfit / data.emps) * timeFrac);
             var accountingSurplus  = Math.round((data.ebitda  / data.emps) * timeFrac);
             var fedTax = calculateTax(income);
+            var effectiveRate = (income > 0 && fedTax > 0) ? (fedTax / income * 100).toFixed(1) : 0;
+            var taxable = Math.max(0, income - 14600);
+            var marginalRate = taxable > 609350 ? 37 : taxable > 243725 ? 35 : taxable > 191950 ? 32
+                             : taxable > 100525 ? 24 : taxable > 47150 ? 22 : taxable > 11600 ? 12
+                             : taxable > 0 ? 10 : 0;
             var netTotal    = income + distributedSurplus;
             var ebitdaTotal = income + accountingSurplus;
 
@@ -528,7 +533,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div style="margin-top:20px; padding-top:20px; border-top: 1px solid #eee;">' +
                             summaryLine +
-                            '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax.</p>' +
+                            (income <= 14600
+                                ? '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$0</strong> in income tax — your income is below the $14,600 standard deduction.</p>'
+                                : '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax (<strong>' + effectiveRate + '% effective rate</strong>).</p>' +
+                                  (marginalRate >= 24 ? '<p style="margin:2px 0 4px; font-size:0.78em; color:#888;">Tax brackets are progressive — the ' + marginalRate + '% rate only applies to the portion of income above that threshold, not your full salary.</p>' : '')
+                            ) +
                             '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
                             sourcesLine +
                         '</div>' +
