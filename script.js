@@ -427,6 +427,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var marginalRate = taxable > 609350 ? 37 : taxable > 243725 ? 35 : taxable > 191950 ? 32
                              : taxable > 100525 ? 24 : taxable > 47150 ? 22 : taxable > 11600 ? 12
                              : taxable > 0 ? 10 : 0;
+            var topBracketGrossThreshold = marginalRate === 37 ? 623950 : marginalRate === 35 ? 258325
+                                         : marginalRate === 32 ? 206550 : marginalRate === 24 ? 115125 : 0;
+            var amountInTopBracket = topBracketGrossThreshold > 0 ? income - topBracketGrossThreshold : 0;
             var netTotal    = income + distributedSurplus;
             var ebitdaTotal = income + accountingSurplus;
 
@@ -536,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             (income <= 14600
                                 ? '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$0</strong> in income tax — your income is below the $14,600 standard deduction.</p>'
                                 : '<p style="margin:0 0 2px;"><strong>The federal government</strong> kept <strong>$' + fedTax.toLocaleString() + '</strong> in income tax (<strong>' + effectiveRate + '% effective rate</strong>).</p>' +
-                                  (marginalRate >= 24 ? '<p style="margin:2px 0 4px; font-size:0.78em; color:#888;">Tax brackets are progressive — the ' + marginalRate + '% rate only applies to the portion of income above that threshold, not your full salary.</p>' : '')
+                                  (marginalRate >= 24 ? '<p style="margin:2px 0 4px; font-size:0.78em; color:#888;">Tax brackets are progressive — only the $' + amountInTopBracket.toLocaleString() + ' above $' + topBracketGrossThreshold.toLocaleString() + ' is taxed at ' + marginalRate + '%. The rest is taxed at lower rates.</p>' : '')
                             ) +
                             '<a href="how-it-works.html#summary" target="_blank" style="font-size:0.78em; color:#1565c0;">How are these calculated?</a>' +
                             sourcesLine +
@@ -547,7 +550,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Worker-owned companies and ESOPs share ownership — and profits — with employees. ' +
                         '<a href="https://www.usfwc.org/find-a-co-op/" target="_blank" rel="noopener" style="color:#1b5e20;">Find a worker co-op near you</a> or ' +
                         '<a href="https://www.nceo.org/articles/esop-employee-stock-ownership-plan" target="_blank" rel="noopener" style="color:#1b5e20;">learn about ESOPs</a>.' +
-                    '</div>';
+                    '</div>' +
+                    (function() {
+                        var shareText, surplusAmt = accountingSurplus;
+                        if (ebitdaNegative || surplusAmt <= 0) {
+                            shareText = data.name + ' didn\u2019t turn a profit this year \u2014 so there\u2019s nothing to share. I used Your Fair Share to check: https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
+                        } else {
+                            shareText = data.name + ' kept $' + surplusAmt.toLocaleString() + ' from me last year. My fair share of their profits would\u2019ve brought my salary from $' + income.toLocaleString() + ' to $' + ebitdaTotal.toLocaleString() + '. What does your employer keep? https://fair-share-calc.vercel.app \uD83C\uDDFA\uD83C\uDDF8';
+                        }
+                        var tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
+                        var linkedinUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://fair-share-calc.vercel.app');
+                        return '<div style="margin-top:12px; display:flex; gap:8px; align-items:center;">' +
+                            '<span style="font-size:0.8em; color:#888;">Share your result:</span>' +
+                            '<a href="' + tweetUrl + '" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:#000; color:#fff; border-radius:20px; font-size:0.8em; font-weight:600; text-decoration:none;">𝕏 Post</a>' +
+                            '<a href="' + linkedinUrl + '" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:#0a66c2; color:#fff; border-radius:20px; font-size:0.8em; font-weight:600; text-decoration:none;">in Share</a>' +
+                        '</div>';
+                    })();
                 resultsArea.classList.remove('hidden');
             }
         });

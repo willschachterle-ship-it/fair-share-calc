@@ -4,7 +4,7 @@ A running list of improvements to implement after core testing is complete.
 
 ---
 
-## 1. Handle Money-Losing Companies
+## 1. ✅ Handle Money-Losing Companies — DONE
 
 **Problem:** When a company has negative net income or EBITDA, the result is confusing — e.g. "your salary would be $-811,982" implies the employee would owe money.
 
@@ -18,7 +18,7 @@ A running list of improvements to implement after core testing is complete.
 
 ---
 
-## 2. Source Transparency — Add Data Source Links
+## 2. ✅ Source Transparency — Add Data Source Links — DONE 2026-03-12
 
 **Problem:** Users can't verify where the numbers come from.
 
@@ -44,7 +44,7 @@ Each fallback entry should carry a `_src` tag so the client knows which case app
 - Client renders sources as small linked footnotes below results
 ---
 
-## 3. API Key Security for Public Site
+## 3. ✅ API Key Security for Public Site — DONE 2026-03-12
 
 **Problem:** API keys (Finnhub, Alpha Vantage, etc.) may be exposed in client-side code or Vercel environment.
 
@@ -60,7 +60,7 @@ Each fallback entry should carry a `_src` tag so the client knows which case app
 
 ---
 
-## 4. Link to Worker-Owned Companies
+## 4. ✅ Link to Worker-Owned Companies — DONE 2026-03-12
 
 **Problem/Opportunity:** After showing how little workers get vs. the company, offer an alternative.
 
@@ -76,7 +76,7 @@ Each fallback entry should carry a `_src` tag so the client knows which case app
 
 ---
 
-## 5. Data Source Attribution Analysis Script
+## 5. ✅ Data Source Attribution Analysis Script — DONE 2026-03-13
 
 **Goal:** Understand how reliant the app is on each data source — especially the manually-maintained fallback DB — across all ~1000 companies.
 
@@ -126,7 +126,7 @@ FIELD: profit
 
 ---
 
-## 6. Explain How Taxes Are Calculated
+## 6. ✅ Explain How Taxes Are Calculated — DONE
 
 **Problem:** Users see a "your fair share" dollar figure but have no idea how the tax calculation works — what rate, what brackets, what assumptions.
 
@@ -144,7 +144,7 @@ FIELD: profit
 
 ---
 
-## 7. Explain Net Income vs. EBITDA — Why We Show Both
+## 7. ✅ Explain Net Income vs. EBITDA — Why We Show Both — DONE
 
 **Problem:** Most users don't know what "EBITDA" means or why it differs from profit, and may not understand why we show two figures.
 
@@ -175,7 +175,7 @@ FIELD: profit
 
 ---
 
-## 8. Top-1000 Output Analysis Script
+## 8. ✅ Top-5000 Output Analysis Script — DONE 2026-03-13
 
 **Goal:** Parse the text output of a full top-1000 test run and produce a statistical breakdown of data quality, source coverage, and financial health across the full company set.
 
@@ -303,7 +303,7 @@ EMPLOYEE COUNT DISTRIBUTION
 
 ---
 
-## 9. Autocomplete on the Search Input
+## 9. ✅ Autocomplete on the Search Input — DONE 2026-03-12
 
 **Problem:** Users type things like "delek" or "cheesecake" and either get a "could not be found" error (because they didn't know the ticker), or type a slightly wrong name and get no result. The search box gives no feedback about what's available before they hit Enter.
 
@@ -386,6 +386,51 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 
 ---
 
+## 10. American Flag / US-Only Indicator
+
+**Problem:** The tool is US-only but there's no visual cue reinforcing that.
+
+**Desired behavior:** Add a 🇺🇸 flag somewhere tasteful — likely in the header next to the title or subtitle, or in the "how to use" guidance note at the bottom. Reinforces that this is a US-focused tool without requiring extra text.
+
+---
+
+## 11. ✅ "They Kept $ From You" Copy Tweak — DONE 2026-03-13
+
+---
+
+## 12. Social Sharing Buttons
+
+**Problem:** No easy way for users to share their result.
+
+**Desired behavior:** After results load, show share buttons:
+- **Tweet / post to X:** Pre-filled text like *"I work at Walmart. If profits were shared equally, my salary would be $284,000. Instead I make $35,000. They kept $249,000 from me. yourfairshare.com"*
+- Optionally: Copy link / copy text button
+
+**Implementation notes:**
+- X share URL: `https://twitter.com/intent/tweet?text=YOUR+TEXT+HERE`
+- Generate the tweet text dynamically from the result (company name, fair share salary, actual salary, delta)
+- Keep the share button subtle — below the results card, not intrusive
+- Don't add LinkedIn/Facebook unless there's a clear reason — X is where this will go viral
+
+---
+
+## 13. ✅ Fix Tax Calculation Display — Marginal vs. Effective Rate — DONE 2026-03-13
+
+**Two issues reported by users:**
+
+**Bug:** At very low incomes (e.g. $2,000/year), the site may show a tax amount when the correct answer is $0 — income below the standard deduction ($14,600) owes no federal income tax.
+
+**UX confusion:** Users see a percentage like "32%" and think their entire income is taxed at that rate. This is wrong — 32% is the *marginal* rate (only applies to income above ~$191k). Most of a $200k salary is taxed at lower rates.
+
+**Desired behavior:**
+- Show **effective tax rate** (total tax ÷ gross income) alongside or instead of the marginal rate, e.g. *"~22% effective federal rate"*
+- Add a one-line explainer: *"Tax brackets are progressive — everyone pays the same low rate on the first dollars earned. The 32% rate only applies to income above $191,950."*
+- Fix the low-income bug: if income ≤ standard deduction ($14,600), show $0 tax owed
+
+**Why this matters:** Users trust the tool more if the tax math feels right. A $2k/year worker being told they owe tax is an obvious red flag that undermines credibility.
+
+---
+
 ## Notes
 
 - Keep this file updated as new issues come up during testing
@@ -393,6 +438,7 @@ viral are the top 200-500, not the micro-caps at the bottom of the list.
 - #1 and #2 are UI polish — implement together in one pass
 - #4 is a nice-to-have that reinforces the app's message
 - #5 depends on #2 (add `_sources` to API response) — do them as a pair
-- #6 and #7 are user-education items — implement together in one pass when doing UI polish
+- #6 ✅ DONE — tax brackets, standard deduction, and caveats are on how-it-works.html#federal-tax; linked from results via "How are these calculated?"
+- #7 ✅ DONE — "Why we show both," divergence examples, Wikipedia links are on how-it-works.html#ebitda; linked from results via "How was this calculated?"
 - #8 (analysis script) can be built and run right now against existing output files — no API changes needed. Upgrade it to use `_sources` once #2 is shipped.
-- #9 (autocomplete) ✅ DONE 2026-03-12 — covers 837 companies including full viral500
+- #9 ✅ DONE 2026-03-12 — autocomplete covers 837 companies including full viral500
