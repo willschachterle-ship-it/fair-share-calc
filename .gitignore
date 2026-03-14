@@ -1,8 +1,14 @@
+# User-specific files
 .DS_Store
-results_*.json
+*.zip
+*.log
+
+# Test and Analysis files
 test_*.js
-*.docx
-*.md
-update_*.txt
-viral500 list.js
-top5000_list.js
+results_*.json
+data_analysis.js
+fallback.js
+
+# Node/Vercel (if applicable)
+.vercel
+node_modules/
