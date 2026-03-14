@@ -1,4 +1,8 @@
-.env
-.env.local
-.env*.local
-node_modules/
+.DS_Store
+results_*.json
+test_*.js
+*.docx
+*.md
+update_*.txt
+viral500 list.js
+top5000_list.js
