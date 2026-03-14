@@ -3,230 +3,1261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Fair Share — Design Options</title>
+    <title>Your Fair Share - CASPR-Inspired Studies</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Chivo:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Epilogue:wght@400;500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Lexend:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Noto+Sans+Display:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #e8edf2; padding: 40px 20px 60px; }
-        .page-header { text-align: center; margin-bottom: 32px; }
-        .page-header h1 { font-size: 1.1em; color: #333; font-weight: 700; }
-        .page-header p { font-size: 0.8em; color: #999; margin-top: 4px; }
-        .designs { display: flex; gap: 36px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
-        .design-col { width: 400px; }
-        .design-label { text-align: center; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #999; margin-bottom: 10px; }
-        .share-btn { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 20px; font-size: 0.75em; font-weight: 600; margin-bottom: 4px; }
+        :root {
+            color-scheme: light;
+            --page-bg: #f7f4ed;
+            --page-grid: rgba(27, 44, 94, 0.06);
+            --page-text: #24303a;
+            --page-muted: #697786;
+            --frame-width: 420px;
+            --selected-heading-font: "Source Serif 4", serif;
+            --selected-body-font: "IBM Plex Sans", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)),
+                linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), var(--page-grid) calc(100% - 1px)),
+                var(--page-bg);
+            background-size: auto, 28px 28px, auto;
+            color: var(--page-text);
+            font-family: var(--selected-body-font);
+            padding: 40px 20px 72px;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 16px;
+            z-index: 20;
+            display: flex;
+            justify-content: flex-end;
+            max-width: 1180px;
+            margin: 0 auto 18px;
+        }
+
+        .font-launcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border: 1px solid rgba(41, 63, 103, 0.16);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2b3f63;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            box-shadow: 0 12px 24px rgba(38, 55, 84, 0.08);
+            backdrop-filter: blur(14px);
+            cursor: pointer;
+        }
+
+        .font-launcher span:last-child {
+            color: #6d7b8f;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
+        .font-popover {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: min(420px, calc(100vw - 28px));
+            border: 1px solid rgba(41, 63, 103, 0.14);
+            border-radius: 22px;
+            background: rgba(252, 249, 243, 0.98);
+            box-shadow: 0 24px 48px rgba(37, 54, 82, 0.15);
+            backdrop-filter: blur(20px);
+            padding: 18px;
+        }
+
+        .font-popover[hidden] {
+            display: none;
+        }
+
+        .font-popover-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .font-popover-title {
+            font-family: var(--selected-heading-font);
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .font-popover-copy {
+            margin-top: 4px;
+            color: #697786;
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        .font-close {
+            border: none;
+            background: transparent;
+            color: #758296;
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .font-targets {
+            display: inline-flex;
+            gap: 4px;
+            margin-top: 16px;
+            padding: 4px;
+            border-radius: 11px;
+            background: #dfe8fb;
+            border: 1px solid rgba(85, 110, 166, 0.14);
+        }
+
+        .font-target {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #556476;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .font-target.active {
+            background: #ffffff;
+            color: #223141;
+            box-shadow: 0 1px 4px rgba(30, 41, 59, 0.08);
+        }
+
+        .font-current {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .font-current-card {
+            padding: 12px;
+            border: 1px solid rgba(70, 86, 112, 0.12);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .font-current-card .label {
+            color: #7a8795;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .font-current-card .value {
+            margin-top: 8px;
+            color: #223141;
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .font-preview {
+            margin-top: 16px;
+            padding: 14px;
+            border: 1px solid rgba(70, 86, 112, 0.12);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.74);
+        }
+
+        .font-preview-title {
+            font-family: var(--selected-heading-font);
+            font-size: 1.45rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+        }
+
+        .font-preview-body {
+            margin-top: 8px;
+            color: #5e6e80;
+            font-family: var(--selected-body-font);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .font-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .font-option {
+            padding: 12px;
+            border: 1px solid rgba(70, 86, 112, 0.12);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.78);
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .font-option.active {
+            border-color: #2d438f;
+            box-shadow: inset 0 0 0 1px #2d438f;
+        }
+
+        .font-option-name {
+            color: #213243;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .font-option-meta {
+            margin-top: 4px;
+            color: #7b8898;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .font-option-sample {
+            margin-top: 8px;
+            color: #516171;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .font-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .font-actions-copy {
+            color: #758296;
+            font-size: 0.76rem;
+            line-height: 1.45;
+        }
+
+        .font-reset {
+            padding: 10px 12px;
+            border: 1px solid rgba(70, 86, 112, 0.14);
+            border-radius: 12px;
+            background: #ffffff;
+            color: #28384b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .page-header {
+            max-width: 940px;
+            margin: 0 auto 36px;
+            text-align: center;
+        }
+
+        .page-header .eyebrow {
+            display: inline-block;
+            padding: 6px 12px;
+            border: 1px solid rgba(44, 70, 123, 0.16);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.72);
+            color: #52606f;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .page-header h1 {
+            margin-top: 16px;
+            font-family: var(--selected-heading-font);
+            font-size: clamp(2.3rem, 4vw, 3.4rem);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1.02;
+        }
+
+        .page-header p {
+            max-width: 700px;
+            margin: 14px auto 0;
+            color: var(--page-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .designs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, var(--frame-width)));
+            justify-content: center;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .study {
+            width: 100%;
+        }
+
+        .study-label {
+            margin-bottom: 12px;
+            color: #7a8795;
+            font-size: 0.73rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .phone {
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+            border: 1px solid var(--frame-border);
+            background: var(--shell-bg);
+            box-shadow: var(--shell-shadow);
+        }
+
+        .phone::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: var(--shell-overlay);
+        }
+
+        .phone-inner {
+            position: relative;
+            padding: 18px;
+        }
+
+        .mini-brand {
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .flag-logo {
+            position: relative;
+            width: 74px;
+            height: 46px;
+            margin: 0 auto 14px;
+            border-radius: 10px;
+            background:
+                repeating-linear-gradient(
+                    180deg,
+                    #c73d3d 0 4px,
+                    #f7f2ea 4px 8px
+                );
+            box-shadow: 0 10px 20px rgba(61, 52, 47, 0.12);
+            overflow: hidden;
+        }
+
+        .flag-logo::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 34px;
+            height: 24px;
+            background:
+                linear-gradient(135deg, #264a9b 0%, #1a2f66 100%);
+            border-bottom-right-radius: 16px;
+        }
+
+        .flag-logo::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.32), transparent 55%);
+        }
+
+        .mini-brand .kicker {
+            color: var(--brand-muted);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .mini-brand h2 {
+            margin-top: 10px;
+            font-family: var(--selected-heading-font);
+            color: var(--brand-ink);
+            font-size: 2rem;
+            font-weight: var(--brand-weight);
+            letter-spacing: var(--brand-track);
+            line-height: 0.95;
+        }
+
+        .mini-brand p {
+            margin-top: 10px;
+            color: var(--brand-muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .control-stack {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .segmented {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 9px;
+            background: var(--segment-bg);
+            border: 1px solid var(--segment-border);
+        }
+
+        .segmented span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 32px;
+            padding: 0 12px;
+            border-radius: 7px;
+            color: var(--segment-text);
+            font-size: 0.77rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .segmented .active {
+            background: var(--segment-active-bg);
+            color: var(--segment-active-text);
+            box-shadow: var(--segment-active-shadow);
+        }
+
+        .panel,
+        .result-card,
+        .support-card {
+            border: 1px solid var(--card-border);
+            border-radius: var(--card-radius);
+            background: var(--card-bg);
+        }
+
+        .panel {
+            padding: 18px;
+        }
+
+        .fields {
+            display: grid;
+            gap: 12px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .autocomplete-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .currency-field::before {
+            content: "$";
+            position: absolute;
+            left: 14px;
+            top: calc(50% + 10px);
+            transform: translateY(-50%);
+            color: #556274;
+            font-size: 0.92rem;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .field-label {
+            color: var(--label-text);
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .field-value {
+            margin-top: 6px;
+            padding: 12px 13px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--input-radius);
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-family: var(--selected-body-font);
+            font-size: 0.93rem;
+            font-weight: 500;
+        }
+
+        .field-control {
+            width: 100%;
+            margin-top: 6px;
+            padding: 12px 13px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--input-radius);
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-family: var(--selected-body-font);
+            font-size: 0.93rem;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .currency-field.has-value::before {
+            opacity: 1;
+        }
+
+        .currency-field .field-control {
+            padding-left: 13px;
+        }
+
+        .currency-field.has-value .field-control {
+            padding-left: 28px;
+        }
+
+        .field-control:focus {
+            border-color: rgba(45, 67, 143, 0.45);
+            box-shadow: 0 0 0 3px rgba(45, 67, 143, 0.08);
+        }
+
+        .field-control::placeholder {
+            color: #556274;
+            font-weight: 400;
+            opacity: 1;
+        }
+
+        .field-control[type="number"]::-webkit-outer-spin-button,
+        .field-control[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .field-control[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .toggle-container {
+            display: flex;
+            gap: 8px;
+            margin: 2px 0 2px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            min-height: 40px;
+            padding: 10px 12px;
+            border: 1px solid var(--segment-border);
+            border-radius: 10px;
+            background: #ffffff;
+            color: var(--segment-text);
+            font-family: var(--selected-body-font);
+            font-size: 0.84rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background: #dfe8fb;
+            color: #1f3f8a;
+            box-shadow: var(--segment-active-shadow);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #results {
+            display: grid;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .autocomplete-wrapper {
+            z-index: 5;
+        }
+
+        #ac-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            display: none;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 14px 28px rgba(36, 56, 75, 0.12);
+            backdrop-filter: blur(12px);
+        }
+
+        .ac-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 13px;
+            color: var(--body-text);
+            font-size: 0.84rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(70, 86, 112, 0.08);
+        }
+
+        .ac-item:last-child {
+            border-bottom: none;
+        }
+
+        .ac-item:hover,
+        .ac-item.active {
+            background: rgba(223, 232, 251, 0.55);
+        }
+
+        .ac-item-name {
+            color: var(--headline-ink);
+        }
+
+        .ac-item-ticker {
+            color: var(--muted-text);
+            font-family: "IBM Plex Sans", sans-serif;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .loading-panel {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .loading-track {
+            margin-top: 8px;
+            background: rgba(223, 232, 251, 0.75);
+            border-radius: 999px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .cta {
+            margin-top: 16px;
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            border-radius: var(--button-radius);
+            background: var(--button-bg);
+            color: var(--button-text);
+            font-family: var(--selected-body-font);
+            font-size: 0.96rem;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            text-align: center;
+        }
+
+        .results-block {
+            display: grid;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .result-card {
+            overflow: hidden;
+        }
+
+        .result-head {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--rule-color);
+        }
+
+        .result-head .company {
+            color: var(--headline-ink);
+            font-family: var(--selected-heading-font);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .result-head .meta {
+            margin-top: 4px;
+            color: var(--muted-text);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .result-section {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--rule-color);
+        }
+
+        .result-section:last-child {
+            border-bottom: none;
+        }
+
+        .result-copy {
+            color: var(--body-text);
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .result-copy strong {
+            color: var(--headline-ink);
+            font-weight: 700;
+        }
+
+        .result-figure {
+            margin-top: 8px;
+            color: var(--figure-color);
+            font-family: var(--selected-heading-font);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+        }
+
+        .result-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: var(--link-color);
+            font-size: 0.77rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .support-card {
+            padding: 15px 16px;
+            color: var(--support-text);
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .support-card strong {
+            color: var(--support-strong);
+        }
+
+        .metric-list {
+            display: grid;
+            gap: 7px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: baseline;
+        }
+
+        .metric-item span:first-child {
+            color: var(--body-text);
+            font-size: 0.8rem;
+        }
+
+        .metric-item span:last-child {
+            color: var(--headline-ink);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .share-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .share-pill {
+            padding: 7px 11px;
+            border: 1px solid var(--share-border);
+            border-radius: 999px;
+            background: var(--share-bg);
+            color: var(--share-text);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .study-a {
+            --shell-bg: linear-gradient(180deg, #fbf8f1 0%, #f3efe5 100%);
+            --shell-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 26%);
+            --frame-border: rgba(60, 79, 106, 0.16);
+            --shell-shadow: 0 20px 40px rgba(43, 55, 68, 0.08);
+            --brand-ink: #1f2b34;
+            --brand-muted: #6b7889;
+            --brand-weight: 500;
+            --brand-track: -0.04em;
+            --segment-bg: #dfe8fb;
+            --segment-border: rgba(114, 139, 196, 0.16);
+            --segment-text: #4a5c72;
+            --segment-active-bg: #ffffff;
+            --segment-active-text: #243243;
+            --segment-active-shadow: 0 1px 4px rgba(30, 41, 59, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.84);
+            --card-border: rgba(61, 81, 104, 0.14);
+            --card-radius: 16px;
+            --label-text: #718097;
+            --input-bg: rgba(251, 252, 255, 0.92);
+            --input-border: rgba(91, 113, 145, 0.18);
+            --input-radius: 11px;
+            --input-text: #233244;
+            --button-bg: #2d438f;
+            --button-text: #ffffff;
+            --button-radius: 11px;
+            --headline-ink: #1d2830;
+            --body-text: #516171;
+            --muted-text: #7b8797;
+            --rule-color: rgba(74, 95, 126, 0.12);
+            --figure-color: #233b87;
+            --link-color: #5168b5;
+            --support-text: #4d5c6d;
+            --support-strong: #223040;
+            --share-bg: rgba(255, 255, 255, 0.72);
+            --share-border: rgba(61, 81, 104, 0.16);
+            --share-text: #304357;
+        }
+
+        .study-a .mini-brand h2 {
+            font-size: calc(2rem + 2px);
+        }
+
+        .study-a .field-label,
+        .study-a #loadingLabel {
+            color: #6a7688;
+        }
+
+        .study-b {
+            --shell-bg:
+                linear-gradient(180deg, rgba(232, 239, 252, 0.7), rgba(232, 239, 252, 0) 26%),
+                #fbfcff;
+            --shell-overlay:
+                linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(43, 88, 167, 0.06) calc(100% - 1px));
+            --frame-border: rgba(62, 87, 126, 0.14);
+            --shell-shadow: 0 22px 48px rgba(36, 58, 92, 0.08);
+            --brand-ink: #13233a;
+            --brand-muted: #60748b;
+            --brand-weight: 800;
+            --brand-track: -0.05em;
+            --segment-bg: #e3ebfb;
+            --segment-border: rgba(75, 111, 175, 0.16);
+            --segment-text: #546476;
+            --segment-active-bg: #173d8d;
+            --segment-active-text: #ffffff;
+            --segment-active-shadow: none;
+            --card-bg: #ffffff;
+            --card-border: rgba(64, 90, 126, 0.13);
+            --card-radius: 14px;
+            --label-text: #6e7f91;
+            --input-bg: #f6f9ff;
+            --input-border: rgba(59, 101, 177, 0.18);
+            --input-radius: 10px;
+            --input-text: #12243c;
+            --button-bg: linear-gradient(135deg, #163a87 0%, #2f61c5 100%);
+            --button-text: #ffffff;
+            --button-radius: 10px;
+            --headline-ink: #152335;
+            --body-text: #506274;
+            --muted-text: #7f8b9c;
+            --rule-color: rgba(72, 95, 130, 0.11);
+            --figure-color: #174392;
+            --link-color: #1c56ba;
+            --support-text: #495f74;
+            --support-strong: #13233a;
+            --share-bg: #f3f6fc;
+            --share-border: rgba(62, 87, 126, 0.12);
+            --share-text: #28405c;
+        }
+
+        .study-c {
+            --shell-bg:
+                radial-gradient(circle at top left, rgba(161, 192, 171, 0.16), transparent 34%),
+                linear-gradient(180deg, #f7f3ea 0%, #f2ede1 100%);
+            --shell-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 24%);
+            --frame-border: rgba(97, 102, 76, 0.18);
+            --shell-shadow: 0 18px 36px rgba(57, 61, 41, 0.09);
+            --brand-ink: #243022;
+            --brand-muted: #76816b;
+            --brand-weight: 600;
+            --brand-track: -0.035em;
+            --segment-bg: #e7ecdf;
+            --segment-border: rgba(118, 129, 107, 0.16);
+            --segment-text: #5f6858;
+            --segment-active-bg: #fcfcf7;
+            --segment-active-text: #273125;
+            --segment-active-shadow: 0 1px 3px rgba(64, 72, 47, 0.08);
+            --card-bg: rgba(255, 252, 246, 0.9);
+            --card-border: rgba(98, 103, 76, 0.15);
+            --card-radius: 18px;
+            --label-text: #7d866f;
+            --input-bg: #fbfaf5;
+            --input-border: rgba(118, 129, 107, 0.19);
+            --input-radius: 12px;
+            --input-text: #283224;
+            --button-bg: #6b7d58;
+            --button-text: #ffffff;
+            --button-radius: 12px;
+            --headline-ink: #253022;
+            --body-text: #586453;
+            --muted-text: #8b927d;
+            --rule-color: rgba(118, 129, 107, 0.14);
+            --figure-color: #4f6740;
+            --link-color: #587548;
+            --support-text: #55614f;
+            --support-strong: #263023;
+            --share-bg: rgba(248, 248, 241, 0.86);
+            --share-border: rgba(98, 103, 76, 0.14);
+            --share-text: #455140;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            .toolbar {
+                top: 10px;
+                justify-content: center;
+            }
+
+            .font-popover {
+                right: 50%;
+                transform: translateX(50%);
+            }
+
+            .font-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .phone-inner {
+                padding: 15px;
+            }
+
+            .mini-brand h2 {
+                font-size: 1.8rem;
+            }
+
+            .study-a .mini-brand h2 {
+                font-size: calc(1.8rem + 2px);
+            }
+        }
     </style>
 </head>
 <body>
-
-<div class="page-header">
-    <h1>Your Fair Share — Design Options</h1>
-    <p>3 visual directions, same content &nbsp;·&nbsp; Amazon worker, $45,000/year</p>
-</div>
-
-<div class="designs">
-
-<!-- ══ A: BOLD / EDITORIAL ══ -->
-<div class="design-col">
-    <p class="design-label">A — Bold / Editorial</p>
-    <div style="background:#0a1628; border-radius:16px; overflow:hidden;">
-
-        <!-- header -->
-        <div style="padding:26px 28px 20px; text-align:center; border-bottom:1px solid #1a2e45;">
-            <div style="font-size:2.2em; margin-bottom:8px;">🇺🇸</div>
-            <div style="color:#fff; font-size:1.6em; font-weight:900; letter-spacing:-0.03em;">Your Fair Share</div>
-            <div style="color:#4a7fa5; font-size:0.75em; text-transform:uppercase; letter-spacing:0.12em; margin-top:5px;">Live Corporate Wealth Analysis</div>
-        </div>
-
-        <!-- input -->
-        <div style="background:#111f33; margin:16px; border-radius:12px; padding:20px;">
-            <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px;">Company Name or Ticker</div>
-            <div style="background:#0a1628; border:1px solid #1e3448; border-radius:6px; padding:10px 12px; color:#fff; font-size:0.9em; margin-bottom:14px;">Amazon</div>
-            <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px;">Annual Salary ($)</div>
-            <div style="background:#0a1628; border:1px solid #1e3448; border-radius:6px; padding:10px 12px; color:#fff; font-size:0.9em; margin-bottom:14px;">45,000</div>
-            <div style="background:#0070f3; color:#fff; border-radius:6px; padding:13px; text-align:center; font-weight:700; font-size:1em;">Calculate Your Fair Share</div>
-        </div>
-
-        <!-- results -->
-        <div style="background:#111f33; margin:0 16px 16px; border-radius:12px; overflow:hidden;">
-            <!-- company -->
-            <div style="padding:16px 20px; border-bottom:1px solid #1a2e45;">
-                <div style="color:#fff; font-size:1.1em; font-weight:800;">Amazon</div>
-                <div style="color:#4a7fa5; font-size:0.7em; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;">1,500,000 employees</div>
-            </div>
-            <!-- net income -->
-            <div style="padding:18px 20px; border-bottom:1px solid #1a2e45;">
-                <p style="color:#8aa8c0; font-size:0.85em; margin-bottom:6px;">If you got to keep your fair share of what <strong style="color:#fff;">Amazon</strong> said they made, <strong style="color:#fff;">$50B</strong>, your salary would be</p>
-                <div style="font-size:1.9em; font-weight:900; color:#4caf50;">$78,333</div>
-                <a href="#" style="font-size:0.75em; color:#4a7fa5; display:block; margin-top:5px;">How was this calculated?</a>
-            </div>
-            <!-- ebitda -->
-            <div style="padding:18px 20px; border-bottom:1px solid #1a2e45;">
-                <p style="color:#8aa8c0; font-size:0.85em; margin-bottom:6px;">If you got to keep your fair share of what <strong style="color:#fff;">Amazon</strong> actually made, <strong style="color:#fff;">$75B</strong>, your salary would be</p>
-                <div style="font-size:1.9em; font-weight:900; color:#4a9eff;">$95,000</div>
-                <a href="#" style="font-size:0.75em; color:#4a7fa5; display:block; margin-top:5px;">How was this calculated?</a>
-            </div>
-            <!-- bottom -->
-            <div style="padding:16px 20px; border-bottom:1px solid #1a2e45;">
-                <p style="color:#8aa8c0; font-size:0.82em; margin-bottom:4px;"><strong style="color:#fff;">Amazon</strong> kept <strong style="color:#e63946;">$50,000</strong> from you.</p>
-                <p style="color:#8aa8c0; font-size:0.82em; margin-bottom:4px;"><strong style="color:#fff;">The federal government</strong> kept <strong style="color:#fff;">$4,320</strong> in income tax.</p>
-                <p style="color:#4a7fa5; font-size:0.75em; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
-                <a href="#" style="font-size:0.75em; color:#4a7fa5;">How are these calculated?</a>
-            </div>
-            <!-- coop -->
-            <div style="padding:14px 20px; background:#0c2218; border-bottom:1px solid #1a2e45; font-size:0.78em; color:#66bb6a; line-height:1.6;">
-                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#81c784;">Find a worker co-op near you</a> or <a href="#" style="color:#81c784;">learn about ESOPs</a>.
-            </div>
-            <!-- share -->
-            <div style="padding:14px 20px 18px;">
-                <div style="font-size:0.72em; color:#4a7fa5; margin-bottom:8px;">Share your result:</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
-                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                    <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ══ B: CLEAN / REFINED ══ -->
-<div class="design-col">
-    <p class="design-label">B — Clean / Refined</p>
-    <div style="background:#f5f7f9; border-radius:16px; padding:24px;">
-
-        <!-- header -->
-        <div style="text-align:center; margin-bottom:20px;">
-            <div style="font-size:2em; margin-bottom:8px;">🇺🇸</div>
-            <div style="color:#1a1a1a; font-size:1.55em; font-weight:800; letter-spacing:-0.02em;">Your Fair Share</div>
-            <div style="color:#888; font-size:0.78em; margin-top:4px;">Live Corporate Wealth Analysis</div>
-        </div>
-
-        <!-- input -->
-        <div style="background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); padding:22px; margin-bottom:20px;">
-            <label style="display:block; font-size:0.82em; font-weight:600; color:#444; margin-bottom:7px;">Company Name or Ticker</label>
-            <div style="padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px;">Amazon</div>
-            <label style="display:block; font-size:0.82em; font-weight:600; color:#444; margin-bottom:7px;">Annual Salary ($)</label>
-            <div style="padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px;">45,000</div>
-            <div style="background:#0070f3; color:#fff; border-radius:6px; padding:14px; text-align:center; font-weight:700; font-size:1.05em;">Calculate Your Fair Share</div>
-        </div>
-
-        <!-- results -->
-        <div style="background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.06); overflow:hidden;">
-            <!-- company -->
-            <div style="padding:16px 22px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; gap:12px;">
-                <div style="width:42px; height:42px; background:#f5f5f5; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.3em; flex-shrink:0; border:1px solid #eee;">📦</div>
+    <div class="toolbar">
+        <button class="font-launcher" id="fontLauncher" type="button" aria-expanded="false" aria-controls="fontPopover">
+            Font Lab
+            <span id="fontLauncherLabel">Headline: Source Serif 4 / Body: IBM Plex Sans</span>
+        </button>
+        <div class="font-popover" id="fontPopover" hidden>
+            <div class="font-popover-header">
                 <div>
-                    <div style="color:#1a1a1a; font-size:1.1em; font-weight:700;">Amazon</div>
-                    <div style="color:#aaa; font-size:0.7em; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;">1,500,000 employees</div>
+                    <div class="font-popover-title">25-font popover</div>
+                    <div class="font-popover-copy">Pick a headline font and a body font, and the choice will update all three studies immediately.</div>
+                </div>
+                <button class="font-close" id="fontClose" type="button" aria-label="Close font picker">&times;</button>
+            </div>
+
+            <div class="font-targets" id="fontTargets">
+                <button class="font-target active" type="button" data-target="heading">Headline font</button>
+                <button class="font-target" type="button" data-target="body">Body font</button>
+            </div>
+
+            <div class="font-current">
+                <div class="font-current-card">
+                    <div class="label">Headline</div>
+                    <div class="value" id="currentHeadingLabel">Source Serif 4</div>
+                </div>
+                <div class="font-current-card">
+                    <div class="label">Body</div>
+                    <div class="value" id="currentBodyLabel">IBM Plex Sans</div>
                 </div>
             </div>
-            <!-- net income -->
-            <div style="padding:18px 22px; border-bottom:1px solid #f5f5f5;">
-                <p style="font-size:0.85em; color:#444; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> said they made, <strong>$50B</strong>, your salary would be</p>
-                <div style="font-size:1.85em; font-weight:800; color:#1b5e20;">$78,333</div>
-                <a href="#" style="font-size:0.75em; color:#1565c0; display:block; margin-top:5px;">How was this calculated?</a>
+
+            <div class="font-preview">
+                <div class="font-preview-title">Your Fair Share</div>
+                <div class="font-preview-body">This preview uses your current headline and body choices before they flow through every variation below.</div>
             </div>
-            <!-- ebitda -->
-            <div style="padding:18px 22px; border-bottom:1px solid #f5f5f5;">
-                <p style="font-size:0.85em; color:#444; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> actually made, <strong>$75B</strong>, your salary would be</p>
-                <div style="font-size:1.85em; font-weight:800; color:#0d47a1;">$95,000</div>
-                <a href="#" style="font-size:0.75em; color:#1565c0; display:block; margin-top:5px;">How was this calculated?</a>
-            </div>
-            <!-- bottom -->
-            <div style="padding:16px 22px; border-bottom:1px solid #f5f5f5;">
-                <p style="font-size:0.85em; color:#333; margin-bottom:4px;"><strong>Amazon</strong> kept <strong>$50,000</strong> from you.</p>
-                <p style="font-size:0.85em; color:#333; margin-bottom:4px;"><strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.</p>
-                <p style="font-size:0.75em; color:#888; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
-                <a href="#" style="font-size:0.75em; color:#1565c0;">How are these calculated?</a>
-                <p style="font-size:0.72em; color:#bbb; margin-top:6px;">Sources: employees: Wikipedia · profit: SEC EDGAR · EBITDA: SEC EDGAR</p>
-            </div>
-            <!-- coop -->
-            <div style="padding:14px 22px; background:#f0f7f0; border-bottom:1px solid #f0f0f0; font-size:0.78em; color:#2e7d32; line-height:1.6;">
-                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#1b5e20;">Find a worker co-op near you</a> or <a href="#" style="color:#1b5e20;">learn about ESOPs</a>.
-            </div>
-            <!-- share -->
-            <div style="padding:14px 22px 18px;">
-                <div style="font-size:0.72em; color:#aaa; margin-bottom:8px;">Share your result:</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <span class="share-btn" style="background:#000;color:#fff;">𝕏 Post</span>
-                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                    <span class="share-btn" style="background:#555;color:#fff;">✉ Text</span>
-                </div>
+
+            <div class="font-grid" id="fontGrid"></div>
+
+            <div class="font-actions">
+                <div class="font-actions-copy">Tip: use a louder headline font with a calmer body font. The active target controls which one you are editing.</div>
+                <button class="font-reset" id="fontReset" type="button">Reset defaults</button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- ══ C: WARM / POPULIST ══ -->
-<div class="design-col">
-    <p class="design-label">C — Warm / Populist</p>
-    <div style="background:#fffbf5; border-radius:16px; overflow:hidden; border:1px solid #ede0d0;">
+    <div class="designs">
+        <article class="study study-a">
+            <div class="phone">
+                <div class="phone-inner">
+                    <header class="mini-brand">
+                        <div class="flag-logo" aria-hidden="true"></div>
+                        <h2>Your Fair Share</h2>
+                        <p>Worker compensation calculator</p>
+                    </header>
 
-        <!-- header -->
-        <div style="text-align:center; padding:26px 24px 20px; background:#fff; border-bottom:1px solid #ede0d0;">
-            <div style="font-size:2em; margin-bottom:8px;">🇺🇸</div>
-            <div style="color:#1a0a00; font-size:1.55em; font-weight:900; letter-spacing:-0.02em;">Your Fair Share</div>
-            <div style="color:#a0785a; font-size:0.78em; margin-top:4px;">Live Corporate Wealth Analysis</div>
-        </div>
+                    <section class="panel">
+                        <div class="fields">
+                            <div class="input-group autocomplete-wrapper">
+                                <div class="field-label">Company name or ticker</div>
+                                <input class="field-control" type="text" id="company" placeholder="e.g. Walmart, WMT, AMZN" autocomplete="off">
+                                <div id="ac-dropdown"></div>
+                            </div>
+                            <div class="toggle-container">
+                                <button id="annualToggle" class="toggle-btn active" type="button">Annual Salary</button>
+                                <button id="hourlyToggle" class="toggle-btn" type="button">Hourly Wage</button>
+                            </div>
+                            <div id="salaryInputs">
+                                <div class="input-group currency-field">
+                                    <div class="field-label">Annual salary</div>
+                                    <input class="field-control" type="text" inputmode="numeric" id="annualSalary" placeholder="e.g. 40,000">
+                                </div>
+                            </div>
+                            <div id="hourlyInputs" class="hidden">
+                                <div class="input-group currency-field">
+                                    <div class="field-label">Hourly wage</div>
+                                    <input class="field-control" type="text" inputmode="decimal" id="hourlyWage" placeholder="15.00">
+                                </div>
+                                <div class="row" style="margin-top:12px;">
+                                    <div class="input-group">
+                                        <div class="field-label">Hours / week</div>
+                                        <input class="field-control" type="number" id="hoursPerWeek" value="40">
+                                    </div>
+                                    <div class="input-group">
+                                        <div class="field-label">Weeks / year</div>
+                                        <input class="field-control" type="number" id="weeksWorked" value="52">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="cta" id="calculateBtn" type="button">Calculate Fair Share</button>
 
-        <!-- input -->
-        <div style="background:#fff; margin:16px; border-radius:12px; border:1px solid #ede0d0; padding:20px;">
-            <label style="display:block; font-size:0.82em; font-weight:600; color:#7c4a00; margin-bottom:7px;">Company Name or Ticker</label>
-            <div style="padding:10px 12px; border:1px solid #e0c8b0; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px; background:#fffbf5;">Amazon</div>
-            <label style="display:block; font-size:0.82em; font-weight:600; color:#7c4a00; margin-bottom:7px;">Annual Salary ($)</label>
-            <div style="padding:10px 12px; border:1px solid #e0c8b0; border-radius:6px; font-size:0.9em; color:#333; margin-bottom:14px; background:#fffbf5;">45,000</div>
-            <div style="background:#b45309; color:#fff; border-radius:8px; padding:14px; text-align:center; font-weight:700; font-size:1.05em;">Calculate Your Fair Share</div>
-        </div>
+                        <div id="loadingMsg" class="loading-panel hidden">
+                            <p id="loadingLabel" style="margin:0; text-align:center; font-size:0.78rem;">Querying SEC filings...</p>
+                            <div class="loading-track">
+                                <div id="loadingBar" style="height:100%; width:0%; background:linear-gradient(90deg,#2d438f,#6d83d7); border-radius:999px; transition:width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                    </section>
 
-        <!-- results -->
-        <div style="margin:0 16px 16px; border-radius:12px; border:1px solid #ede0d0; overflow:hidden; background:#fff;">
-            <!-- company -->
-            <div style="padding:16px 18px; border-bottom:1px solid #ede0d0;">
-                <div style="color:#1a0a00; font-size:1.15em; font-weight:800;">Amazon</div>
-                <div style="color:#a0785a; font-size:0.72em; margin-top:2px;">1,500,000 employees</div>
-            </div>
-            <!-- net income -->
-            <div style="padding:18px; border-bottom:1px solid #ede0d0;">
-                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> said they made, <strong>$50B</strong>, your salary would be</p>
-                <div style="font-size:1.85em; font-weight:900; color:#15803d;">$78,333</div>
-                <a href="#" style="font-size:0.75em; color:#b45309; display:block; margin-top:5px;">How was this calculated?</a>
-            </div>
-            <!-- ebitda -->
-            <div style="padding:18px; border-bottom:1px solid #ede0d0;">
-                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:6px;">If you got to keep your fair share of what <strong>Amazon</strong> actually made, <strong>$75B</strong>, your salary would be</p>
-                <div style="font-size:1.85em; font-weight:900; color:#b45309;">$95,000</div>
-                <a href="#" style="font-size:0.75em; color:#b45309; display:block; margin-top:5px;">How was this calculated?</a>
-            </div>
-            <!-- bottom -->
-            <div style="padding:16px 18px; border-bottom:1px solid #ede0d0;">
-                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:4px;"><strong>Amazon</strong> kept <strong>$50,000</strong> from you.</p>
-                <p style="font-size:0.85em; color:#5a3a1a; margin-bottom:4px;"><strong>The federal government</strong> kept <strong>$4,320</strong> in income tax.</p>
-                <p style="font-size:0.75em; color:#a0785a; margin-bottom:6px;">Tax brackets are progressive — only the $X above $Y is taxed at the top rate. The rest is taxed at lower rates.</p>
-                <a href="#" style="font-size:0.75em; color:#b45309;">How are these calculated?</a>
-            </div>
-            <!-- coop -->
-            <div style="padding:14px 18px; background:#f0faf0; border-bottom:1px solid #ede0d0; border-left:4px solid #16a34a; font-size:0.78em; color:#166534; line-height:1.6;">
-                <strong>Want to work somewhere you actually share in the profits?</strong> Worker-owned companies and ESOPs share ownership — and profits — with employees. <a href="#" style="color:#166534;">Find a worker co-op near you</a> or <a href="#" style="color:#166534;">learn about ESOPs</a>.
-            </div>
-            <!-- share -->
-            <div style="padding:14px 18px 18px;">
-                <div style="font-size:0.72em; color:#a0785a; margin-bottom:8px;">Share your result:</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <span class="share-btn" style="background:#1a0a00;color:#fff;">𝕏 Post</span>
-                    <span class="share-btn" style="background:#1877f2;color:#fff;">f Facebook</span>
-                    <span class="share-btn" style="background:#25d366;color:#fff;">💬 WhatsApp</span>
-                    <span class="share-btn" style="background:#ff4500;color:#fff;">👾 Reddit</span>
-                    <span class="share-btn" style="background:#7c4a00;color:#fff;">✉ Text</span>
+                    <div id="results" class="hidden"></div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+        </article>
 
-</div><!-- /designs -->
+    </div>
+
+    <script>
+        const FONT_OPTIONS = [
+            { name: "Inter", stack: "\"Inter\", sans-serif", category: "Neo-grotesk" },
+            { name: "Manrope", stack: "\"Manrope\", sans-serif", category: "Geometric" },
+            { name: "Space Grotesk", stack: "\"Space Grotesk\", sans-serif", category: "Display sans" },
+            { name: "Plus Jakarta Sans", stack: "\"Plus Jakarta Sans\", sans-serif", category: "UI sans" },
+            { name: "DM Sans", stack: "\"DM Sans\", sans-serif", category: "Grotesk" },
+            { name: "Outfit", stack: "\"Outfit\", sans-serif", category: "Round geometric" },
+            { name: "Urbanist", stack: "\"Urbanist\", sans-serif", category: "Clean sans" },
+            { name: "Archivo", stack: "\"Archivo\", sans-serif", category: "Sharp sans" },
+            { name: "Bricolage Grotesque", stack: "\"Bricolage Grotesque\", sans-serif", category: "Expressive sans" },
+            { name: "Instrument Sans", stack: "\"Instrument Sans\", sans-serif", category: "Contemporary sans" },
+            { name: "Public Sans", stack: "\"Public Sans\", sans-serif", category: "Civic sans" },
+            { name: "Syne", stack: "\"Syne\", sans-serif", category: "Art display" },
+            { name: "Sora", stack: "\"Sora\", sans-serif", category: "Tech sans" },
+            { name: "IBM Plex Sans", stack: "\"IBM Plex Sans\", sans-serif", category: "System sans" },
+            { name: "Work Sans", stack: "\"Work Sans\", sans-serif", category: "Editorial sans" },
+            { name: "Noto Sans Display", stack: "\"Noto Sans Display\", sans-serif", category: "Display sans" },
+            { name: "Figtree", stack: "\"Figtree\", sans-serif", category: "Friendly sans" },
+            { name: "Be Vietnam Pro", stack: "\"Be Vietnam Pro\", sans-serif", category: "Modern sans" },
+            { name: "Onest", stack: "\"Onest\", sans-serif", category: "Minimal sans" },
+            { name: "Chivo", stack: "\"Chivo\", sans-serif", category: "Strong sans" },
+            { name: "Montserrat", stack: "\"Montserrat\", sans-serif", category: "Urban sans" },
+            { name: "Epilogue", stack: "\"Epilogue\", sans-serif", category: "Structured sans" },
+            { name: "Lexend", stack: "\"Lexend\", sans-serif", category: "Readable sans" },
+            { name: "Fraunces", stack: "\"Fraunces\", serif", category: "Soft serif" },
+            { name: "Source Serif 4", stack: "\"Source Serif 4\", serif", category: "Editorial serif" }
+        ];
+
+        const root = document.documentElement;
+        const fontLauncher = document.getElementById("fontLauncher");
+        const fontLauncherLabel = document.getElementById("fontLauncherLabel");
+        const fontPopover = document.getElementById("fontPopover");
+        const fontClose = document.getElementById("fontClose");
+        const fontTargets = Array.from(document.querySelectorAll(".font-target"));
+        const fontGrid = document.getElementById("fontGrid");
+        const currentHeadingLabel = document.getElementById("currentHeadingLabel");
+        const currentBodyLabel = document.getElementById("currentBodyLabel");
+        const fontReset = document.getElementById("fontReset");
+
+        const defaults = {
+            heading: FONT_OPTIONS.find((font) => font.name === "Source Serif 4"),
+            body: FONT_OPTIONS.find((font) => font.name === "IBM Plex Sans")
+        };
+
+        const state = {
+            target: "heading",
+            heading: defaults.heading,
+            body: defaults.body
+        };
+
+        function updateFontLabels() {
+            currentHeadingLabel.textContent = state.heading.name;
+            currentHeadingLabel.style.fontFamily = state.heading.stack;
+            currentBodyLabel.textContent = state.body.name;
+            currentBodyLabel.style.fontFamily = state.body.stack;
+            fontLauncherLabel.textContent = `Headline: ${state.heading.name} / Body: ${state.body.name}`;
+        }
+
+        function applyFonts() {
+            root.style.setProperty("--selected-heading-font", state.heading.stack);
+            root.style.setProperty("--selected-body-font", state.body.stack);
+            updateFontLabels();
+        }
+
+        function renderFontGrid() {
+            fontGrid.innerHTML = "";
+
+            FONT_OPTIONS.forEach((font) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "font-option";
+                button.style.fontFamily = font.stack;
+                if (state[state.target].name === font.name) {
+                    button.classList.add("active");
+                }
+
+                button.innerHTML = `
+                    <div class="font-option-name" style="font-family:${font.stack};">${font.name}</div>
+                    <div class="font-option-meta">${font.category}</div>
+                    <div class="font-option-sample" style="font-family:${font.stack};">Fair wages should look this good.</div>
+                `;
+
+                button.addEventListener("click", () => {
+                    state[state.target] = font;
+                    applyFonts();
+                    renderFontGrid();
+                });
+
+                fontGrid.appendChild(button);
+            });
+        }
+
+        function setTarget(target) {
+            state.target = target;
+            fontTargets.forEach((button) => {
+                button.classList.toggle("active", button.dataset.target === target);
+            });
+            renderFontGrid();
+        }
+
+        function togglePopover(forceOpen) {
+            const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : fontPopover.hidden;
+            fontPopover.hidden = !shouldOpen;
+            fontLauncher.setAttribute("aria-expanded", String(shouldOpen));
+        }
+
+        function syncCurrencyFields() {
+            document.querySelectorAll(".currency-field .field-control").forEach((input) => {
+                const wrapper = input.closest(".currency-field");
+                if (!wrapper) return;
+                const hasValue = String(input.value || "").trim() !== "";
+                wrapper.classList.toggle("has-value", hasValue);
+            });
+        }
+
+        fontLauncher.addEventListener("click", () => togglePopover());
+        fontClose.addEventListener("click", () => togglePopover(false));
+
+        fontTargets.forEach((button) => {
+            button.addEventListener("click", () => setTarget(button.dataset.target));
+        });
+
+        fontReset.addEventListener("click", () => {
+            state.heading = defaults.heading;
+            state.body = defaults.body;
+            applyFonts();
+            renderFontGrid();
+        });
+
+        document.addEventListener("click", (event) => {
+            if (fontPopover.hidden) return;
+            if (fontPopover.contains(event.target) || fontLauncher.contains(event.target)) return;
+            togglePopover(false);
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                togglePopover(false);
+            }
+        });
+
+        document.querySelectorAll(".currency-field .field-control").forEach((input) => {
+            input.addEventListener("input", syncCurrencyFields);
+            input.addEventListener("change", syncCurrencyFields);
+        });
+
+        applyFonts();
+        renderFontGrid();
+        syncCurrencyFields();
+    </script>
+    <script src="fallback.js"></script>
+    <script src="ac_list.js"></script>
+    <script src="script.js"></script>
+    <script>
+        (function() {
+            function formatIntegerWithCommas(value) {
+                var digits = String(value || "").replace(/[^\d]/g, "");
+                if (!digits) return "";
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            function normalizeCurrencyInputs() {
+                ["annualSalary", "hourlyWage"].forEach(function(id) {
+                    var input = document.getElementById(id);
+                    if (!input) return;
+                    input.value = input.value.replace(/,/g, "");
+                });
+            }
+
+            var annualSalaryInput = document.getElementById("annualSalary");
+            if (annualSalaryInput) {
+                annualSalaryInput.addEventListener("input", function() {
+                    annualSalaryInput.value = formatIntegerWithCommas(annualSalaryInput.value);
+                    if (typeof syncCurrencyFields === "function") syncCurrencyFields();
+                });
+            }
+
+            var calculateButton = document.getElementById("calculateBtn");
+            if (calculateButton) {
+                calculateButton.addEventListener("click", normalizeCurrencyInputs, true);
+            }
+        })();
+    </script>
 </body>
 </html>

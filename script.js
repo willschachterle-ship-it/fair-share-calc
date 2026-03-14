@@ -553,8 +553,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</div>';
             } else {
                 netIncomeSection =
-                    '<p style="margin-bottom:4px;">If you got to keep your fair share of what <strong>' + data.name + '</strong> said they made, <strong>' + fmtBig(effectiveProfit) + '</strong>, your salary would be</p>' +
-                    '<div style="font-size:1.8em; font-weight:bold; color:#1b5e20;">$' + netTotal.toLocaleString() + '</div>' +
+                    '<p style="margin-bottom:4px;">If <strong>' + data.name + '</strong> distributed their \'Net Income\', <strong>' + fmtBig(effectiveProfit) + '</strong>, evenly across its workforce, a worker at this pay level would earn:</p>' +
+                    '<div style="font-size:1.8em; font-weight:bold; color:#0d47a1;">$' + netTotal.toLocaleString() + '</div>' +
                     '<a href="how-it-works.html#net-income" target="_blank" style="font-size:0.78em; color:#1565c0; display:block; margin-top:6px;">How was this calculated?</a>';
             }
 
@@ -617,6 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">' +
                             (data.logo ? '<img src="' + data.logo + '" alt="logo" onerror="this.style.display=\'none\'" style="width:50px; height:50px; border-radius:8px; object-fit:contain; border:1px solid #eee;">' : '') +
                             '<div>' +
+                                '<p style="margin:0 0 6px 0; color:#0d47a1; font-size:0.9em; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; font-family:\'Source Serif 4\', Georgia, serif;">FAIR SHARE</p>' +
                                 '<h2 style="margin:0; color:#1a1a1a; font-size:1.4em;">' + data.name + '</h2>' +
                                 '<p style="margin:0; font-size:0.75em; color:#888; text-transform:uppercase; letter-spacing:1px;">' + data.emps.toLocaleString() + ' employees</p>' +
                             '</div>' +
